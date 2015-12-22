@@ -611,7 +611,7 @@ class Propagator(BaseToolbox_Mixin):
                 )
 
 
-class Accumulator(StandardScenarios):
+class Accumulator(BaseToolbox_Mixin):
     """
     ArcGIS Python toolbox to accumulate subcatechments attributes and
     water quality parameters downstream through a stream.
@@ -625,7 +625,7 @@ class Accumulator(StandardScenarios):
     Propagator
 
     """
-    direction = = 'downstream'
+    direction = 'downstream'
 
     def __init__(self):
         """Define the tool (tool name is the name of the class)."""
