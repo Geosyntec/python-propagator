@@ -1,9 +1,19 @@
 # Contributing to ``python-propagator``
 
 ## General `git` workflow
+
+### Starting out
+  1. Fork the main repository to your github account
+  2. Clone your fork via `git clone git@github.com:<your_github_name>/python-propagator.git`
+
 You should have at least two git remotes on your local machine:
-  1. `origin` (e.g., git@github.com:phobson/python-propagator.git)
-  1. `Geosyntec` or `upstream` (e.g.,  git@github.com:Geosyntec/python-propagator.git)
+  1. `origin` (e.g., `git@github.com:phobson/python-propagator.git`)
+  1. `Geosyntec` or `upstream` (e.g., `git@github.com:Geosyntec/python-propagator.git`)
+
+You add the upstream fork with:
+```
+git remote add upstream git@github.com:Geosyntec/python-propagator.git
+```
 
 Since you have both of these remotes, we can safely say that you should:
   * never, *never* push to `origin/master`.
