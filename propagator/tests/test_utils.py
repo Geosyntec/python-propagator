@@ -819,6 +819,27 @@ def test_intersect_polygon_layers():
     utils.cleanup_temp_results(output)
 
 
+def test_load_attribute_table():
+    path = resource_filename('propagator.testing.load_attribute_table', 'subcatchments.shp')
+    expected_top_five = numpy.array(
+        [
+            (u'541', u'571', u'San Juan Creek'),
+            (u'754', u'618', u'San Juan Creek'),
+            (u'561', u'577', u'San Juan Creek'),
+            (u'719', u'770', u'San Juan Creek'),
+            (u'766', u'597', u'San Juan Creek'),
+        ],
+        dtype=[
+            ('CatchID', '<U20'),
+            ('DwnCatchID', '<U20'),
+            ('Watershed', '<U50'),
+        ]
+    )
+
+    result = utils.load_attribute_table(path, 'CatchID', 'DwnCatchID', 'Watershed')
+    nptest.assert_array_equal(result[:5], expected_top_five)
+
+
 class Test_groupby_and_aggregate():
     known_counts = {16.0: 32, 150.0: 2}
     buildings = resource_filename("propagator.testing.groupby_and_aggregate", "flooded_buildings.shp")

@@ -1035,6 +1035,50 @@ def intersect_polygon_layers(destination, *layers, **intersect_options):
     return intersected
 
 
+@update_status() # record array
+def load_attribute_table(input_path, *fields):
+    """
+    Loads a shapefile's attribute table as a numpy record array.
+
+    Parameters
+    ----------
+    input_path : str
+        Fiilepath to the shapefile or feature class whose table needs
+        to be read.
+    *fields : str
+        Names of the fields that should be included in the resulting
+        array.
+
+    Returns
+    -------
+    records : numpy.recarray
+        A record array of the selected fields in the attribute table.
+
+    Examples
+    --------
+    >>> from propagator import utils
+    >>> path = "data/subcatchment.shp"
+    >>> catchements = utils.load_attribute_table(path, 'CatchID',
+    ... 'DwnCatchID', 'Watershed')
+    >>> catchements[:5]
+    array([(u'541', u'571', u'San Juan Creek'),
+           (u'754', u'618', u'San Juan Creek'),
+           (u'561', u'577', u'San Juan Creek'),
+           (u'719', u'770', u'San Juan Creek'),
+           (u'766', u'597', u'San Juan Creek')],
+          dtype=[('CatchID', '<U20'), ('DwnCatchID', '<U20'),
+                 ('Watershed', '<U50')])
+    """
+    # load the data
+    layer = load_data(input_path, "layer")
+
+    # check that fields are valid
+    _check_fields(layer.dataSource, *fields, should_exist=True)
+
+    array = arcpy.da.FeatureClassToNumPyArray(in_table=input_path, field_names=fields)
+    return array
+
+
 @update_status() # dict
 def groupby_and_aggregate(input_path, groupfield, valuefield,
                           aggfxn=None):
@@ -1097,13 +1141,8 @@ def groupby_and_aggregate(input_path, groupfield, valuefield,
     if aggfxn is None:
         aggfxn = lambda x: int(numpy.unique(list(x)).shape[0])
 
-    # load the data
-    layer = load_data(input_path, "layer")
 
-    # check that fields are valid
-    _check_fields(layer.dataSource, groupfield, valuefield, should_exist=True)
-
-    table = arcpy.da.TableToNumPyArray(layer, [groupfield, valuefield])
+    table = load_attribute_table(input_path, groupfield, valuefield)
     #_status((table.dtype), verbose=True, asMessage=True)
     #table.sort(order=groupfield)
     table.sort()
