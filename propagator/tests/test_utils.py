@@ -7,7 +7,7 @@ import numpy
 
 import nose.tools as nt
 import numpy.testing as nptest
-import propagator.testing as tgtest
+import propagator.testing as pptest
 import mock
 
 import propagator
@@ -293,34 +293,34 @@ class Test_create_temp_filename():
             nt.assert_equal(temp_shape, known_shape)
 
 
-class Test__check_fields(object):
+class Test_check_fields(object):
     table = resource_filename("propagator.testing.check_fields", "test_file.shp")
 
     def test_should_exist_uni(self):
-        utils._check_fields(self.table, "Id", should_exist=True)
+        utils.check_fields(self.table, "Id", should_exist=True)
 
     def test_should_exist_multi(self):
-        utils._check_fields(self.table, "Id", "existing", should_exist=True)
+        utils.check_fields(self.table, "Id", "existing", should_exist=True)
 
     def test_should_exist_multi_witharea(self):
-        utils._check_fields(self.table, "Id", "existing", "SHAPE@AREA", should_exist=True)
+        utils.check_fields(self.table, "Id", "existing", "SHAPE@AREA", should_exist=True)
 
     @nt.raises(ValueError)
     def test_should_exist_bad_vals(self):
-        utils._check_fields(self.table, "Id", "existing", "JUNK", "GARBAGE", should_exist=True)
+        utils.check_fields(self.table, "Id", "existing", "JUNK", "GARBAGE", should_exist=True)
 
     def test_should_not_exist_uni(self):
-        utils._check_fields(self.table, "NEWFIELD", should_exist=False)
+        utils.check_fields(self.table, "NEWFIELD", should_exist=False)
 
     def test_should_not_exist_multi(self):
-        utils._check_fields(self.table, "NEWFIELD", "YANFIELD", should_exist=False)
+        utils.check_fields(self.table, "NEWFIELD", "YANFIELD", should_exist=False)
 
     def test_should_not_exist_multi_witharea(self):
-        utils._check_fields(self.table, "NEWFIELD", "YANFIELD", "SHAPE@AREA", should_exist=False)
+        utils.check_fields(self.table, "NEWFIELD", "YANFIELD", "SHAPE@AREA", should_exist=False)
 
     @nt.raises(ValueError)
     def test_should_not_exist_bad_vals(self):
-        utils._check_fields(self.table, "NEWFIELD", "YANFIELD", "existing", should_exist=False)
+        utils.check_fields(self.table, "NEWFIELD", "YANFIELD", "existing", should_exist=False)
 
 
 def test_result_to_raster():
@@ -481,7 +481,7 @@ class _polygons_to_raster_mixin(object):
     testfile = resource_filename("propagator.testing.polygons_to_raster", "test_zones.shp")
     known_values = numpy.array([-999, 16, 150])
 
-    @nptest.dec.skipif(not tgtest.has_spatial)
+    @nptest.dec.skipif(not pptest.has_spatial)
     def test_process(self):
         raster = utils.polygons_to_raster(self.testfile, "GeoID", **self.kwargs)
         nt.assert_true(isinstance(raster, arcpy.Raster))
@@ -516,7 +516,7 @@ class Test_polygons_to_raster_x08(_polygons_to_raster_mixin):
         self.known_shape = (427, 330)
         self.known_counts = numpy.array([23828,  9172])
 
-    @nptest.dec.skipif(not tgtest.has_spatial)
+    @nptest.dec.skipif(not pptest.has_spatial)
     def test_actual_arrays(self):
         known_raster_file = resource_filename("propagator.testing.polygons_to_raster", "test_zones_raster.tif")
         known_raster = utils.load_data(known_raster_file, 'raster')
@@ -552,7 +552,7 @@ def test_clip_dem_to_zones():
     nt.assert_tuple_equal(dem_a.shape, zone_a.shape)
 
 
-@nptest.dec.skipif(not tgtest.has_fiona)
+@nptest.dec.skipif(not pptest.has_fiona)
 def test_raster_to_polygons():
     zonefile = resource_filename("propagator.testing.raster_to_polygons", "input_raster_to_polygon.tif")
     knownfile = resource_filename("propagator.testing.raster_to_polygons", "known_polygons_from_raster_1.shp")
@@ -563,11 +563,11 @@ def test_raster_to_polygons():
         known = utils.load_data(knownfile, 'layer')
         test = utils.raster_to_polygons(zones, testfile)
 
-    tgtest.assert_shapefiles_are_close(test.dataSource, known.dataSource)
+    pptest.assert_shapefiles_are_close(test.dataSource, known.dataSource)
     utils.cleanup_temp_results(testfile)
 
 
-@nptest.dec.skipif(not tgtest.has_fiona)
+@nptest.dec.skipif(not pptest.has_fiona)
 def test_raster_to_polygons_with_new_field():
     zonefile = resource_filename("propagator.testing.raster_to_polygons", "input_raster_to_polygon.tif")
     knownfile = resource_filename("propagator.testing.raster_to_polygons", "known_polygons_from_raster_2.shp")
@@ -578,11 +578,11 @@ def test_raster_to_polygons_with_new_field():
         known = utils.load_data(knownfile, 'layer')
         test = utils.raster_to_polygons(zones, testfile, newfield="GeoID")
 
-    tgtest.assert_shapefiles_are_close(test.dataSource, known.dataSource)
+    pptest.assert_shapefiles_are_close(test.dataSource, known.dataSource)
     utils.cleanup_temp_results(testfile)
 
 
-@nptest.dec.skipif(not tgtest.has_fiona)
+@nptest.dec.skipif(not pptest.has_fiona)
 def test_aggregate_polygons():
     inputfile = resource_filename("propagator.testing.aggregate_polygons", "input_polygons_from_raster.shp")
     knownfile = resource_filename("propagator.testing.aggregate_polygons", "known_dissolved_polygons.shp")
@@ -593,7 +593,7 @@ def test_aggregate_polygons():
         known = utils.load_data(knownfile, 'layer')
         test = utils.aggregate_polygons(raw, "gridcode", testfile)
 
-    tgtest.assert_shapefiles_are_close(test.dataSource, known.dataSource)
+    pptest.assert_shapefiles_are_close(test.dataSource, known.dataSource)
 
     utils.cleanup_temp_results(testfile)
 
@@ -799,7 +799,7 @@ class Test_cleanup_temp_results(object):
             utils.cleanup_temp_results('temp_1.tif', 'temp_2.tif')
 
 
-@nptest.dec.skipif(not tgtest.has_fiona)
+@nptest.dec.skipif(not pptest.has_fiona)
 def test_intersect_polygon_layers():
     input1_file = resource_filename("propagator.testing.intersect_polygons", "intersect_input1.shp")
     input2_file = resource_filename("propagator.testing.intersect_polygons", "intersect_input2.shp")
@@ -814,7 +814,7 @@ def test_intersect_polygon_layers():
         )
 
     nt.assert_true(isinstance(output, arcpy.mapping.Layer))
-    tgtest.assert_shapefiles_are_close(output_file, known_file)
+    pptest.assert_shapefiles_are_close(output_file, known_file)
 
     utils.cleanup_temp_results(output)
 
@@ -916,12 +916,12 @@ def test_rename_column():
     #layer = utils.load_data(inputfile, "layer")
 
     utils.rename_column(layer, oldname, newname)
-    utils._check_fields(layer, newname, should_exist=True)
-    utils._check_fields(layer, oldname, should_exist=False)
+    utils.check_fields(layer, newname, should_exist=True)
+    utils.check_fields(layer, oldname, should_exist=False)
 
     utils.rename_column(layer, newname, oldname)
-    utils._check_fields(layer, newname, should_exist=False)
-    utils._check_fields(layer, oldname, should_exist=True)
+    utils.check_fields(layer, newname, should_exist=False)
+    utils.check_fields(layer, oldname, should_exist=True)
 
 
 class Test_populate_field(object):
@@ -978,7 +978,7 @@ class Test_copy_data(object):
         utils.cleanup_temp_results(*self.output)
 
 
-    @nptest.dec.skipif(not tgtest.has_fiona)
+    @nptest.dec.skipif(not pptest.has_fiona)
     def test_list(self):
         with utils.OverwriteState(True):
             newlayers = utils.copy_data(self.destfolder, *self.srclayers)
@@ -987,9 +987,9 @@ class Test_copy_data(object):
 
         for newlyr, newname, oldname in zip(newlayers, self.output, self.srclayers):
             nt.assert_true(isinstance(newlyr, arcpy.mapping.Layer))
-            tgtest.assert_shapefiles_are_close(newname, oldname)
+            pptest.assert_shapefiles_are_close(newname, oldname)
 
-    @nptest.dec.skipif(not tgtest.has_fiona)
+    @nptest.dec.skipif(not pptest.has_fiona)
     def test_single_squeeze_false(self):
         with utils.OverwriteState(True):
             newlayers = utils.copy_data(self.destfolder, *self.srclayers[:1])
@@ -998,9 +998,9 @@ class Test_copy_data(object):
 
         for newlyr, newname, oldname in zip(newlayers[:1], self.output[:1], self.srclayers[:1]):
             nt.assert_true(isinstance(newlyr, arcpy.mapping.Layer))
-            tgtest.assert_shapefiles_are_close(newname, oldname)
+            pptest.assert_shapefiles_are_close(newname, oldname)
 
-    @nptest.dec.skipif(not tgtest.has_fiona)
+    @nptest.dec.skipif(not pptest.has_fiona)
     def test_single_squeeze_true(self):
         with utils.OverwriteState(True):
             newlayer = utils.copy_data(self.destfolder, *self.srclayers[:1], squeeze=True)
@@ -1008,10 +1008,10 @@ class Test_copy_data(object):
         nt.assert_true(isinstance(newlayer, arcpy.mapping.Layer))
 
         nt.assert_true(isinstance(newlayer, arcpy.mapping.Layer))
-        tgtest.assert_shapefiles_are_close(self.output[0], self.srclayers[0])
+        pptest.assert_shapefiles_are_close(self.output[0], self.srclayers[0])
 
 
-@nptest.dec.skipif(not tgtest.has_fiona)
+@nptest.dec.skipif(not pptest.has_fiona)
 def test_concat_results():
     known = resource_filename('propagator.testing.concat_results', 'known.shp')
     with utils.OverwriteState(True):
@@ -1022,12 +1022,12 @@ def test_concat_results():
         )
 
     nt.assert_true(isinstance(test, arcpy.mapping.Layer))
-    tgtest.assert_shapefiles_are_close(test.dataSource, known)
+    pptest.assert_shapefiles_are_close(test.dataSource, known)
 
     utils.cleanup_temp_results(test)
 
 
-@nptest.dec.skipif(not tgtest.has_fiona)
+@nptest.dec.skipif(not pptest.has_fiona)
 def test_join_results_to_baseline():
     known = resource_filename('propagator.testing.join_results', 'merge_result.shp')
     with utils.OverwriteState(True):
@@ -1037,7 +1037,7 @@ def test_join_results_to_baseline():
             resource_filename('propagator.testing.join_results', 'merge_baseline.shp')
         )
     nt.assert_true(isinstance(test, arcpy.mapping.Layer))
-    tgtest.assert_shapefiles_are_close(test.dataSource, known)
+    pptest.assert_shapefiles_are_close(test.dataSource, known)
 
     utils.cleanup_temp_results(test)
 
