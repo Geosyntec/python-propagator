@@ -163,11 +163,23 @@ def propagate_scores(subcatchment_array, wq_column, null_value='None',
 
     """
 
+    # copy the input array so that we always have the
+    # original to compare to.
     propagated = subcatchment_array.copy()
+
+    # loop through the array
     for n, row in enumerate(propagated):
+
+        # check to see if we're at the bottom of the watershed
         is_bottom = row[ds_col] == bottom_ID
+
+        # look for a downstream value if there is not value
+        # and we're not already at the bottom
         if row[wq_column] == null_value and not is_bottom:
+            # find the downstream value
             ds_values = find_downstream_scores(propagated, row[ds_col], wq_column)
+
+            # assign the downstream value to the current (empty) value
             propagated[wq_column][n] = ds_values[wq_column]
 
     return propagated
