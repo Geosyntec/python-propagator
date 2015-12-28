@@ -129,7 +129,7 @@ def find_tops(subcatchment_array, id_col='ID', ds_col='DS_ID'):
     return numpy.array(list(tops), dtype=subcatchment_array.dtype)
 
 
-def propagate_scores(subcatchment_array, testcol, null_value='None',
+def propagate_scores(subcatchment_array, wq_column, null_value='None',
                      id_col='ID', ds_col='DS_ID', bottom_ID='Ocean'):
     """
     Propagate values into upstream subcatchments through a watershed.
@@ -140,7 +140,7 @@ def propagate_scores(subcatchment_array, testcol, null_value='None',
         A record array of all of the subcatchments in the watershed.
         This array must have a "downstrea ID" column in which each
         subcatchment identifies as single, downstream neighbor.
-    testcol : str
+    wq_column : str
         Name of a representative water quality column that can be used
         to indicate if the given subcatchment has or has not been
         populated with water quality data.
@@ -166,16 +166,14 @@ def propagate_scores(subcatchment_array, testcol, null_value='None',
     propagated = subcatchment_array.copy()
     for n, row in enumerate(propagated):
         is_bottom = row[ds_col] == bottom_ID
-        if row[testcol] == null_value and not is_bottom:
-            vals = find_downstream_scores(propagated, row[ds_col], testcol)
-            vals[id_col] = row[id_col]
-            vals[ds_col] = row[ds_col]
-            propagated[n] = vals
+        if row[wq_column] == null_value and not is_bottom:
+            ds_values = find_downstream_scores(propagated, row[ds_col], wq_column)
+            propagated[wq_column][n] = ds_values[wq_column]
 
     return propagated
 
 
-def find_downstream_scores(subcatchment_array, subcatchment_ID, testcol,
+def find_downstream_scores(subcatchment_array, subcatchment_ID, wq_column,
                            null_value='None', id_col='ID', ds_col='DS_ID'):
     """
     Recursively look for populated water quality score in downstream
@@ -190,7 +188,7 @@ def find_downstream_scores(subcatchment_array, subcatchment_ID, testcol,
     subcatchment_ID : str
         ID of the subcatchment whose water quality scores need to be
         populated.
-    testcol : str
+    wq_column : str
         Name of a representative water quality column that can be used
         to indicate if the given subcatchment has or has not been
         populated with water quality data.
@@ -211,10 +209,14 @@ def find_downstream_scores(subcatchment_array, subcatchment_ID, testcol,
     """
 
     vals = filter(lambda r: r[id_col] == subcatchment_ID, subcatchment_array)[0]
-    if vals[testcol] == null_value:
+    if vals[wq_column] == null_value:
         return find_downstream_scores(subcatchment_array, vals[ds_col])
     else:
         return vals.copy()
+
+
+def update_water_quality_layer(layer, water_quality):
+    raise NotImplementedError
 
 
 def split_streams(stream_layer, subcatchment_layer):
