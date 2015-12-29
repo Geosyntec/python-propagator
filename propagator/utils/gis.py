@@ -24,7 +24,7 @@ import numpy
 
 import arcpy
 
-from .misc import update_status
+from . import misc
 
 
 class RasterTemplate(object):
@@ -404,7 +404,7 @@ def check_fields(table, *fieldnames, **kwargs):
         raise ValueError('fields {} are {} in {}'.format(bad_names, qual, table))
 
 
-@update_status() # raster
+@misc.update_status() # raster
 def result_to_raster(result):
     """ Gets the actual `arcpy.Raster`_ from an `arcpy.Result`_ object.
 
@@ -429,7 +429,7 @@ def result_to_raster(result):
     return arcpy.Raster(result.getOutput(0))
 
 
-@update_status() # layer
+@misc.update_status() # layer
 def result_to_layer(result):
     """ Gets the actual `arcpy.mapping.Layer`_ from an `arcpy.Result`_
     object.
@@ -456,7 +456,7 @@ def result_to_layer(result):
     return arcpy.mapping.Layer(result.getOutput(0))
 
 
-@update_status() # list of arrays
+@misc.update_status() # list of arrays
 def rasters_to_arrays(*rasters, **kwargs):
     """ Converts an arbitrary number of `rasters`_ to `numpy arrays`_.
     Relies on `arcpy.RasterToNumPyArray`_.
@@ -499,7 +499,7 @@ def rasters_to_arrays(*rasters, **kwargs):
     return arrays
 
 
-@update_status() # raster
+@misc.update_status() # raster
 def array_to_raster(array, template, outfile=None):
     """ Create an arcpy.Raster from a numpy.ndarray based on a template.
     This wrapper around `arcpy.NumPyArrayToRaster`_.
@@ -549,7 +549,7 @@ def array_to_raster(array, template, outfile=None):
     return newraster
 
 
-@update_status() # raster or layer
+@misc.update_status() # raster or layer
 def load_data(datapath, datatype, greedyRasters=True, **verbosity):
     """ Loads vector and raster data from filepaths.
 
@@ -604,7 +604,7 @@ def load_data(datapath, datatype, greedyRasters=True, **verbosity):
     return data
 
 
-@update_status() # raster
+@misc.update_status() # raster
 def polygons_to_raster(polygons, ID_column, cellsize=4, outfile=None):
     """ Prepare tidegates' areas of influence polygons for flooding
     by converting to a raster. Relies on
@@ -662,7 +662,7 @@ def polygons_to_raster(polygons, ID_column, cellsize=4, outfile=None):
     return zones
 
 
-@update_status() # raster
+@misc.update_status() # raster
 def clip_dem_to_zones(dem, zones, outfile=None):
     """ Limits the extent of the topographic data (``dem``) to that of
     the zones of influence  so that we can easily use array
@@ -705,7 +705,7 @@ def clip_dem_to_zones(dem, zones, outfile=None):
     return dem_clipped
 
 
-@update_status() # layer
+@misc.update_status() # layer
 def raster_to_polygons(zonal_raster, filename, newfield=None):
     """
     Converts zonal rasters to polygons layers. This is basically just
@@ -762,7 +762,7 @@ def raster_to_polygons(zonal_raster, filename, newfield=None):
     return polygons
 
 
-@update_status() # layer
+@misc.update_status() # layer
 def aggregate_polygons(polygons, ID_field, filename):
     """
     Dissolves (aggregates) polygons into a single feature the unique
@@ -809,7 +809,7 @@ def aggregate_polygons(polygons, ID_field, filename):
     return dissolved
 
 
-@update_status() # None
+@misc.update_status() # None
 def add_field_with_value(table, field_name, field_value=None,
                          overwrite=False, **field_opts):
     """ Adds a numeric or text field to an attribute table and sets it
@@ -884,7 +884,7 @@ def add_field_with_value(table, field_name, field_value=None,
         populate_field(table, lambda row: field_value, field_name)
 
 
-@update_status() # None
+@misc.update_status() # None
 def cleanup_temp_results(*results):
     """ Deletes temporary results from the current workspace.
 
@@ -921,7 +921,7 @@ def cleanup_temp_results(*results):
         arcpy.management.Delete(fullpath)
 
 
-@update_status() # layer
+@misc.update_status() # layer
 def intersect_polygon_layers(destination, *layers, **intersect_options):
     """
     Intersect polygon layers with each other. Basically a thin wrapper
@@ -967,7 +967,7 @@ def intersect_polygon_layers(destination, *layers, **intersect_options):
     return intersected
 
 
-@update_status() # record array
+@misc.update_status() # record array
 def load_attribute_table(input_path, *fields):
     """
     Loads a shapefile's attribute table as a numpy record array.
@@ -1019,7 +1019,7 @@ def load_attribute_table(input_path, *fields):
     return array
 
 
-@update_status() # dict
+@misc.update_status() # dict
 def groupby_and_aggregate(input_path, groupfield, valuefield,
                           aggfxn=None):
     """
@@ -1091,7 +1091,7 @@ def groupby_and_aggregate(input_path, groupfield, valuefield,
     return counts
 
 
-@update_status() # None
+@misc.update_status() # None
 def rename_column(table, oldname, newname, newalias=None): # pragma: no cover
     """
     .. warning: Not yet implemented.
@@ -1113,7 +1113,7 @@ def rename_column(table, oldname, newname, newalias=None): # pragma: no cover
     )
 
 
-@update_status() # None
+@misc.update_status() # None
 def populate_field(table, value_fxn, valuefield, *keyfields):
     """
     Loops through the records of a table and populates the value of one
@@ -1164,7 +1164,7 @@ def populate_field(table, value_fxn, valuefield, *keyfields):
             cur.updateRow(row)
 
 
-@update_status() # layers
+@misc.update_status() # layers
 def copy_data(destfolder, *source_layers, **kwargs):
     """ Copies an arbitrary number of spatial files to a new folder.
 
@@ -1206,7 +1206,7 @@ def copy_data(destfolder, *source_layers, **kwargs):
     return copied
 
 
-@update_status() # layer
+@misc.update_status() # layer
 def concat_results(destination, *input_files):
     """ Concatentates (merges) serveral datasets into a single shapefile
     or feature class.
@@ -1236,7 +1236,7 @@ def concat_results(destination, *input_files):
     return result_to_layer(result)
 
 
-@update_status() # layer
+@misc.update_status() # layer
 def join_results_to_baseline(destination, result_file, baseline_file):
     """ Joins attributes of a geoprocessing result to a baseline dataset
     and saves the results to another file.
