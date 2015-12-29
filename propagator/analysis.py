@@ -232,7 +232,134 @@ def find_downstream_scores(subcatchment_array, subcatchment_ID, wq_column,
 
 def update_water_quality_layer(layer, water_quality):
     raise NotImplementedError
-
-
+    
+    
 def split_streams(stream_layer, subcatchment_layer):
     raise NotImplementedError
+    
+    
+def prepare_data(ml, cat, final_fields):
+    """
+    Assigns water quality ranking from monitoring locations to the 
+    subcatchments. If multiple monitoring locations are present in 
+    one subcatchment, water quality rankings are aggregated prior to
+    assignment.
+
+    Parameters
+    ----------
+    ml : str
+        File path to the monitoring locations feature class.
+    cat : str
+        File path to the subcatchments feature class.
+    final_fields : list
+        List of field names to be retained in the output feature class.
+        
+    Returns
+    -------
+    cat_wq : arcpy.Layer
+        A subcatchment class that inherited water quality rankings
+        from respective monitoring locations.
+
+    """
+    
+    # Step 0. Load input and create temporary shapes
+    raw_ml = utils.load_data(
+        datapath=ml,
+        datatype="shape",
+        msg='Loading Monitoring Location {}'.format(ml),
+        #**verbose_options
+    )
+    raw_cat = utils.load_data(
+        datapath=cat,
+        datatype="shape",
+        msg='Loading Monitoring Location {}'.format(cat),
+        #**verbose_options
+    )
+    _reduced_ml = utils.create_temp_filename("reML", filetype='shape')
+    _cat_ml_int = utils.create_temp_filename("Cat_ML_int", filetype='shape')
+    _ml = utils.create_temp_filename("ml", filetype='shape')
+    _out_ml = utils.create_temp_filename("out_ml", filetype='shape')
+    cat_wq = utils.create_temp_filename("Cat_WQ", filetype='shape')
+    
+    # Step 1. Intersect ml and cat to generate a point shapefile 
+    # that contains an additional catid field showing where the ML
+    # is located at.
+    arcpy.analysis.Intersect([raw_cat, raw_ml], _cat_ml_int, "ALL", "", "INPUT")
+    
+    # Step 2. Create a new point file (_reduced_ml) that pair only one set 
+    # of ranking data to each catchment. 
+    
+    # extract all subcatchment ID that has at least one monitroing location    
+    arr = utils.load_attribute_table(_cat_ml_int, 'Catch_ID_a', 'Station')
+    catid = numpy.unique(arr['Catch_ID_a'])
+    
+    lc = 0
+    for ucat in catid:
+        
+        sqlexp = '"Catch_ID_a" = ' + "'%s'" % ucat
+        arcpy.analysis.Select(_cat_ml_int, _ml, sqlexp)
+        
+        # count number of MLs within each catchment
+        count = arcpy.management.GetCount(_ml).getOutput(0)
+        
+        # if there is only one monitoring location  in the subcatchment, 
+        # this monitoring location is direclty copied to a new point feature class.
+        if count == 1:
+            if lc == 0:
+                arcpy.management.Copy(_ml, _reduced_ml)
+            else:
+                arcpy.management.Append(_ml, _reduced_ml)
+
+        # otherwise, aggregates monitoring locations to one single entry
+        else:
+            if lc == 0:
+                arcpy.management.Copy(_reduce(_ml, _out_ml), _reduced_ml)
+            else:
+                arcpy.management.Append(_reduce(_ml, _out_ml), _reduced_ml)
+        lc = lc+1
+        
+    # Step 3. spatial join _reduced_ml with raw_cat, so that the new cathcment
+    # shapefile will inherit water quality data from the only monitoring location in it.
+    arcpy.analysis.SpatialJoin(raw_cat, _reduced_ml, cat_wq)
+    fields_to_remove = filter(lambda name: name not in final_fields, [f.name for f in arcpy.ListFields(cat_wq)])
+    utils.delete_columns(cat_wq, *fields_to_remove)
+    utils.cleanup_temp_results(
+        _reduced_ml,
+        _cat_ml_int,
+        _ml,
+        _out_ml,
+    )
+      
+    return cat_wq
+    
+
+def _reduce(_ml, _out_ml):
+    """
+    Aggregates water quality ranksing from all monitoring locations
+    in the same subcatchment.
+    
+    Parameters
+    ----------
+    _ml : str
+        File path to the temporary monitoring location feature class
+    _out_ml : str
+        File path to an empty temporary feature class that will be 
+        filled in this function.
+        
+    Returns
+    -------
+    _out_ml : str
+    
+    """
+    
+    #load water quality data - place holder for now
+    _arr = utils.load_attribute_table(_ml, 'FID_ml', 'Catch_ID_a')
+    
+    # for testing purpose at the moment, export the feature with the 
+    # smallest FID as output
+    _sqlexp = '"FID_ml" = ' + "%i" % numpy.min(_arr['FID_ml'])
+    arcpy.analysis.Select(_ml, _out_ml, _sqlexp)
+    
+    #process the WQ data - [e.g. out_ml.wq = average(temp_ml.wq)]
+    return _out_ml
+

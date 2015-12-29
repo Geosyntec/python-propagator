@@ -1,9 +1,15 @@
+from pkg_resources import resource_filename
+import os
+
+import arcpy
 import numpy
 
 import nose.tools as nt
 import numpy.testing as nptest
+import propagator.testing as pgtest
 
 from propagator import analysis
+from propagator import utils
 
 
 SIMPLE_SUBCATCHMENTS = numpy.array(
@@ -140,3 +146,25 @@ def test_find_downstream_scores():
     expected = ('E1', 'D1', 'None', 'E1_y')
     value = analysis.find_downstream_scores(subcatchments, 'G1', 'Pb')
     nt.assert_tuple_equal(tuple(value), expected)
+
+
+def test_prepdata():
+    ws = resource_filename("propagator.testing", "prepare_data")
+    with utils.OverwriteState(True), utils.WorkSpace(ws):
+        cat = resource_filename("propagator.testing.prepare_data", "cat.shp") 
+        ml = resource_filename("propagator.testing.prepare_data", "ml.shp")
+        expected_cat_wq = resource_filename("propagator.testing.prepare_data", "cat_wq.shp")
+        final_field = [
+            "FID",
+            "Shape",
+            "Catch_ID_a", 
+            "Dwn_Catch_", 
+            "Watershed", 
+            "Station", 
+            "Latitude",
+            "Longitude"
+        ]
+        cat_wq = analysis.prepare_data(ml, cat, final_field)
+        pgtest.assert_shapefiles_are_close(cat_wq, expected_cat_wq)
+        utils.cleanup_temp_results(cat_wq)
+        
