@@ -1,7 +1,7 @@
-""" Basic utility functions for ``propagator``.
+""" Wrappers around Esri's ``arcpy`` library.
 
 This contains basic file I/O, coversion, and spatial analysis functions
-to support the python-tidegates library. In most cases, these functions
+to support the python-propagator library. These functions generally
 are simply wrappers around their ``arcpy`` counter parts. This was done
 so that in the future, these functions could be replaced with calls to
 a different geoprocessing library and eventually ween the code base off
@@ -17,14 +17,14 @@ Written by Paul Hobson (phobson@geosyntec.com)
 
 
 import os
-import datetime
 import itertools
-from functools import wraps
 from contextlib import contextmanager
 
 import numpy
 
 import arcpy
+
+from . import misc
 
 
 class RasterTemplate(object):
@@ -307,37 +307,6 @@ def WorkSpace(path):
     arcpy.env.workspace = orig_workspace
 
 
-def _status(msg, verbose=False, asMessage=False, addTab=False): # pragma: no cover
-    if verbose:
-        if addTab:
-            msg = '\t' + msg
-        if asMessage:
-            arcpy.AddMessage(msg)
-        else:
-            print(msg)
-
-
-def update_status(): # pragma: no cover
-    """ Decorator to allow a function to take a additional keyword
-    arguments related to printing status messages to stdin or as arcpy
-    messages.
-
-    """
-
-    def decorate(func):
-        @wraps(func)
-        def wrapper(*args, **kwargs):
-            msg = kwargs.pop("msg", None)
-            verbose = kwargs.pop("verbose", False)
-            asMessage = kwargs.pop("asMessage", False)
-            addTab = kwargs.pop("addTab", False)
-            _status(msg, verbose=verbose, asMessage=asMessage, addTab=addTab)
-
-            return func(*args, **kwargs)
-        return wrapper
-    return decorate
-
-
 def create_temp_filename(filepath, filetype=None, prefix='_temp_', num=None):
     """ Helper function to create temporary filenames before to be saved
     before the final output has been generated.
@@ -393,7 +362,7 @@ def create_temp_filename(filepath, filetype=None, prefix='_temp_', num=None):
     return os.path.join(ws, folder, prefix + filename + num + ext)
 
 
-def _check_fields(table, *fieldnames, **kwargs):
+def check_fields(table, *fieldnames, **kwargs):
     """
     Checks that field are (or are not) in a table. The check fails, a
     ``ValueError`` is raised. Relies on `arcpy.ListFields`_.
@@ -435,7 +404,7 @@ def _check_fields(table, *fieldnames, **kwargs):
         raise ValueError('fields {} are {} in {}'.format(bad_names, qual, table))
 
 
-@update_status() # raster
+@misc.update_status() # raster
 def result_to_raster(result):
     """ Gets the actual `arcpy.Raster`_ from an `arcpy.Result`_ object.
 
@@ -460,7 +429,7 @@ def result_to_raster(result):
     return arcpy.Raster(result.getOutput(0))
 
 
-@update_status() # layer
+@misc.update_status() # layer
 def result_to_layer(result):
     """ Gets the actual `arcpy.mapping.Layer`_ from an `arcpy.Result`_
     object.
@@ -487,7 +456,7 @@ def result_to_layer(result):
     return arcpy.mapping.Layer(result.getOutput(0))
 
 
-@update_status() # list of arrays
+@misc.update_status() # list of arrays
 def rasters_to_arrays(*rasters, **kwargs):
     """ Converts an arbitrary number of `rasters`_ to `numpy arrays`_.
     Relies on `arcpy.RasterToNumPyArray`_.
@@ -530,7 +499,7 @@ def rasters_to_arrays(*rasters, **kwargs):
     return arrays
 
 
-@update_status() # raster
+@misc.update_status() # raster
 def array_to_raster(array, template, outfile=None):
     """ Create an arcpy.Raster from a numpy.ndarray based on a template.
     This wrapper around `arcpy.NumPyArrayToRaster`_.
@@ -580,7 +549,7 @@ def array_to_raster(array, template, outfile=None):
     return newraster
 
 
-@update_status() # raster or layer
+@misc.update_status() # raster or layer
 def load_data(datapath, datatype, greedyRasters=True, **verbosity):
     """ Loads vector and raster data from filepaths.
 
@@ -635,7 +604,7 @@ def load_data(datapath, datatype, greedyRasters=True, **verbosity):
     return data
 
 
-@update_status() # raster
+@misc.update_status() # raster
 def polygons_to_raster(polygons, ID_column, cellsize=4, outfile=None):
     """ Prepare tidegates' areas of influence polygons for flooding
     by converting to a raster. Relies on
@@ -693,7 +662,7 @@ def polygons_to_raster(polygons, ID_column, cellsize=4, outfile=None):
     return zones
 
 
-@update_status() # raster
+@misc.update_status() # raster
 def clip_dem_to_zones(dem, zones, outfile=None):
     """ Limits the extent of the topographic data (``dem``) to that of
     the zones of influence  so that we can easily use array
@@ -736,7 +705,7 @@ def clip_dem_to_zones(dem, zones, outfile=None):
     return dem_clipped
 
 
-@update_status() # layer
+@misc.update_status() # layer
 def raster_to_polygons(zonal_raster, filename, newfield=None):
     """
     Converts zonal rasters to polygons layers. This is basically just
@@ -793,7 +762,7 @@ def raster_to_polygons(zonal_raster, filename, newfield=None):
     return polygons
 
 
-@update_status() # layer
+@misc.update_status() # layer
 def aggregate_polygons(polygons, ID_field, filename):
     """
     Dissolves (aggregates) polygons into a single feature the unique
@@ -840,44 +809,7 @@ def aggregate_polygons(polygons, ID_field, filename):
     return dissolved
 
 
-@update_status() # array
-def flood_zones(zones_array, topo_array, elevation):
-    """ Mask out non-flooded portions of arrays.
-
-    Parameters
-    ----------
-    zones_array : numpy.array
-        Array of zone IDs from each zone of influence.
-    topo_array : numpy.array
-        Digital elevation model (as an array) of the areas.
-    elevation : float
-        The flood elevation *above* which everything will be masked.
-
-    Returns
-    -------
-    flooded_array : numpy.array
-        Array of zone IDs only where there is flooding.
-
-    """
-
-    # compute mask of non-zoned areas of topo
-    nonzone_mask = zones_array <= 0
-
-    invalid_mask = numpy.ma.masked_invalid(topo_array).mask
-    topo_array[invalid_mask] = -999
-
-    # mask out zoned areas above the flood elevation
-    unflooded_mask = topo_array > elevation
-
-    # apply the mask to the zone array
-    final_mask = nonzone_mask | unflooded_mask
-    flooded_array = zones_array.copy()
-    flooded_array[final_mask] = 0
-
-    return flooded_array
-
-
-@update_status() # None
+@misc.update_status() # None
 def add_field_with_value(table, field_name, field_value=None,
                          overwrite=False, **field_opts):
     """ Adds a numeric or text field to an attribute table and sets it
@@ -934,7 +866,7 @@ def add_field_with_value(table, field_name, field_value=None,
     field_type = field_opts.pop("field_type", typemap[type(field_value)])
 
     if not overwrite:
-        _check_fields(table, field_name, should_exist=False)
+        check_fields(table, field_name, should_exist=False)
 
     if field_value is None and field_type is None:
         raise ValueError("must provide a `field_type` if not providing a value.")
@@ -952,7 +884,7 @@ def add_field_with_value(table, field_name, field_value=None,
         populate_field(table, lambda row: field_value, field_name)
 
 
-@update_status() # None
+@misc.update_status() # None
 def cleanup_temp_results(*results):
     """ Deletes temporary results from the current workspace.
 
@@ -989,7 +921,7 @@ def cleanup_temp_results(*results):
         arcpy.management.Delete(fullpath)
 
 
-@update_status() # layer
+@misc.update_status() # layer
 def intersect_polygon_layers(destination, *layers, **intersect_options):
     """
     Intersect polygon layers with each other. Basically a thin wrapper
@@ -1035,10 +967,14 @@ def intersect_polygon_layers(destination, *layers, **intersect_options):
     return intersected
 
 
-@update_status() # record array
+@misc.update_status() # record array
 def load_attribute_table(input_path, *fields):
     """
     Loads a shapefile's attribute table as a numpy record array.
+
+    Relies on `arcpy.da.TableToNumPyArray`_.
+
+    .. _arcpy.da.TableToNumPyArray: http://goo.gl/NzS6sB
 
     Parameters
     ----------
@@ -1053,6 +989,10 @@ def load_attribute_table(input_path, *fields):
     -------
     records : numpy.recarray
         A record array of the selected fields in the attribute table.
+
+    See also
+    --------
+    groupby_and_aggregate
 
     Examples
     --------
@@ -1073,24 +1013,19 @@ def load_attribute_table(input_path, *fields):
     layer = load_data(input_path, "layer")
 
     # check that fields are valid
-    _check_fields(layer.dataSource, *fields, should_exist=True)
+    check_fields(layer.dataSource, *fields, should_exist=True)
 
     array = arcpy.da.FeatureClassToNumPyArray(in_table=input_path, field_names=fields)
     return array
 
 
-@update_status() # dict
+@misc.update_status() # dict
 def groupby_and_aggregate(input_path, groupfield, valuefield,
                           aggfxn=None):
     """
     Counts the number of distinct values of `valuefield` are associated
     with each value of `groupfield` in a data source found at
     `input_path`.
-
-    Relies on `arcpy.da.TableToNumPyArray`_.
-
-    .. _arcpy.da.TableToNumPyArray: http://goo.gl/NzS6sB
-
 
     Parameters
     ----------
@@ -1135,6 +1070,7 @@ def groupby_and_aggregate(input_path, groupfield, valuefield,
     --------
     itertools.groupby
     populate_field
+    load_attribute_table
 
     """
 
@@ -1155,7 +1091,7 @@ def groupby_and_aggregate(input_path, groupfield, valuefield,
     return counts
 
 
-@update_status() # None
+@misc.update_status() # None
 def rename_column(table, oldname, newname, newalias=None): # pragma: no cover
     """
     .. warning: Not yet implemented.
@@ -1177,7 +1113,7 @@ def rename_column(table, oldname, newname, newalias=None): # pragma: no cover
     )
 
 
-@update_status() # None
+@misc.update_status() # None
 def populate_field(table, value_fxn, valuefield, *keyfields):
     """
     Loops through the records of a table and populates the value of one
@@ -1220,7 +1156,7 @@ def populate_field(table, value_fxn, valuefield, *keyfields):
 
     fields = list(keyfields)
     fields.append(valuefield)
-    _check_fields(table, *fields, should_exist=True)
+    check_fields(table, *fields, should_exist=True)
 
     with arcpy.da.UpdateCursor(table, fields) as cur:
         for row in cur:
@@ -1228,7 +1164,7 @@ def populate_field(table, value_fxn, valuefield, *keyfields):
             cur.updateRow(row)
 
 
-@update_status() # layers
+@misc.update_status() # layers
 def copy_data(destfolder, *source_layers, **kwargs):
     """ Copies an arbitrary number of spatial files to a new folder.
 
@@ -1270,7 +1206,7 @@ def copy_data(destfolder, *source_layers, **kwargs):
     return copied
 
 
-@update_status()
+@misc.update_status() # layer
 def concat_results(destination, *input_files):
     """ Concatentates (merges) serveral datasets into a single shapefile
     or feature class.
@@ -1300,7 +1236,7 @@ def concat_results(destination, *input_files):
     return result_to_layer(result)
 
 
-@update_status()
+@misc.update_status() # layer
 def join_results_to_baseline(destination, result_file, baseline_file):
     """ Joins attributes of a geoprocessing result to a baseline dataset
     and saves the results to another file.
@@ -1339,3 +1275,46 @@ def join_results_to_baseline(destination, result_file, baseline_file):
     )
 
     return result_to_layer(result)
+
+
+def update_attribute_table(layerpath, attribute_array, id_column, *update_columns):
+    """
+    Update the attribute table of a feature class from a record array.
+
+    Parameters
+    ----------
+    layerpath : str
+        Path to the feature class to be updated.
+    attribute_array : numpy.recarray
+        A record array that contains the data to be writted into
+        ``layerpath``.
+    id_column : str
+        The name of the column that uniquely identifies each feature in
+        both ``layerpath`` and ``attribute_array``.
+    *update_columns : str
+        Names of the columns in both ``layerpath`` and
+        ``attribute_array`` that will be updated.
+
+    Returns
+    -------
+    None
+
+    """
+
+    # place the ID_column and columnes to be updated
+    # in a single list
+    all_columns = [id_column]
+    all_columns.extend(update_columns)
+
+    # load the existing attributed table, loop through all rows
+    with arcpy.da.UpdateCursor(layerpath, all_columns) as cur:
+        for oldrow in cur:
+            # find the current row in the new array
+            newrow = misc.find_row_in_array(attribute_array, id_column, oldrow[0])
+            # loop through the value colums, setting them to the new values
+            for n, col in enumerate(update_columns, 1):
+                oldrow[n] = newrow[col]
+
+            # update the row
+            cur.updateRow(oldrow)
+

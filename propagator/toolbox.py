@@ -18,6 +18,10 @@ from collections import OrderedDict
 
 import arcpy
 import numpy
+try:
+    from tqdm import tqdm
+except ImportError:
+    tqdm = lambda x: x
 
 import propagator
 from propagator import utils
@@ -130,7 +134,7 @@ class BaseToolbox_Mixin(object):
         """
 
         params = self._get_parameter_values(parameters)
-        self.main_execute(**params)
+        self.analyze(**params)
 
         return None
 
@@ -301,6 +305,46 @@ class BaseToolbox_Mixin(object):
         return self._subcatchments
 
     @property
+    def ID_column(self):
+        """
+        Name of the field in the `subcatchments` layer that uniquely
+        identifies each subcatchment.
+
+        """
+
+        if self._ID_column is None:
+            self._ID_column = arcpy.Parameter(
+                displayName="Column with Subcatchment IDs",
+                name="ID_column",
+                datatype="Field",
+                parameterType="Required",
+                direction="Input",
+                multiValue=False
+            )
+            self._set_parameter_dependency(self._ID_column, self.subcatchments)
+        return self._ID_column
+
+    @property
+    def downstream_ID_column(self):
+        """
+        Name of the field in the `subcatchments` layer that specifies
+        the downstream subcatchment.
+
+        """
+
+        if self._ID_column is None:
+            self._ID_column = arcpy.Parameter(
+                displayName="Column with the Downstream Subcatchment IDs",
+                name="downstream_ID_column",
+                datatype="Field",
+                parameterType="Required",
+                direction="Input",
+                multiValue=False
+            )
+            self._set_parameter_dependency(self._downstream_ID_column, self.subcatchments)
+        return self._downstream_ID_column
+
+    @property
     def output_layer(self):
         """ Where the propagated/accumulated data will be saved.
 
@@ -316,54 +360,11 @@ class BaseToolbox_Mixin(object):
             )
         return self._output_layer
 
-    @staticmethod
-    @utils.update_status()
-    def finish_results(outputname, results, **kwargs):
-        """ Merges and cleans up compiled output from `analyze`.
-
-        Parameters
-        ----------
-        outputname : str
-            Path to where the final file sould be saved.
-        results : list of str
-            Lists of all of the floods, flooded wetlands, and flooded
-            buildings, respectively, that will be merged and deleted.
-        sourcename : str, optional
-            Path to the original source file of the results. If
-            provided, its attbutes will be spatially joined to the
-            concatenated results.
-
-        Returns
-        -------
-        None
-
-        """
-
-        sourcename = kwargs.pop('sourcename', None)
-        cleanup = kwargs.pop('cleanup', True)
-
-        if outputname is not None:
-            if sourcename is not None:
-                tmp_fname = utils.create_temp_filename(outputname, filetype='shape')
-                utils.concat_results(tmp_fname, *results)
-                utils.join_results_to_baseline(
-                    outputname,
-                    utils.load_data(tmp_fname, 'layer'),
-                    utils.load_data(sourcename, 'layer')
-                )
-                utils.cleanup_temp_results(tmp_fname)
-
-            else:
-                utils.concat_results(outputname, *results)
-
-        if cleanup:
-            utils.cleanup_temp_results(*results)
-
 
 class Propagator(BaseToolbox_Mixin):
     """
     ArcGIS Python toolbox to propagate water quality metrics upstream
-    through subcatechments in a watershed.
+    through subcatchments in a watershed.
 
     Parameters
     ----------
@@ -379,7 +380,7 @@ class Propagator(BaseToolbox_Mixin):
     def __init__(self):
         """Define the tool (tool name is the name of the class)."""
         # std attributes
-        self.label = "1 - Propagate values via subcatechments"
+        self.label = "1 - Propagate values via subcatchments"
         self.description = dedent("""
         TDB
         """)
@@ -389,7 +390,8 @@ class Propagator(BaseToolbox_Mixin):
         # lazy properties
         self._workspace = None
         self._subcatchments = None
-        self._direction = None
+        self._ID_column = None
+        self._downstream_ID_column = None
         self._monitoring_locations = None
         self._output_layer = None
 
@@ -415,97 +417,15 @@ class Propagator(BaseToolbox_Mixin):
     def _params_as_list(self):
         params = [
             self.workspace,
-            self.subcatechments,
+            self.subcatchments,
+            self.ID_column,
+            self.downstream_ID_column,
             self.monitoring_locations,
             self.output_layer,
         ]
         return params
 
-    def analyze(self, topo_array, zones_array, template,
-                elev=None, surge=None, slr=None, num=0, **params):
-        """ Tool-agnostic helper function for :meth:`.main_execute`.
-
-        Parameters
-        ----------
-        topo_array : numpy array
-            Floating point array of the digital elevation model.
-        zones_array : numpy array
-            Categorical (integer) array of where each non-zero value
-            delineates a tidegate's zone of influence.
-        template : arcpy.Raster or tidegates.utils.RasterTemplate
-            A raster or raster-like object that define the spatial
-            extent of the analysis area. Required attributes are:
-              - templatemeanCellWidth
-              - templatemeanCellHeight
-              - templateextent.lowerLeft
-        elev : float, optional
-            Custom elevation to be analyzed
-        slr : float, optional
-            Sea level rise associated with the standard scenario.
-        surge : str, optional
-            The name of the storm surge associated with the scenario
-            (e.g., MHHW, 100yr).
-        **params : keyword arguments
-            Keyword arguments of analysis parameters generated by
-            `self._get_parameter_values`
-
-        Returns
-        -------
-        floods, flooded_wetlands, flooded_buildings : arcpy.mapping.Layers
-            Layers (or None) of the floods and flood-impacted wetlands
-            and buildings, respectively.
-
-        """
-
-        # prep input
-        elev, title, floods_path = self._prep_flooder_input(
-            flood_output=params['flood_output'],
-            elev=elev,
-            surge=surge,
-            slr=slr,
-            num=num,
-        )
-
-        # define the scenario in the message windows
-        self._show_header(title)
-
-        # run the scenario and add its info the output attribute table
-        flooded_zones = tidegates.flood_area(
-            topo_array=topo_array,
-            zones_array=zones_array,
-            template=template,
-            ID_column=params['ID_column'],
-            elevation_feet=elev,
-            filename=floods_path,
-            num=num,
-            verbose=True,
-            asMessage=True
-        )
-        self._add_scenario_columns(flooded_zones.dataSource, elev=elev, surge=surge, slr=slr)
-
-        # setup temporary files for impacted wetlands and buildings
-        wl_path = utils.create_temp_filename(floods_path, prefix="_wetlands_", filetype='shape', num=num)
-        bldg_path = utils.create_temp_filename(floods_path, prefix="_buildings_", filetype='shape', num=num)
-
-        # asses impacts due to flooding
-        fldlyr, wtlndlyr, blgdlyr = tidegates.assess_impact(
-            floods_path=floods_path,
-            flood_idcol=params['ID_column'],
-            wetlands_path=params.get('wetlands', None),
-            wetlands_output=wl_path,
-            buildings_path=params.get('buildings', None),
-            buildings_output=bldg_path,
-            cleanup=False,
-            verbose=True,
-            asMessage=True,
-        )
-
-        if wtlndlyr is not None:
-            self._add_scenario_columns(wtlndlyr.dataSource, elev=elev, surge=surge, slr=slr)
-
-        return fldlyr, wtlndlyr, blgdlyr
-
-    def main_execute(self, **params):
+    def analyze(self, **params):
         """ Performs the flood-impact analysis on multiple flood
         elevations.
 
@@ -514,106 +434,37 @@ class Propagator(BaseToolbox_Mixin):
         workspace : str
             The folder or geodatabase where the analysis will be
             executed.
-        dem : str
-            Filename of the digital elevation model (topography data)
-            to be used in determinging the inundated areas.
-        zones : str
-            Name of zones of influence layer.
-        ID_column : str
-            Name of the field in ``zones`` that uniquely identifies
-            each zone of influence.
-        elevation : list, optional
-            List of (custom) flood elevations to be analyzed. If this is
-            not provided, *all* of the standard scenarios will be
-            evaluated.
-        flood_output : str
-            Filename where the extent of flooding and damage will be
-            saved.
-        wetlands, buildings : str, optional
-            Names of the wetland and building footprint layers.
-        wetland_output, building_output : str, optional
-            Filenames where the flooded wetlands and building footprints
-            will be saved.
+        subcatchments, monitoring_locations : str
+            Name of the subcatchments and streams layers inside
+            ``workspace``.
+        output_layer : str
+            Name of the new layer inside ``workspace`` where all of the
+            results will be save.
 
         Returns
         -------
         None
 
         """
+        workspace = params.pop('workspace', '.')
+        subcatchments = params.pop('subcatchments', None)
+        id_col = params.pop('ID_column', None)
+        ds_col = params.pop('downstream_ID_column', None)
+        monitoring_locations = params.pop('monitoring_locations', None)
+        output = params.pop('output_layer', None)
+        water_quality_columns = params.pop('water_quality_columns', None)
 
-        wetlands = params.get('wetlands', None)
-        buildings = params.get('buildings', None)
+        with utils.WorkSpace(workspace), utils.OverwriteState(True):
+            subcatchment_array = self.prep_water_quality(subcatchments, monitoring_locations)
+            for wqcol in water_quality_columns:
+                wq = analysis.propagate_scores(subcatchment_array, wqcol)
 
-        all_floods = []
-        all_wetlands = []
-        all_buildings = []
-
-        with utils.WorkSpace(params['workspace']), utils.OverwriteState(True):
-
-            topo_array, zones_array, template = tidegates.process_dem_and_zones(
-                dem=params['dem'],
-                zones=params['zones'],
-                ID_column=params['ID_column']
-            )
-
-            for num, scenario in enumerate(self.make_scenarios(**params)):
-                fldlyr, wtlndlyr, blgdlyr = self.analyze(
-                    topo_array=topo_array,
-                    zones_array=zones_array,
-                    template=template,
-                    elev=scenario['elev'],
-                    surge=scenario['surge_name'],
-                    slr=scenario['slr'],
-                    num=num,
-                    **params
-                )
-                all_floods.append(fldlyr.dataSource)
-                if wetlands is not None:
-                    all_wetlands.append(wtlndlyr.dataSource)
-
-                if buildings is not None:
-                    all_buildings.append(blgdlyr.dataSource)
-
-            self.finish_results(
-                params['flood_output'],
-                all_floods,
-                msg="Merging and cleaning up all flood results",
-                verbose=True,
-                asMessage=True,
-            )
-
-            if wetlands is not None:
-                wtld_output = params.get(
-                    'wetland_output',
-                    utils.create_temp_filename(params['wetlands'], prefix='output_', filetype='shape')
-                )
-                self.finish_results(
-                    wtld_output,
-                    all_wetlands,
-                    sourcename=params['wetlands'],
-                    msg="Merging and cleaning up all wetlands results",
-                    verbose=True,
-                    asMessage=True,
-                )
-
-            if buildings is not None:
-                bldg_output = params.get(
-                    'building_output',
-                    utils.create_temp_filename(params['buildings'], prefix='output_', filetype='shape')
-                )
-                self.finish_results(
-                    bldg_output,
-                    all_buildings,
-                    sourcename=params['buildings'],
-                    msg="Merging and cleaning up all buildings results",
-                    verbose=True,
-                    asMessage=True,
-                )
+            analysis.update_water_quality_layer(output_layer, wq)
 
 
 class Accumulator(BaseToolbox_Mixin):
     """
-    ArcGIS Python toolbox to accumulate subcatechments attributes and
+    ArcGIS Python toolbox to accumulate subcatchments attributes and
     water quality parameters downstream through a stream.
 
     Parameters
@@ -647,7 +498,7 @@ class Accumulator(BaseToolbox_Mixin):
     def _params_as_list(self):
         params = [
             self.workspace,
-            self.subcatechments,
+            self.subcatchments,
             self.streams,
             self.output_layer,
         ]
@@ -672,101 +523,7 @@ class Accumulator(BaseToolbox_Mixin):
             self._set_parameter_dependency(self._streams, self.workspace)
         return self._streams
 
-    def _params_as_list(self):
-        params = [
-            self.workspace,
-            self.subcatechments,
-            self.direction,
-            self._monitoring_locations,
-            self.output_layer,
-        ]
-        return params
-
-    def analyze(self, topo_array, zones_array, template,
-                elev=None, surge=None, slr=None, num=0, **params):
-        """ Tool-agnostic helper function for :meth:`.main_execute`.
-
-        Parameters
-        ----------
-        topo_array : numpy array
-            Floating point array of the digital elevation model.
-        zones_array : numpy array
-            Categorical (integer) array of where each non-zero value
-            delineates a tidegate's zone of influence.
-        template : arcpy.Raster or tidegates.utils.RasterTemplate
-            A raster or raster-like object that define the spatial
-            extent of the analysis area. Required attributes are:
-              - templatemeanCellWidth
-              - templatemeanCellHeight
-              - templateextent.lowerLeft
-        elev : float, optional
-            Custom elevation to be analyzed
-        slr : float, optional
-            Sea level rise associated with the standard scenario.
-        surge : str, optional
-            The name of the storm surge associated with the scenario
-            (e.g., MHHW, 100yr).
-        **params : keyword arguments
-            Keyword arguments of analysis parameters generated by
-            `self._get_parameter_values`
-
-        Returns
-        -------
-        floods, flooded_wetlands, flooded_buildings : arcpy.mapping.Layers
-            Layers (or None) of the floods and flood-impacted wetlands
-            and buildings, respectively.
-
-        """
-
-        # prep input
-        elev, title, floods_path = self._prep_flooder_input(
-            flood_output=params['flood_output'],
-            elev=elev,
-            surge=surge,
-            slr=slr,
-            num=num,
-        )
-
-        # define the scenario in the message windows
-        self._show_header(title)
-
-        # run the scenario and add its info the output attribute table
-        flooded_zones = tidegates.flood_area(
-            topo_array=topo_array,
-            zones_array=zones_array,
-            template=template,
-            ID_column=params['ID_column'],
-            elevation_feet=elev,
-            filename=floods_path,
-            num=num,
-            verbose=True,
-            asMessage=True
-        )
-        self._add_scenario_columns(flooded_zones.dataSource, elev=elev, surge=surge, slr=slr)
-
-        # setup temporary files for impacted wetlands and buildings
-        wl_path = utils.create_temp_filename(floods_path, prefix="_wetlands_", filetype='shape', num=num)
-        bldg_path = utils.create_temp_filename(floods_path, prefix="_buildings_", filetype='shape', num=num)
-
-        # asses impacts due to flooding
-        fldlyr, wtlndlyr, blgdlyr = tidegates.assess_impact(
-            floods_path=floods_path,
-            flood_idcol=params['ID_column'],
-            wetlands_path=params.get('wetlands', None),
-            wetlands_output=wl_path,
-            buildings_path=params.get('buildings', None),
-            buildings_output=bldg_path,
-            cleanup=False,
-            verbose=True,
-            asMessage=True,
-        )
-
-        if wtlndlyr is not None:
-            self._add_scenario_columns(wtlndlyr.dataSource, elev=elev, surge=surge, slr=slr)
-
-        return fldlyr, wtlndlyr, blgdlyr
-
-    def main_execute(self, **params):
+    def analyze(self, **params):
         """ Performs the flood-impact analysis on multiple flood
         elevations.
 
@@ -775,26 +532,12 @@ class Accumulator(BaseToolbox_Mixin):
         workspace : str
             The folder or geodatabase where the analysis will be
             executed.
-        dem : str
-            Filename of the digital elevation model (topography data)
-            to be used in determinging the inundated areas.
-        zones : str
-            Name of zones of influence layer.
-        ID_column : str
-            Name of the field in ``zones`` that uniquely identifies
-            each zone of influence.
-        elevation : list, optional
-            List of (custom) flood elevations to be analyzed. If this is
-            not provided, *all* of the standard scenarios will be
-            evaluated.
-        flood_output : str
-            Filename where the extent of flooding and damage will be
-            saved.
-        wetlands, buildings : str, optional
-            Names of the wetland and building footprint layers.
-        wetland_output, building_output : str, optional
-            Filenames where the flooded wetlands and building footprints
-            will be saved.
+        subcatchments, streams : str
+            Name of the subcatchments and streams layers inside
+            ``workspace``.
+        output_layer : str
+            Name of the new layer inside ``workspace`` where all of the
+            results will be save.
 
         Returns
         -------
@@ -802,85 +545,9 @@ class Accumulator(BaseToolbox_Mixin):
 
         """
 
-        wetlands = params.get('wetlands', None)
-        buildings = params.get('buildings', None)
+        ws = params.pop('workspace', '.')
+        sc = params.pop('subcatchments', None)
+        st = params.pop('streams', None)
+        lyr = params.pop('output_layer', None)
 
-        all_floods = []
-        all_wetlands = []
-        all_buildings = []
-
-        with utils.WorkSpace(params['workspace']), utils.OverwriteState(True):
-
-            topo_array, zones_array, template = tidegates.process_dem_and_zones(
-                dem=params['dem'],
-                zones=params['zones'],
-                ID_column=params['ID_column']
-            )
-
-            for num, scenario in enumerate(self.make_scenarios(**params)):
-                fldlyr, wtlndlyr, blgdlyr = self.analyze(
-                    topo_array=topo_array,
-                    zones_array=zones_array,
-                    template=template,
-                    elev=scenario['elev'],
-                    surge=scenario['surge_name'],
-                    slr=scenario['slr'],
-                    num=num,
-                    **params
-                )
-                all_floods.append(fldlyr.dataSource)
-                if wetlands is not None:
-                    all_wetlands.append(wtlndlyr.dataSource)
-
-                if buildings is not None:
-                    all_buildings.append(blgdlyr.dataSource)
-
-            self.finish_results(
-                params['flood_output'],
-                all_floods,
-                msg="Merging and cleaning up all flood results",
-                verbose=True,
-                asMessage=True,
-            )
-
-            if wetlands is not None:
-                wtld_output = params.get(
-                    'wetland_output',
-                    utils.create_temp_filename(params['wetlands'], prefix='output_', filetype='shape')
-                )
-                self.finish_results(
-                    wtld_output,
-                    all_wetlands,
-                    sourcename=params['wetlands'],
-                    msg="Merging and cleaning up all wetlands results",
-                    verbose=True,
-                    asMessage=True,
-                )
-
-            if buildings is not None:
-                bldg_output = params.get(
-                    'building_output',
-                    utils.create_temp_filename(params['buildings'], prefix='output_', filetype='shape')
-                )
-                self.finish_results(
-                    bldg_output,
-                    all_buildings,
-                    sourcename=params['buildings'],
-                    msg="Merging and cleaning up all buildings results",
-                    verbose=True,
-                    asMessage=True,
-                )
-        """ The flood elevation for a custom scenario.
-
-        """
-
-        if self._elevation is None:
-            self._elevation = arcpy.Parameter(
-                displayName="Water Surface Elevation",
-                name="elevation",
-                datatype="GPDouble",
-                parameterType="Required",
-                direction="Input",
-                multiValue=True
-            )
-        return self._elevation
+        utils._status('{}-{}-{}-{}'.format(ws, sc, st, lyr), verbose=True, asMessage=True)
