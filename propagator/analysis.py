@@ -46,6 +46,7 @@ def trace_upstream(subcatchment_array, subcatchment_ID, id_col='ID',
         subcatchment.
     downstream : list, optional
         A list of already known downstream catchments in the trace.
+
         .. note ::
            This is *only* used in the recursive calls to this function.
            You should never provide this value.
