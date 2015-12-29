@@ -1277,3 +1277,44 @@ def join_results_to_baseline(destination, result_file, baseline_file):
     return result_to_layer(result)
 
 
+def update_attribute_table(layerpath, attribute_array, id_column, *update_columns):
+    """
+    Update the attribute table of a feature class from a record array.
+
+    Parameters
+    ----------
+    layerpath : str
+        Path to the feature class to be updated.
+    attribute_array : numpy.recarray
+        A record array that contains the data to be writted into
+        ``layerpath``.
+    id_column : str
+        The name of the column that uniquely identifies each feature in
+        both ``layerpath`` and ``attribute_array``.
+    *update_columns : str
+        Names of the columns in both ``layerpath`` and
+        ``attribute_array`` that will be updated.
+
+    Returns
+    -------
+    None
+
+    """
+
+    # place the ID_column and columnes to be updated
+    # in a single list
+    all_columns = [id_column]
+    all_columns.extend(update_columns)
+
+    # load the existing attributed table, loop through all rows
+    with arcpy.da.UpdateCursor(layerpath, all_columns) as cur:
+        for oldrow in cur:
+            # find the current row in the new array
+            newrow = misc.find_row_in_array(attribute_array, id_column, oldrow[0])
+            # loop through the value colums, setting them to the new values
+            for n, col in enumerate(update_columns, 1):
+                oldrow[n] = newrow[col]
+
+            # update the row
+            cur.updateRow(oldrow)
+
