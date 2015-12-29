@@ -220,7 +220,7 @@ def find_downstream_scores(subcatchment_array, subcatchment_ID, wq_column,
 
     """
 
-    vals = filter(lambda r: r[id_col] == subcatchment_ID, subcatchment_array)[0]
+    vals = utils.find_row_in_array(subcatchment_array, id_col, subcatchment_ID)
     if vals[wq_column] == null_value:
         return find_downstream_scores(subcatchment_array, vals[ds_col], wq_column,
                                       null_value=null_value, id_col=id_col,
