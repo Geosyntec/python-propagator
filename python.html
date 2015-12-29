@@ -1,0 +1,293 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Using python-propagator from python &mdash; python-propagator v0.1.0 documentation</title>
+  
+
+  
+  
+
+  
+  <link href='https://fonts.googleapis.com/css?family=Lato:400,700,400italic,700italic|Roboto+Slab:400,700|Inconsolata:400,700&subset=latin,cyrillic' rel='stylesheet' type='text/css'>
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  
+
+  
+    <link rel="stylesheet" href="_static/style.css" type="text/css" />
+  
+
+  
+    <link rel="top" title="python-propagator v0.1.0 documentation" href="index.html"/>
+        <link rel="next" title="toolbox API Reference" href="toolbox.html"/>
+        <link rel="prev" title="Using python-tidegates as a python-toolbox in ArcGIS" href="arcgis.html"/> 
+
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/modernizr/2.6.2/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-nav-search">
+        
+          <a href="index.html" class="fa fa-home"> python-propagator</a>
+        
+        
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+        
+          
+          
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="install.html">Installing <strong>python-propagator</strong></a><ul>
+<li class="toctree-l2"><a class="reference internal" href="install.html#terminology">Terminology</a></li>
+<li class="toctree-l2"><a class="reference internal" href="install.html#downloading-python-propagator">Downloading <strong>python-propagator</strong></a></li>
+<li class="toctree-l2"><a class="reference internal" href="install.html#dependencies">Dependencies</a></li>
+<li class="toctree-l2"><a class="reference internal" href="install.html#id1">Installing <strong>python-propagator</strong></a></li>
+<li class="toctree-l2"><a class="reference internal" href="install.html#running-the-test-suite">Running the test suite</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="arcgis.html">Using <strong>python-tidegates</strong> as a python-toolbox in ArcGIS</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.html#finding-the-toolbox">Finding the toolbox</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.html#inputs-to-the-toolboxes">Inputs to the toolboxes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.html#examples-of-filled-out-forms">Examples of filled out forms</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.html#if-you-encounter-a-memoryerror">If you encounter a <code class="docutils literal"><span class="pre">MemoryError</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.html#other-ways-of-using-python-propagator">Other ways of using <strong>python-propagator</strong></a></li>
+</ul>
+</li>
+<li class="toctree-l1 current"><a class="current reference internal" href="">Using <strong>python-propagator</strong> from python</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#common-elements-of-examples">Common elements of examples</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#the-toolbox-api">The <code class="docutils literal"><span class="pre">toolbox</span></code> API</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#the-analysis-api">The <code class="docutils literal"><span class="pre">analysis</span></code> API</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="toolbox.html"><code class="docutils literal"><span class="pre">toolbox</span></code> API Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="analysis.html"><code class="docutils literal"><span class="pre">analysis</span></code> API Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="utils_misc.html"><code class="docutils literal"><span class="pre">utils.misc</span></code> API Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="utils_gis.html"><code class="docutils literal"><span class="pre">utils.gis</span></code> API Reference</a></li>
+</ul>
+
+          
+        
+      </div>
+      &nbsp;
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="index.html">python-propagator</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="index.html">Docs</a> &raquo;</li>
+      
+    <li>Using <strong>python-propagator</strong> from python</li>
+      <li class="wy-breadcrumbs-aside">
+        
+          <a href="_sources/python.txt" rel="nofollow"> View page source</a>
+        
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document">
+            
+  <div class="section" id="using-python-propagator-from-python">
+<span id="python"></span><h1>Using <strong>python-propagator</strong> from python<a class="headerlink" href="#using-python-propagator-from-python" title="Permalink to this headline">¶</a></h1>
+<p>You don&#8217;t have to start an ArcGIS session to use <strong>python-propagator</strong>.
+The analytical guts of the library are completely isolated from the ArcGIS interface portions.
+This allows users to directly use the analytical capabilities from a python script or an interactive python session.</p>
+<p>There are two interfaces to the analytic capabilities:</p>
+<blockquote>
+<div><ol class="arabic simple">
+<li><a class="reference internal" href="#toolbox-guide"><span>The toolbox API</span></a>, which is easier to use and parallels the toolboxes.</li>
+<li><a class="reference internal" href="#analysis-guide"><span>The analysis API</span></a>, which is more powerful but requires precise coding.</li>
+</ol>
+</div></blockquote>
+<div class="section" id="common-elements-of-examples">
+<h2>Common elements of examples<a class="headerlink" href="#common-elements-of-examples" title="Permalink to this headline">¶</a></h2>
+<p>The following import statements are prerequisites for all of the code snippets below.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">import</span> <span class="nn">numpy</span>
+<span class="kn">import</span> <span class="nn">arcpy</span>
+<span class="kn">import</span> <span class="nn">propagator</span>
+<span class="kn">from</span> <span class="nn">propagator</span> <span class="kn">import</span> <span class="n">utils</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="the-toolbox-api">
+<span id="toolbox-guide"></span><h2>The <code class="docutils literal"><span class="pre">toolbox</span></code> API<a class="headerlink" href="#the-toolbox-api" title="Permalink to this headline">¶</a></h2>
+<p>(see <a class="reference internal" href="install.html#install"><span>install instructions</span></a>)</p>
+<p>For a full description of the API, see the <a class="reference internal" href="toolbox.html#toolbox-auto"><span>reference guide</span></a></p>
+<p>The <a class="reference internal" href="toolbox.html#module-propagator.toolbox" title="propagator.toolbox"><code class="xref py py-mod docutils literal"><span class="pre">propagator.toolbox</span></code></a> interface provides a very high-level interface to <strong>python-propagator</strong> that very closely mimics the tooboxes.
+Just like how there are two forms in the ArcGIS toolbox, there are two analagous classes available in the <a class="reference internal" href="toolbox.html#module-propagator.toolbox" title="propagator.toolbox"><code class="xref py py-mod docutils literal"><span class="pre">propagator.toolbox</span></code></a> API.</p>
+<p>The <a class="reference internal" href="toolbox.html#propagator.toolbox.propagate" title="propagator.toolbox.propagate"><code class="xref py py-func docutils literal"><span class="pre">propagator.toolbox.propagate()</span></code></a> function allows the user to progagate water quality scores from monitoring locations to upstream subcatchments.</p>
+<p>The <a class="reference internal" href="toolbox.html#propagator.toolbox.accumulate" title="propagator.toolbox.accumulate"><code class="xref py py-func docutils literal"><span class="pre">propagator.toolbox.accumulate()</span></code></a> function automatically accumulate upstream subcatchment attributes into stream features.</p>
+<div class="section" id="common-input-parameters">
+<h3>Common input parameters<a class="headerlink" href="#common-input-parameters" title="Permalink to this headline">¶</a></h3>
+<p>The following are the parameters shared by both toolboxes.
+All parameters are required except where noted.</p>
+<dl class="docutils">
+<dt>Analysis Workspace (<code class="docutils literal"><span class="pre">workspace</span></code>)</dt>
+<dd><p class="first">This is the folder or geodatabase that contains all of the input for the analysis.</p>
+<div class="last admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">All of the input for the analysis (see below) <em>must</em> be in this workspace.</p>
+</div>
+</dd>
+</dl>
+<p>TBD</p>
+</div>
+<div class="section" id="code-examples">
+<h3>Code examples<a class="headerlink" href="#code-examples" title="Permalink to this headline">¶</a></h3>
+<p>Below is an example of using the <a class="reference internal" href="toolbox.html#propagator.toolbox.propagate" title="propagator.toolbox.propagate"><code class="xref py py-func docutils literal"><span class="pre">propagator.toolbox.propagate()</span></code></a> class to evaluate custom flood elevations.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="c"># define the workspace as a geodatabase</span>
+<span class="n">workspace</span> <span class="o">=</span> <span class="s">r&#39;F:\phobson\propagator\MB_Small.gdb&#39;</span>
+
+<span class="c"># TBD</span>
+</pre></div>
+</div>
+<p>Below is an example of using the <a class="reference internal" href="toolbox.html#propagator.toolbox.accumulate" title="propagator.toolbox.accumulate"><code class="xref py py-func docutils literal"><span class="pre">propagator.toolbox.accumulate()</span></code></a> class to evaluate custom flood elevations.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="c"># define the workspace as a geodatabase</span>
+<span class="n">workspace</span> <span class="o">=</span> <span class="s">r&#39;F:\phobson\propagator\MB_Small.gdb&#39;</span>
+
+<span class="c"># TBD</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="section" id="the-analysis-api">
+<span id="analysis-guide"></span><h2>The <code class="docutils literal"><span class="pre">analysis</span></code> API<a class="headerlink" href="#the-analysis-api" title="Permalink to this headline">¶</a></h2>
+<p>For a full description of the API, see the <a class="reference internal" href="analysis.html#module-propagator.analysis" title="propagator.analysis"><code class="xref py py-mod docutils literal"><span class="pre">propagator.analysis</span></code></a>.</p>
+<p>The <code class="docutils literal"><span class="pre">analysis</span></code> API can be used to taylor a more nuanced, custom analysis of the impacts resulting from a flood event.
+Where the <code class="docutils literal"><span class="pre">toolbox</span></code> API effectively limits the user to computing total area and counts of one asset each, the functions below can be used by a python programmer to assess the impact to any number of assets.</p>
+<div class="section" id="general-descriptions">
+<h3>General descriptions<a class="headerlink" href="#general-descriptions" title="Permalink to this headline">¶</a></h3>
+<p>The <a class="reference internal" href="analysis.html#module-propagator.analysis" title="propagator.analysis"><code class="xref py py-mod docutils literal"><span class="pre">propagator.analysis</span></code></a> submodule contains five functions:</p>
+<dl class="docutils">
+<dt><a class="reference internal" href="analysis.html#propagator.analysis.trace_upstream" title="propagator.analysis.trace_upstream"><code class="xref py py-func docutils literal"><span class="pre">propagator.analysis.trace_upstream()</span></code></a></dt>
+<dd>TBD</dd>
+</dl>
+</div>
+<div class="section" id="id1">
+<h3>Code examples<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h3>
+<dl class="docutils">
+<dt>The classes in <a class="reference internal" href="toolbox.html#module-propagator.toolbox" title="propagator.toolbox"><code class="xref py py-mod docutils literal"><span class="pre">propagator.toolbox</span></code></a> rely on the functions in <a class="reference internal" href="analysis.html#module-propagator.analysis" title="propagator.analysis"><code class="xref py py-mod docutils literal"><span class="pre">propagator.analysis</span></code></a> to determine</dt>
+<dd><ul class="first simple">
+<li>TBD</li>
+</ul>
+<p class="last">= TBD</p>
+</dd>
+</dl>
+<p>The sample script below does TDB by using <a class="reference internal" href="analysis.html#module-propagator.analysis" title="propagator.analysis"><code class="xref py py-mod docutils literal"><span class="pre">propagator.analysis</span></code></a> directly.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="c"># common parameters</span>
+<span class="n">workspace</span> <span class="o">=</span> <span class="s">r&#39;F:\phobson\propagator\MB_Small.gdb&#39;</span>
+<span class="c"># TBD</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+
+
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="toolbox.html" class="btn btn-neutral float-right" title="toolbox API Reference">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="arcgis.html" class="btn btn-neutral" title="Using python-tidegates as a python-toolbox in ArcGIS"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2015, Geosyntec Consultants.
+    </p>
+  </div>
+
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+  
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'./',
+            VERSION:'v0.1.0',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="_static/jquery.js"></script>
+      <script type="text/javascript" src="_static/underscore.js"></script>
+      <script type="text/javascript" src="_static/doctools.js"></script>
+      <script type="text/javascript" src="_static/copybutton.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

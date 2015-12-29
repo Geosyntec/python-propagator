@@ -1,0 +1,300 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>utils.misc API Reference &mdash; python-propagator v0.1.0 documentation</title>
+  
+
+  
+  
+
+  
+  <link href='https://fonts.googleapis.com/css?family=Lato:400,700,400italic,700italic|Roboto+Slab:400,700|Inconsolata:400,700&subset=latin,cyrillic' rel='stylesheet' type='text/css'>
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  
+
+  
+    <link rel="stylesheet" href="_static/style.css" type="text/css" />
+  
+
+  
+    <link rel="top" title="python-propagator v0.1.0 documentation" href="index.html"/>
+        <link rel="next" title="utils.gis API Reference" href="utils_gis.html"/>
+        <link rel="prev" title="analysis API Reference" href="analysis.html"/> 
+
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/modernizr/2.6.2/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-nav-search">
+        
+          <a href="index.html" class="fa fa-home"> python-propagator</a>
+        
+        
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+        
+          
+          
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="install.html">Installing <strong>python-propagator</strong></a><ul>
+<li class="toctree-l2"><a class="reference internal" href="install.html#terminology">Terminology</a></li>
+<li class="toctree-l2"><a class="reference internal" href="install.html#downloading-python-propagator">Downloading <strong>python-propagator</strong></a></li>
+<li class="toctree-l2"><a class="reference internal" href="install.html#dependencies">Dependencies</a></li>
+<li class="toctree-l2"><a class="reference internal" href="install.html#id1">Installing <strong>python-propagator</strong></a></li>
+<li class="toctree-l2"><a class="reference internal" href="install.html#running-the-test-suite">Running the test suite</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="arcgis.html">Using <strong>python-tidegates</strong> as a python-toolbox in ArcGIS</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.html#finding-the-toolbox">Finding the toolbox</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.html#inputs-to-the-toolboxes">Inputs to the toolboxes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.html#examples-of-filled-out-forms">Examples of filled out forms</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.html#if-you-encounter-a-memoryerror">If you encounter a <code class="docutils literal"><span class="pre">MemoryError</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.html#other-ways-of-using-python-propagator">Other ways of using <strong>python-propagator</strong></a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="python.html">Using <strong>python-propagator</strong> from python</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="python.html#common-elements-of-examples">Common elements of examples</a></li>
+<li class="toctree-l2"><a class="reference internal" href="python.html#the-toolbox-api">The <code class="docutils literal"><span class="pre">toolbox</span></code> API</a></li>
+<li class="toctree-l2"><a class="reference internal" href="python.html#the-analysis-api">The <code class="docutils literal"><span class="pre">analysis</span></code> API</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="toolbox.html"><code class="docutils literal"><span class="pre">toolbox</span></code> API Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="analysis.html"><code class="docutils literal"><span class="pre">analysis</span></code> API Reference</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href=""><code class="docutils literal"><span class="pre">utils.misc</span></code> API Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="utils_gis.html"><code class="docutils literal"><span class="pre">utils.gis</span></code> API Reference</a></li>
+</ul>
+
+          
+        
+      </div>
+      &nbsp;
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="index.html">python-propagator</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="index.html">Docs</a> &raquo;</li>
+      
+    <li><code class="docutils literal"><span class="pre">utils.misc</span></code> API Reference</li>
+      <li class="wy-breadcrumbs-aside">
+        
+          <a href="_sources/utils_misc.txt" rel="nofollow"> View page source</a>
+        
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document">
+            
+  <div class="section" id="module-propagator.utils.misc">
+<span id="utils-misc-api-reference"></span><span id="utils-misc-auto"></span><h1><code class="docutils literal"><span class="pre">utils.misc</span></code> API Reference<a class="headerlink" href="#module-propagator.utils.misc" title="Permalink to this headline">¶</a></h1>
+<p>Miscellaneous helper functions and classes.</p>
+<p>This contains basic file I/O, coversion, and spatial analysis functions
+to support the python-propagator library.</p>
+<ol class="loweralpha simple" start="3">
+<li>Geosyntec Consultants, 2015.</li>
+</ol>
+<p>Released under the BSD 3-clause license (see LICENSE file for more info)</p>
+<p>Written by Paul Hobson (<a class="reference external" href="mailto:phobson&#37;&#52;&#48;geosyntec&#46;com">phobson<span>&#64;</span>geosyntec<span>&#46;</span>com</a>)</p>
+<dl class="function">
+<dt id="propagator.utils.misc.update_status">
+<code class="descclassname">propagator.utils.misc.</code><code class="descname">update_status</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#propagator.utils.misc.update_status" title="Permalink to this definition">¶</a></dt>
+<dd><p>Decorator to allow a function to take a additional keyword
+arguments related to printing status messages to stdin or as arcpy
+messages.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="propagator.utils.misc.flood_zones">
+<code class="descclassname">propagator.utils.misc.</code><code class="descname">flood_zones</code><span class="sig-paren">(</span><em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#propagator.utils.misc.flood_zones" title="Permalink to this definition">¶</a></dt>
+<dd><p>Mask out non-flooded portions of arrays.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>zones_array</strong> : numpy.array</p>
+<blockquote>
+<div><p>Array of zone IDs from each zone of influence.</p>
+</div></blockquote>
+<p><strong>topo_array</strong> : numpy.array</p>
+<blockquote>
+<div><p>Digital elevation model (as an array) of the areas.</p>
+</div></blockquote>
+<p><strong>elevation</strong> : float</p>
+<blockquote>
+<div><p>The flood elevation <em>above</em> which everything will be masked.</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>flooded_array</strong> : numpy.array</p>
+<blockquote class="last">
+<div><p>Array of zone IDs only where there is flooding.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="propagator.utils.misc.find_row_in_array">
+<code class="descclassname">propagator.utils.misc.</code><code class="descname">find_row_in_array</code><span class="sig-paren">(</span><em>array</em>, <em>column</em>, <em>value</em><span class="sig-paren">)</span><a class="headerlink" href="#propagator.utils.misc.find_row_in_array" title="Permalink to this definition">¶</a></dt>
+<dd><p>Find a single row in a record array.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>array</strong> : numpy.recarray</p>
+<blockquote>
+<div><p>The record array to be searched.</p>
+</div></blockquote>
+<p><strong>column</strong> : str</p>
+<blockquote>
+<div><p>The name of the column of the array to search.</p>
+</div></blockquote>
+<p><strong>value</strong> : int, str, or float</p>
+<blockquote>
+<div><p>The value sought in <code class="docutils literal"><span class="pre">column</span></code></p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>row</strong> : numpy.recarray row</p>
+<blockquote>
+<div><p>The found row from <code class="docutils literal"><span class="pre">array</span></code>.</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Raises:</th><td class="field-body"><p class="first"><strong>ValueError</strong></p>
+<blockquote class="last">
+<div><p>An error is raised if more than one row is found.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Examples</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">propagator</span> <span class="kn">import</span> <span class="n">utils</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">numpy</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">x</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
+<span class="go">        [</span>
+<span class="go">            (&#39;A1&#39;, &#39;Ocean&#39;, &#39;A1_x&#39;), (&#39;A2&#39;, &#39;Ocean&#39;, &#39;A2_x&#39;),</span>
+<span class="go">            (&#39;B1&#39;, &#39;A1&#39;, &#39;None&#39;), (&#39;B2&#39;, &#39;A1&#39;, &#39;B2_x&#39;),</span>
+<span class="go">        ], dtype=[(&#39;ID&#39;, &#39;&lt;U5&#39;), (&#39;DS_ID&#39;, &#39;&lt;U5&#39;), (&#39;Cu&#39;, &#39;&lt;U5&#39;),]</span>
+<span class="go">    )</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">utils</span><span class="o">.</span><span class="n">find_row_in_array</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="s">&#39;ID&#39;</span><span class="p">,</span> <span class="s">&#39;A1&#39;</span><span class="p">)</span>
+<span class="go">(&#39;A1&#39;, &#39;Ocean&#39;, &#39;A1_x&#39;, &#39;A1_y&#39;)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</div>
+
+
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="utils_gis.html" class="btn btn-neutral float-right" title="utils.gis API Reference">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="analysis.html" class="btn btn-neutral" title="analysis API Reference"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2015, Geosyntec Consultants.
+    </p>
+  </div>
+
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+  
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'./',
+            VERSION:'v0.1.0',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="_static/jquery.js"></script>
+      <script type="text/javascript" src="_static/underscore.js"></script>
+      <script type="text/javascript" src="_static/doctools.js"></script>
+      <script type="text/javascript" src="_static/copybutton.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

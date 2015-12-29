@@ -1,0 +1,452 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>analysis API Reference &mdash; python-propagator v0.1.0 documentation</title>
+  
+
+  
+  
+
+  
+  <link href='https://fonts.googleapis.com/css?family=Lato:400,700,400italic,700italic|Roboto+Slab:400,700|Inconsolata:400,700&subset=latin,cyrillic' rel='stylesheet' type='text/css'>
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  
+
+  
+    <link rel="stylesheet" href="_static/style.css" type="text/css" />
+  
+
+  
+    <link rel="top" title="python-propagator v0.1.0 documentation" href="index.html"/>
+        <link rel="next" title="utils.misc API Reference" href="utils_misc.html"/>
+        <link rel="prev" title="toolbox API Reference" href="toolbox.html"/> 
+
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/modernizr/2.6.2/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-nav-search">
+        
+          <a href="index.html" class="fa fa-home"> python-propagator</a>
+        
+        
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+        
+          
+          
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="install.html">Installing <strong>python-propagator</strong></a><ul>
+<li class="toctree-l2"><a class="reference internal" href="install.html#terminology">Terminology</a></li>
+<li class="toctree-l2"><a class="reference internal" href="install.html#downloading-python-propagator">Downloading <strong>python-propagator</strong></a></li>
+<li class="toctree-l2"><a class="reference internal" href="install.html#dependencies">Dependencies</a></li>
+<li class="toctree-l2"><a class="reference internal" href="install.html#id1">Installing <strong>python-propagator</strong></a></li>
+<li class="toctree-l2"><a class="reference internal" href="install.html#running-the-test-suite">Running the test suite</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="arcgis.html">Using <strong>python-tidegates</strong> as a python-toolbox in ArcGIS</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.html#finding-the-toolbox">Finding the toolbox</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.html#inputs-to-the-toolboxes">Inputs to the toolboxes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.html#examples-of-filled-out-forms">Examples of filled out forms</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.html#if-you-encounter-a-memoryerror">If you encounter a <code class="docutils literal"><span class="pre">MemoryError</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.html#other-ways-of-using-python-propagator">Other ways of using <strong>python-propagator</strong></a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="python.html">Using <strong>python-propagator</strong> from python</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="python.html#common-elements-of-examples">Common elements of examples</a></li>
+<li class="toctree-l2"><a class="reference internal" href="python.html#the-toolbox-api">The <code class="docutils literal"><span class="pre">toolbox</span></code> API</a></li>
+<li class="toctree-l2"><a class="reference internal" href="python.html#the-analysis-api">The <code class="docutils literal"><span class="pre">analysis</span></code> API</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="toolbox.html"><code class="docutils literal"><span class="pre">toolbox</span></code> API Reference</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href=""><code class="docutils literal"><span class="pre">analysis</span></code> API Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="utils_misc.html"><code class="docutils literal"><span class="pre">utils.misc</span></code> API Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="utils_gis.html"><code class="docutils literal"><span class="pre">utils.gis</span></code> API Reference</a></li>
+</ul>
+
+          
+        
+      </div>
+      &nbsp;
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="index.html">python-propagator</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="index.html">Docs</a> &raquo;</li>
+      
+    <li><code class="docutils literal"><span class="pre">analysis</span></code> API Reference</li>
+      <li class="wy-breadcrumbs-aside">
+        
+          <a href="_sources/analysis.txt" rel="nofollow"> View page source</a>
+        
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document">
+            
+  <blockquote id="analysis-auto">
+<div>The <code class="docutils literal"><span class="pre">analysis</span></code> API</div></blockquote>
+<div class="section" id="module-propagator.analysis">
+<span id="analysis-api-reference"></span><h1><code class="docutils literal"><span class="pre">analysis</span></code> API Reference<a class="headerlink" href="#module-propagator.analysis" title="Permalink to this headline">¶</a></h1>
+<p>Top-level functions for <code class="docutils literal"><span class="pre">propagator</span></code>.</p>
+<p>This contains main functions use propagate and accumlate catchment
+properties in a larger watershed.</p>
+<ol class="loweralpha simple" start="3">
+<li>Geosyntec Consultants, 2015.</li>
+</ol>
+<p>Released under the BSD 3-clause license (see LICENSE file for more info)</p>
+<p>Written by Paul Hobson (<a class="reference external" href="mailto:phobson&#37;&#52;&#48;geosyntec&#46;com">phobson<span>&#64;</span>geosyntec<span>&#46;</span>com</a>)</p>
+<dl class="function">
+<dt id="propagator.analysis.trace_upstream">
+<code class="descclassname">propagator.analysis.</code><code class="descname">trace_upstream</code><span class="sig-paren">(</span><em>subcatchment_array</em>, <em>subcatchment_ID</em>, <em>id_col='ID'</em>, <em>ds_col='DS_ID'</em>, <em>downstream=None</em><span class="sig-paren">)</span><a class="headerlink" href="#propagator.analysis.trace_upstream" title="Permalink to this definition">¶</a></dt>
+<dd><p>Recursively traces an upstream path of subcatchments through a
+watetershed.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>subcatchment_array</strong> : numpy.recarry</p>
+<blockquote>
+<div><p>A record array of all of the subcatchments in the watershed.
+This array must have a &#8220;downstrea ID&#8221; column in which each
+subcatchment identifies as single, downstream neighbor.</p>
+</div></blockquote>
+<p><strong>subcatchment_ID</strong> : str</p>
+<blockquote>
+<div><p>The ID of the downstream catchment from which the trace
+originates.</p>
+</div></blockquote>
+<p><strong>id_col</strong> : str, optional</p>
+<blockquote>
+<div><p>The name of the column that specifies the current subcatchment.</p>
+</div></blockquote>
+<p><strong>ds_col</strong> : str, optional</p>
+<blockquote>
+<div><p>The name of the column that identifies the downstream
+subcatchment.</p>
+</div></blockquote>
+<p><strong>downstream</strong> : list, optional</p>
+<blockquote>
+<div><p>A list of already known downstream catchments in the trace.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">This is <em>only</em> used in the recursive calls to this function.
+You should never provide this value.</p>
+</div>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>upstream</strong> : numpy.recarry</p>
+<blockquote class="last">
+<div><p>A record array of all of the upstream subcatchments. This will
+have the same schema as <code class="docutils literal"><span class="pre">subcatchment_array</span></code></p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="propagator.analysis.find_bottoms">
+<code class="descclassname">propagator.analysis.</code><code class="descname">find_bottoms</code><span class="sig-paren">(</span><em>subcatchment_array</em>, <em>bottom_ID='ocean'</em>, <em>ds_col='DS_ID'</em><span class="sig-paren">)</span><a class="headerlink" href="#propagator.analysis.find_bottoms" title="Permalink to this definition">¶</a></dt>
+<dd><p>Finds the lowest, non-ocean subcatchments in a watershed.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>subcatchment_array</strong> : numpy.recarry</p>
+<blockquote>
+<div><p>A record array of all of the subcatchments in the watershed.
+This array must have a &#8220;downstrea ID&#8221; column in which each
+subcatchment identifies as single, downstream neighbor.</p>
+</div></blockquote>
+<p><strong>bottom_ID</strong> : str, optional</p>
+<blockquote>
+<div><p>The subcatchment ID of the pseudo-catchments in the Ocean.</p>
+</div></blockquote>
+<p><strong>ds_col</strong> : str, optional</p>
+<blockquote>
+<div><p>The name of the column that identifies the downstream
+subcatchment.</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>bottoms</strong> : numpy.recarry</p>
+<blockquote class="last">
+<div><p>A record array of all of subcatchments that drain into the
+ocean.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="propagator.analysis.find_tops">
+<code class="descclassname">propagator.analysis.</code><code class="descname">find_tops</code><span class="sig-paren">(</span><em>subcatchment_array</em>, <em>id_col='ID'</em>, <em>ds_col='DS_ID'</em><span class="sig-paren">)</span><a class="headerlink" href="#propagator.analysis.find_tops" title="Permalink to this definition">¶</a></dt>
+<dd><p>Finds the the subcatchments in a watershed that do not accept
+any upstrea tributary flow.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>subcatchment_array</strong> : numpy.recarry</p>
+<blockquote>
+<div><p>A record array of all of the subcatchments in the watershed.
+This array must have a &#8220;downstrea ID&#8221; column in which each
+subcatchment identifies as single, downstream neighbor.</p>
+</div></blockquote>
+<p><strong>subcatchment_ID</strong> : str</p>
+<blockquote>
+<div><p>The ID of the downstream catchment from which the trace
+originates.</p>
+</div></blockquote>
+<p><strong>id_col</strong> : str, optional</p>
+<blockquote>
+<div><p>The name of the column that specifies the current subcatchment.</p>
+</div></blockquote>
+<p><strong>ds_col</strong> : str, optional</p>
+<blockquote>
+<div><p>The name of the column that identifies the downstream
+subcatchment.</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>top</strong> : numpy.recarry</p>
+<blockquote class="last">
+<div><p>A record array of all of the upper most subcatchments.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="propagator.analysis.propagate_scores">
+<code class="descclassname">propagator.analysis.</code><code class="descname">propagate_scores</code><span class="sig-paren">(</span><em>subcatchment_array</em>, <em>wq_column</em>, <em>null_value='None'</em>, <em>id_col='ID'</em>, <em>ds_col='DS_ID'</em>, <em>bottom_ID='Ocean'</em><span class="sig-paren">)</span><a class="headerlink" href="#propagator.analysis.propagate_scores" title="Permalink to this definition">¶</a></dt>
+<dd><p>Propagate values into upstream subcatchments through a watershed.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>subcatchment_array</strong> : numpy.recarry</p>
+<blockquote>
+<div><p>A record array of all of the subcatchments in the watershed.
+This array must have a &#8220;downstrea ID&#8221; column in which each
+subcatchment identifies as single, downstream neighbor.</p>
+</div></blockquote>
+<p><strong>wq_column</strong> : str</p>
+<blockquote>
+<div><p>Name of a representative water quality column that can be used
+to indicate if the given subcatchment has or has not been
+populated with water quality data.</p>
+</div></blockquote>
+<p><strong>null_value</strong> : str, optional</p>
+<blockquote>
+<div><p>The string representing unpopulated values in the array of
+subcatchment and water quality data.</p>
+</div></blockquote>
+<p><strong>id_col</strong> : str, optional</p>
+<blockquote>
+<div><p>The name of the column that specifies the current subcatchment.</p>
+</div></blockquote>
+<p><strong>ds_col</strong> : str, optional</p>
+<blockquote>
+<div><p>The name of the column that identifies the downstream
+subcatchment.</p>
+</div></blockquote>
+<p><strong>bottom_ID</strong> : str, optional</p>
+<blockquote>
+<div><p>The subcatchment ID of the pseudo-catchments in the Ocean.</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>propagated</strong> : numpy.recarry</p>
+<blockquote class="last">
+<div><p>A copy of <code class="docutils literal"><span class="pre">subcatchment_array</span></code> with all of the water quality
+records populated.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="propagator.analysis.find_downstream_scores">
+<code class="descclassname">propagator.analysis.</code><code class="descname">find_downstream_scores</code><span class="sig-paren">(</span><em>subcatchment_array</em>, <em>subcatchment_ID</em>, <em>wq_column</em>, <em>null_value='None'</em>, <em>id_col='ID'</em>, <em>ds_col='DS_ID'</em><span class="sig-paren">)</span><a class="headerlink" href="#propagator.analysis.find_downstream_scores" title="Permalink to this definition">¶</a></dt>
+<dd><p>Recursively look for populated water quality score in downstream
+subcatchments.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>subcatchment_array</strong> : numpy.recarry</p>
+<blockquote>
+<div><p>A record array of all of the subcatchments in the watershed.
+This array must have a &#8220;downstrea ID&#8221; column in which each
+subcatchment identifies as single, downstream neighbor.</p>
+</div></blockquote>
+<p><strong>subcatchment_ID</strong> : str</p>
+<blockquote>
+<div><p>ID of the subcatchment whose water quality scores need to be
+populated.</p>
+</div></blockquote>
+<p><strong>wq_column</strong> : str</p>
+<blockquote>
+<div><p>Name of a representative water quality column that can be used
+to indicate if the given subcatchment has or has not been
+populated with water quality data.</p>
+</div></blockquote>
+<p><strong>null_value</strong> : str, optional</p>
+<blockquote>
+<div><p>The string representing unpopulated values in the array of
+subcatchment and water quality data.</p>
+</div></blockquote>
+<p><strong>id_col</strong> : str, optional</p>
+<blockquote>
+<div><p>The name of the column that specifies the current subcatchment.</p>
+</div></blockquote>
+<p><strong>ds_col</strong> : str, optional</p>
+<blockquote>
+<div><p>The name of the column that identifies the downstream
+subcatchment.</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>vals</strong> : numpy.recarray</p>
+<blockquote class="last">
+<div><p>Row of water quality score to be used for the subcatchment.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="propagator.analysis.update_water_quality_layer">
+<code class="descclassname">propagator.analysis.</code><code class="descname">update_water_quality_layer</code><span class="sig-paren">(</span><em>layer</em>, <em>water_quality</em><span class="sig-paren">)</span><a class="headerlink" href="#propagator.analysis.update_water_quality_layer" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="propagator.analysis.split_streams">
+<code class="descclassname">propagator.analysis.</code><code class="descname">split_streams</code><span class="sig-paren">(</span><em>stream_layer</em>, <em>subcatchment_layer</em><span class="sig-paren">)</span><a class="headerlink" href="#propagator.analysis.split_streams" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+
+
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="utils_misc.html" class="btn btn-neutral float-right" title="utils.misc API Reference">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="toolbox.html" class="btn btn-neutral" title="toolbox API Reference"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2015, Geosyntec Consultants.
+    </p>
+  </div>
+
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+  
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'./',
+            VERSION:'v0.1.0',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="_static/jquery.js"></script>
+      <script type="text/javascript" src="_static/underscore.js"></script>
+      <script type="text/javascript" src="_static/doctools.js"></script>
+      <script type="text/javascript" src="_static/copybutton.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

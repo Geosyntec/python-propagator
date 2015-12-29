@@ -1,0 +1,431 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>toolbox API Reference &mdash; python-propagator v0.1.0 documentation</title>
+  
+
+  
+  
+
+  
+  <link href='https://fonts.googleapis.com/css?family=Lato:400,700,400italic,700italic|Roboto+Slab:400,700|Inconsolata:400,700&subset=latin,cyrillic' rel='stylesheet' type='text/css'>
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  
+
+  
+    <link rel="stylesheet" href="_static/style.css" type="text/css" />
+  
+
+  
+    <link rel="top" title="python-propagator v0.1.0 documentation" href="index.html"/>
+        <link rel="next" title="analysis API Reference" href="analysis.html"/>
+        <link rel="prev" title="Using python-propagator from python" href="python.html"/> 
+
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/modernizr/2.6.2/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-nav-search">
+        
+          <a href="index.html" class="fa fa-home"> python-propagator</a>
+        
+        
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+        
+          
+          
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="install.html">Installing <strong>python-propagator</strong></a><ul>
+<li class="toctree-l2"><a class="reference internal" href="install.html#terminology">Terminology</a></li>
+<li class="toctree-l2"><a class="reference internal" href="install.html#downloading-python-propagator">Downloading <strong>python-propagator</strong></a></li>
+<li class="toctree-l2"><a class="reference internal" href="install.html#dependencies">Dependencies</a></li>
+<li class="toctree-l2"><a class="reference internal" href="install.html#id1">Installing <strong>python-propagator</strong></a></li>
+<li class="toctree-l2"><a class="reference internal" href="install.html#running-the-test-suite">Running the test suite</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="arcgis.html">Using <strong>python-tidegates</strong> as a python-toolbox in ArcGIS</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.html#finding-the-toolbox">Finding the toolbox</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.html#inputs-to-the-toolboxes">Inputs to the toolboxes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.html#examples-of-filled-out-forms">Examples of filled out forms</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.html#if-you-encounter-a-memoryerror">If you encounter a <code class="docutils literal"><span class="pre">MemoryError</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.html#other-ways-of-using-python-propagator">Other ways of using <strong>python-propagator</strong></a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="python.html">Using <strong>python-propagator</strong> from python</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="python.html#common-elements-of-examples">Common elements of examples</a></li>
+<li class="toctree-l2"><a class="reference internal" href="python.html#the-toolbox-api">The <code class="docutils literal"><span class="pre">toolbox</span></code> API</a></li>
+<li class="toctree-l2"><a class="reference internal" href="python.html#the-analysis-api">The <code class="docutils literal"><span class="pre">analysis</span></code> API</a></li>
+</ul>
+</li>
+<li class="toctree-l1 current"><a class="current reference internal" href=""><code class="docutils literal"><span class="pre">toolbox</span></code> API Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="analysis.html"><code class="docutils literal"><span class="pre">analysis</span></code> API Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="utils_misc.html"><code class="docutils literal"><span class="pre">utils.misc</span></code> API Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="utils_gis.html"><code class="docutils literal"><span class="pre">utils.gis</span></code> API Reference</a></li>
+</ul>
+
+          
+        
+      </div>
+      &nbsp;
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="index.html">python-propagator</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="index.html">Docs</a> &raquo;</li>
+      
+    <li><code class="docutils literal"><span class="pre">toolbox</span></code> API Reference</li>
+      <li class="wy-breadcrumbs-aside">
+        
+          <a href="_sources/toolbox.txt" rel="nofollow"> View page source</a>
+        
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document">
+            
+  <blockquote id="toolbox-auto">
+<div>The <code class="docutils literal"><span class="pre">toolbox</span></code> API</div></blockquote>
+<div class="section" id="module-propagator.toolbox">
+<span id="toolbox-api-reference"></span><h1><code class="docutils literal"><span class="pre">toolbox</span></code> API Reference<a class="headerlink" href="#module-propagator.toolbox" title="Permalink to this headline">¶</a></h1>
+<p>ArcGIS python toolboxes for <code class="docutils literal"><span class="pre">propagator</span></code>.</p>
+<p>This contains Classes compatible with ArcGIS python toolbox
+infrastructure.</p>
+<ol class="loweralpha simple" start="3">
+<li>Geosyntec Consultants, 2015.</li>
+</ol>
+<p>Released under the BSD 3-clause license (see LICENSE file for more info)</p>
+<p>Written by Paul Hobson (<a class="reference external" href="mailto:phobson&#37;&#52;&#48;geosyntec&#46;com">phobson<span>&#64;</span>geosyntec<span>&#46;</span>com</a>)</p>
+<dl class="function">
+<dt id="propagator.toolbox.propagate">
+<code class="descclassname">propagator.toolbox.</code><code class="descname">propagate</code><span class="sig-paren">(</span><em>**params</em><span class="sig-paren">)</span><a class="headerlink" href="#propagator.toolbox.propagate" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="propagator.toolbox.accumulate">
+<code class="descclassname">propagator.toolbox.</code><code class="descname">accumulate</code><span class="sig-paren">(</span><em>**params</em><span class="sig-paren">)</span><a class="headerlink" href="#propagator.toolbox.accumulate" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="class">
+<dt id="propagator.toolbox.BaseToolbox_Mixin">
+<em class="property">class </em><code class="descclassname">propagator.toolbox.</code><code class="descname">BaseToolbox_Mixin</code><a class="headerlink" href="#propagator.toolbox.BaseToolbox_Mixin" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/library/functions.html#object" title="(in Python v2.7)"><code class="xref py py-class docutils literal"><span class="pre">object</span></code></a></p>
+<dl class="attribute">
+<dt id="propagator.toolbox.BaseToolbox_Mixin.canRunInBackground">
+<code class="descname">canRunInBackground</code><em class="property"> = True</em><a class="headerlink" href="#propagator.toolbox.BaseToolbox_Mixin.canRunInBackground" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="propagator.toolbox.BaseToolbox_Mixin.isLicensed">
+<code class="descname">isLicensed</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#propagator.toolbox.BaseToolbox_Mixin.isLicensed" title="Permalink to this definition">¶</a></dt>
+<dd><p>PART OF THE ESRI BLACK BOX.</p>
+<p>Esri says:</p>
+<blockquote>
+<div>Set whether tool is licensed to execute.</div></blockquote>
+<p>So I just make this always true b/c it&#8217;s an open source project
+with a BSD license &#8211; (c) Geosyntec Consultants &#8211; so who cares?</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="propagator.toolbox.BaseToolbox_Mixin.updateMessages">
+<code class="descname">updateMessages</code><span class="sig-paren">(</span><em>parameters</em><span class="sig-paren">)</span><a class="headerlink" href="#propagator.toolbox.BaseToolbox_Mixin.updateMessages" title="Permalink to this definition">¶</a></dt>
+<dd><p>PART OF THE ESRI BLACK BOX.</p>
+<p>Esri says:</p>
+<blockquote>
+<div>Modify the messages created by internal validation for each
+parameter of the tool.  This method is called after internal
+validation.</div></blockquote>
+<p>But I have no idea when or how internal validation is called so
+that&#8217;s pretty useless information.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="propagator.toolbox.BaseToolbox_Mixin.updateParameters">
+<code class="descname">updateParameters</code><span class="sig-paren">(</span><em>parameters</em><span class="sig-paren">)</span><a class="headerlink" href="#propagator.toolbox.BaseToolbox_Mixin.updateParameters" title="Permalink to this definition">¶</a></dt>
+<dd><p>PART OF THE ESRI BLACK BOX.</p>
+<p>Automatically called when any parameter is updated in the GUI.</p>
+<p>The general flow is like this:</p>
+<blockquote>
+<div><ol class="arabic simple">
+<li>User interacts with GUI, filling out some input element</li>
+<li><code class="docutils literal"><span class="pre">self.getParameterInfo</span></code> is called</li>
+<li>Parameteter are fed to this method as a list</li>
+</ol>
+</div></blockquote>
+<p>I used to set the parameter dependecies in here, but that didn&#8217;t
+work. So now this does nothing and dependecies are set when the
+parameters (as class properties) are created (i.e., called for
+the first time).</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="propagator.toolbox.BaseToolbox_Mixin.getParameterInfo">
+<code class="descname">getParameterInfo</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#propagator.toolbox.BaseToolbox_Mixin.getParameterInfo" title="Permalink to this definition">¶</a></dt>
+<dd><p>PART OF THE ESRI BLACK BOX</p>
+<p>This <em>must</em> return a list of all of the parameter definitions.</p>
+<p>Esri recommends that you create all of the parameters in here,
+and always return that list. I instead chose to create the list
+from the class properties I&#8217;ve defined. Accessing things with
+meaningful names is always better, in my opinion.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="propagator.toolbox.BaseToolbox_Mixin.execute">
+<code class="descname">execute</code><span class="sig-paren">(</span><em>parameters</em>, <em>messages</em><span class="sig-paren">)</span><a class="headerlink" href="#propagator.toolbox.BaseToolbox_Mixin.execute" title="Permalink to this definition">¶</a></dt>
+<dd><p>PART OF THE ESRI BLACK BOX</p>
+<p>This method is called when the tool is actually executed. It
+gets passed magics lists of parameters and messages that no one
+can actually see.</p>
+<p>Due to this mysterious nature, I do the following:</p>
+<ol class="arabic simple">
+<li>turn all of the elements of the list into a dictionary
+so that we can access them in a meaningful way. This
+means, instead of doing something like</li>
+</ol>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">dem</span> <span class="o">=</span> <span class="n">parameters</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">valueAsText</span>
+<span class="n">zones</span> <span class="o">=</span> <span class="n">parameters</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">valueAsText</span>
+<span class="c"># yada yada</span>
+<span class="n">nth_param</span> <span class="o">=</span> <span class="n">parameters</span><span class="p">[</span><span class="n">n</span><span class="p">]</span><span class="o">.</span><span class="n">valueAsText</span>
+</pre></div>
+</div>
+<p>for EVERY. SINGLE. PARAMETER, we can instead do something like:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">params</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_parameter_values</span><span class="p">(</span><span class="n">parameters</span><span class="p">,</span> <span class="n">multivals</span><span class="o">=</span><span class="p">[</span><span class="s">&#39;elevation&#39;</span><span class="p">])</span>
+<span class="n">dem</span> <span class="o">=</span> <span class="n">params</span><span class="p">[</span><span class="s">&#39;dem&#39;</span><span class="p">]</span>
+<span class="n">zones</span> <span class="o">=</span> <span class="n">params</span><span class="p">[</span><span class="s">&#39;zones&#39;</span><span class="p">]</span><span class="o">.</span>
+<span class="c"># yada</span>
+</pre></div>
+</div>
+<p>This is much cleaner, in my opinion, and we don&#8217;t have to
+magically know where in the list of parameters e.g., the
+DEM is found. Take note, Esri.</p>
+<ol class="arabic simple" start="2">
+<li>call <a class="reference internal" href="#propagator.toolbox.Accumulator.analyze" title="propagator.toolbox.Accumulator.analyze"><code class="xref py py-meth docutils literal"><span class="pre">analyze()</span></code></a>.</li>
+</ol>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="propagator.toolbox.BaseToolbox_Mixin.workspace">
+<code class="descname">workspace</code><a class="headerlink" href="#propagator.toolbox.BaseToolbox_Mixin.workspace" title="Permalink to this definition">¶</a></dt>
+<dd><p>The directory or geodatabase in which the analysis will
+occur.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="propagator.toolbox.BaseToolbox_Mixin.subcatchments">
+<code class="descname">subcatchments</code><a class="headerlink" href="#propagator.toolbox.BaseToolbox_Mixin.subcatchments" title="Permalink to this definition">¶</a></dt>
+<dd><p>The subcatchments polygons to be used in the analysis.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="propagator.toolbox.BaseToolbox_Mixin.ID_column">
+<code class="descname">ID_column</code><a class="headerlink" href="#propagator.toolbox.BaseToolbox_Mixin.ID_column" title="Permalink to this definition">¶</a></dt>
+<dd><p>Name of the field in the <cite>subcatchments</cite> layer that uniquely
+identifies each subcatchment.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="propagator.toolbox.BaseToolbox_Mixin.downstream_ID_column">
+<code class="descname">downstream_ID_column</code><a class="headerlink" href="#propagator.toolbox.BaseToolbox_Mixin.downstream_ID_column" title="Permalink to this definition">¶</a></dt>
+<dd><p>Name of the field in the <cite>subcatchments</cite> layer that specifies
+the downstream subcatchment.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="propagator.toolbox.BaseToolbox_Mixin.output_layer">
+<code class="descname">output_layer</code><a class="headerlink" href="#propagator.toolbox.BaseToolbox_Mixin.output_layer" title="Permalink to this definition">¶</a></dt>
+<dd><p>Where the propagated/accumulated data will be saved.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="propagator.toolbox.Propagator">
+<em class="property">class </em><code class="descclassname">propagator.toolbox.</code><code class="descname">Propagator</code><a class="headerlink" href="#propagator.toolbox.Propagator" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#propagator.toolbox.BaseToolbox_Mixin" title="propagator.toolbox.BaseToolbox_Mixin"><code class="xref py py-class docutils literal"><span class="pre">propagator.toolbox.BaseToolbox_Mixin</span></code></a></p>
+<p>ArcGIS Python toolbox to propagate water quality metrics upstream
+through subcatchments in a watershed.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>None</strong></td>
+</tr>
+</tbody>
+</table>
+<div class="admonition seealso">
+<p class="first admonition-title">See also</p>
+<p class="last"><a class="reference internal" href="#propagator.toolbox.Accumulator" title="propagator.toolbox.Accumulator"><code class="xref py py-obj docutils literal"><span class="pre">Accumulator</span></code></a></p>
+</div>
+<dl class="attribute">
+<dt id="propagator.toolbox.Propagator.direction">
+<code class="descname">direction</code><em class="property"> = 'upstream'</em><a class="headerlink" href="#propagator.toolbox.Propagator.direction" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="propagator.toolbox.Propagator.monitoring_locations">
+<code class="descname">monitoring_locations</code><a class="headerlink" href="#propagator.toolbox.Propagator.monitoring_locations" title="Permalink to this definition">¶</a></dt>
+<dd><p>The monitoring location points whose data will be propagated
+to the subcatchments.</p>
+</dd></dl>
+
+<dl class="staticmethod">
+<dt id="propagator.toolbox.Propagator.analyze">
+<em class="property">static </em><code class="descname">analyze</code><span class="sig-paren">(</span><em>**params</em><span class="sig-paren">)</span><a class="headerlink" href="#propagator.toolbox.Propagator.analyze" title="Permalink to this definition">¶</a></dt>
+<dd><p>Propagates water quality scores from monitoring locations
+to upstream subcatchments. Calls directly to <a class="reference internal" href="#propagator.toolbox.propagate" title="propagator.toolbox.propagate"><code class="xref py py-func docutils literal"><span class="pre">propagate()</span></code></a>.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="propagator.toolbox.Accumulator">
+<em class="property">class </em><code class="descclassname">propagator.toolbox.</code><code class="descname">Accumulator</code><a class="headerlink" href="#propagator.toolbox.Accumulator" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#propagator.toolbox.BaseToolbox_Mixin" title="propagator.toolbox.BaseToolbox_Mixin"><code class="xref py py-class docutils literal"><span class="pre">propagator.toolbox.BaseToolbox_Mixin</span></code></a></p>
+<p>ArcGIS Python toolbox to accumulate subcatchments attributes and
+water quality parameters downstream through a stream.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>None</strong></td>
+</tr>
+</tbody>
+</table>
+<div class="admonition seealso">
+<p class="first admonition-title">See also</p>
+<p class="last"><a class="reference internal" href="#propagator.toolbox.Propagator" title="propagator.toolbox.Propagator"><code class="xref py py-obj docutils literal"><span class="pre">Propagator</span></code></a></p>
+</div>
+<dl class="attribute">
+<dt id="propagator.toolbox.Accumulator.direction">
+<code class="descname">direction</code><em class="property"> = 'downstream'</em><a class="headerlink" href="#propagator.toolbox.Accumulator.direction" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="propagator.toolbox.Accumulator.streams">
+<code class="descname">streams</code><a class="headerlink" href="#propagator.toolbox.Accumulator.streams" title="Permalink to this definition">¶</a></dt>
+<dd><p>The streams who will accumulate attributes from
+subcatchments.</p>
+</dd></dl>
+
+<dl class="staticmethod">
+<dt id="propagator.toolbox.Accumulator.analyze">
+<em class="property">static </em><code class="descname">analyze</code><span class="sig-paren">(</span><em>**params</em><span class="sig-paren">)</span><a class="headerlink" href="#propagator.toolbox.Accumulator.analyze" title="Permalink to this definition">¶</a></dt>
+<dd><p>Accumulates subcatchments properties from upstream
+subcatchments into stream. Calls directly to <a class="reference internal" href="#propagator.toolbox.accumulate" title="propagator.toolbox.accumulate"><code class="xref py py-func docutils literal"><span class="pre">accumulate()</span></code></a>.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="analysis.html" class="btn btn-neutral float-right" title="analysis API Reference">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="python.html" class="btn btn-neutral" title="Using python-propagator from python"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2015, Geosyntec Consultants.
+    </p>
+  </div>
+
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+  
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'./',
+            VERSION:'v0.1.0',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="_static/jquery.js"></script>
+      <script type="text/javascript" src="_static/underscore.js"></script>
+      <script type="text/javascript" src="_static/doctools.js"></script>
+      <script type="text/javascript" src="_static/copybutton.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>
