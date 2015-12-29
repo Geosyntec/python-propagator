@@ -133,3 +133,10 @@ def test_propagate_scores_simple_2_columns():
 
     result = analysis.propagate_scores(subcatchments, 'Pb')
     result = analysis.propagate_scores(result, 'Cu')
+
+
+def test_find_downstream_scores():
+    subcatchments = SIMPLE_SUBCATCHMENTS.copy()
+    expected = ('E1', 'D1', 'None', 'E1_y')
+    value = analysis.find_downstream_scores(subcatchments, 'G1', 'Pb')
+    nt.assert_tuple_equal(tuple(value), expected)
