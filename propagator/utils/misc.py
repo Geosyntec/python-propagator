@@ -17,8 +17,12 @@ import datetime
 import itertools
 from functools import wraps
 from contextlib import contextmanager
+from collections import namedtuple
 
 import numpy
+
+
+Statistic = namedtuple("Statistic", ("srccol", "aggfxn", "rescol"))
 
 
 def _status(msg, verbose=False, asMessage=False, addTab=False): # pragma: no cover
@@ -136,3 +140,88 @@ def find_row_in_array(array, column, value):
         raise ValueError("more than one row where {} == {}".format(column, value))
 
     return row
+
+
+def rec_groupby(array, group_cols, *stats):
+    """
+    Perform a groupby-apply operation on a numpy record array.
+
+    Returned record array has *dtype* names for each attribute name in
+    the *groupby* argument, with the associated group values, and
+    for each outname name in the *stats* argument, with the associated
+    stat summary output. Adapted from https://goo.gl/NgwOID.
+
+    Parameters
+    ----------
+    array : numpy.recarray
+        The data to be grouped and aggregated.
+    group_cols : str or sequence of str
+        The columns that identify each group
+    *stats : namedtuples or object
+        Any number of namedtuples or objects specifying which columns
+        should be aggregated, how they should be aggregated, and what
+        the resulting column name should be. The keys/attributes for
+        these tuples/objects must be: "srccol", "aggfxn", and "rescol".
+
+    Returns
+    -------
+    aggregated : numpy.recarray
+
+    See also
+    --------
+    Statistic
+
+    Examples
+    --------
+    >>> from collections import namedtuple
+    >>> from propagator import utils
+    >>> import numpy
+    >>> Statistic = namedtuple("Statistic", ("srccol", "aggfxn", "rescol"))
+    >>> data = data = numpy.array([
+            (u'050SC', 88.3, 0.0),  (u'050SC', 0.0, 0.1),
+            (u'045SC', 49.2, 0.04), (u'045SC', 0.0, 0.08),
+        ], dtype=[('ID', '<U10'), ('Cu', '<f8'), ('Pb', '<f8'),])
+    >>> stats = [
+            Statistic('Cu', numpy.max, 'MaxCu'),
+            Statistic('Pb', numpy.min, 'MinPb')
+        ]
+    >>> utils.rec_groupby(data, ['ID'], *stats)
+    rec.array(
+        [(u'045SC', 49.2, 0.04),
+         (u'050SC', 88.3, 0.0)],
+        dtype=[('ID', '<U5'), ('MaxCu', '<f8'), ('MinPb', '<f8')]
+    )
+
+    """
+    if numpy.isscalar(group_cols):
+        group_cols = [group_cols]
+
+    # build a dictionary from group_cols keys -> list of indices into
+    # array with  those keys
+    row_dict = dict()
+    for i, row in enumerate(array):
+        key = tuple([row[attr] for attr in group_cols])
+        row_dict.setdefault(key, []).append(i)
+
+    # sort the output by group_cols keys
+    keys = list(row_dict.keys())
+    keys.sort()
+
+    output_rows = []
+    for key in keys:
+        row = list(key)
+
+        # get the indices for this group_cols key
+        index = row_dict[key]
+        this_row = array[index]
+
+        # call each aggregating function for this group_cols slice
+        row.extend([stat.aggfxn(this_row[stat.srccol]) for stat in stats])
+        output_rows.append(row)
+
+    # build the output record array with group_cols and outname attributes
+    outnames = [stat.rescol for stat in stats]
+    names = list(group_cols)
+    names.extend(outnames)
+    record_array = numpy.rec.fromrecords(output_rows, names=names)
+    return record_array

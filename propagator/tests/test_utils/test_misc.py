@@ -76,3 +76,61 @@ class Test_find_row_in_array(object):
     def test_too_man_rows(self):
          row = misc.find_row_in_array(self.input_array, 'DS_ID', 'A1')
 
+
+def test_Statistic():
+    x = misc.Statistic('Cu', numpy.mean, 'MaxCu')
+    nt.assert_true(hasattr(x, 'srccol'))
+    nt.assert_equal(x.srccol, 'Cu')
+
+    nt.assert_true(hasattr(x, 'aggfxn'))
+    nt.assert_equal(x.aggfxn, numpy.mean)
+
+    nt.assert_true(hasattr(x, 'rescol'))
+    nt.assert_equal(x.rescol, 'MaxCu')
+
+
+class Test_rec_groupby(object):
+    def setup(self):
+        self.data = numpy.array([
+            (u'050SC', u'A', 88.3, 0.25), (u'050SC', 'B', 0.0, 0.50),
+            (u'050SC', u'A', 98.3, 0.75), (u'050SC', 'B', 1.0, 1.00),
+            (u'045SC', u'A', 49.2, 0.04), (u'045SC', 'B', 0.0, 0.08),
+            (u'045SC', u'A', 69.2, 0.08), (u'045SC', 'B', 2.0, 0.16),
+        ], dtype=[('ID', '<U5'), ('DS_ID', '<U5'), ('Cu', '<f8'), ('Pb', '<f8'),])
+
+        self.expected_one_group_col = numpy.rec.fromrecords([
+            (u'050SC', 98.3, 0.625),
+            (u'045SC', 69.2, 0.090),
+        ], names=['ID', 'MaxCu', 'AvgPb'])
+
+        self.expected_two_group_col = numpy.rec.fromrecords([
+            (u'050SC', u'A', 98.3, 0.50),
+            (u'050SC', u'B',  1.0, 0.75),
+            (u'045SC', u'A', 69.2, 0.06),
+            (u'045SC', u'B',  2.0, 0.12),
+        ], names=['ID', 'DS_ID', 'MaxCu', 'AvgPb'])
+
+        self.stats = [
+            misc.Statistic('Cu', numpy.max, 'MaxCu'),
+            misc.Statistic('Pb', numpy.mean, 'AvgPb')
+        ]
+
+    def test_one_group_col(self):
+        result = misc.rec_groupby(self.data, 'ID', *self.stats)
+        result.sort()
+
+        expected = self.expected_one_group_col.copy()
+        expected.sort()
+
+        nptest.assert_array_equal(result, expected)
+
+    def test_two_group_col(self):
+        result = misc.rec_groupby(self.data, ['ID', 'DS_ID'], *self.stats)
+        result.sort()
+
+        expected = self.expected_two_group_col.copy()
+        expected.sort()
+
+        nptest.assert_array_equal(result, expected)
+
+
