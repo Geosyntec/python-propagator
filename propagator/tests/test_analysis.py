@@ -154,17 +154,28 @@ def test_prepare_data():
         cat = resource_filename("propagator.testing.prepare_data", "cat.shp")
         ml = resource_filename("propagator.testing.prepare_data", "ml.shp")
         expected_cat_wq = resource_filename("propagator.testing.prepare_data", "cat_wq.shp")
-        final_field = [
+        header_fields = [
             "FID",
             "Shape",
-            "Catch_ID_a",
-            "Dwn_Catch_",
-            "Watershed",
-            "Station",
-            "Latitude",
-            "Longitude"
+            "Catch_ID_a", 
+            "Dwn_Catch_", 
+            "Watershed", 
         ]
-        cat_wq = analysis.prepare_data(ml, "Station", cat, "Catch_ID_a", final_field, 'testout.shp')
+        wq_fields = [
+            "Dry_WQI_Ba",
+            "Dry_WQI_Me",
+            "Dry_WQI_Nu",
+            "Dry_WQI_Pe",
+            "Dry_WQI_TD",
+            "Dry_WQI_To",
+            "Storm_WQI_",
+            "Storm_WQI1",
+            "Storm_WQ_1",
+            "Storm_WQ_2",
+            "Storm_WQ_3",
+        ]
+
+        cat_wq = analysis.prepare_data(ml, cat, "Catch_ID_a", header_fields, wq_fields, 'testout.shp')
         pgtest.assert_shapefiles_are_close(cat_wq, expected_cat_wq)
         utils.cleanup_temp_results(cat_wq)
 

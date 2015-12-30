@@ -239,8 +239,8 @@ def split_streams(stream_layer, subcatchment_layer):
 
 
 @utils.update_status()
-def prepare_data(mon_locations, monloc_id_col, subcatchments,
-                 subcatch_id_col, final_fields, outputfile,
+def prepare_data(mon_locations, subcatchments,
+                 subcatch_id_col, header_fields, wq_fields, outputfile,
                  **verbose_options):
     """
     Assigns water quality ranking from monitoring locations to the
@@ -252,15 +252,14 @@ def prepare_data(mon_locations, monloc_id_col, subcatchments,
     ----------
     mon_locations : str
         File path to the monitoring locations feature class.
-    monloc_id_col : str
-        Field name of the monitoring location ID column in
-        ``mon_locations``.
     subcatchments : str
         File path to the subcatchments feature class.
     subcatch_id_col : str
         Field name of the subcatchment ID column in ``subcatchments``.
-    final_fields : list
-        List of field names to be retained in the output feature class.
+    header_fields : list
+        List of header field names to be retained in the output feature class.
+    wq_fields : list
+        List of water quality field names to be analyzed
     outputfile : str
         Filename where the output should be saved.
 
@@ -283,7 +282,7 @@ def prepare_data(mon_locations, monloc_id_col, subcatchments,
     raw_subcatchments = utils.load_data(
         datapath=subcatchments,
         datatype="shape",
-        msg='Loading Monitoring Location {}'.format(subcatchments),
+        msg='Loading Subcatchments {}'.format(subcatchments),
         **verbose_options
     )
 
@@ -298,15 +297,15 @@ def prepare_data(mon_locations, monloc_id_col, subcatchments,
     # is located at.
     arcpy.analysis.Intersect([raw_subcatchments, raw_ml], _cat_ml_int, "ALL", "", "INPUT")
 
-    # Step 2. Create a new point file (_reduced_ml) that pair only one
+    # Step 2. Create a new point file (_reduced_ml) that pairs only one
     # set of ranking data to each catchment.
 
     # extract all subcatchment ID that has at least one
     # monitoring location
-    arr = utils.load_attribute_table(_cat_ml_int, subcatch_id_col, monloc_id_col)
+    arr = utils.load_attribute_table(_cat_ml_int, subcatch_id_col)
     catid = numpy.unique(arr[subcatch_id_col])
 
-    for lc, ucat in enumeriate(catid):
+    for lc, ucat in enumerate(catid):
         sqlexp = '"{}" = \'{}\''.format(subcatch_id_col, ucat)
         arcpy.analysis.Select(_cat_ml_int, _ml, sqlexp)
 
@@ -320,26 +319,20 @@ def prepare_data(mon_locations, monloc_id_col, subcatchments,
             fxn = arcpy.management.Append
 
         # count number of MLs within each catchment
-        count = arcpy.management.GetCount(_ml).getOutput(0)
+        fxn(_reduce(_ml, _out_ml, wq_fields,subcatch_id_col), _reduced_ml)
 
-        if count == 1:
-            fxn(_ml, _reduced_ml)
-        else:
-            fxn(_reduce(_ml, _out_ml), _reduced_ml)
-
-    # Step 3. spatial join _reduced_ml with raw_subcatchments, so that
+    # Step 3. Spatial join _reduced_ml with raw_subcatchments, so that
     # the new cathcment shapefile will inherit water quality data from
     # the only monitoring location in it.
     arcpy.analysis.SpatialJoin(raw_subcatchments, _reduced_ml, subcatchment_wq)
 
-    # removed extraneous columns
+    # Remove extraneous columns
     fields_to_remove = filter(
-        lambda name: name not in final_fields,
+        lambda name: name not in header_fields and name not in wq_fields,
         [f.name for f in arcpy.ListFields(subcatchment_wq)]
     )
     utils.delete_columns(subcatchment_wq, *fields_to_remove)
-
-    # clean up intermediate files
+    # Delete temporary files.
     utils.cleanup_temp_results(
         _reduced_ml,
         _cat_ml_int,
@@ -348,9 +341,37 @@ def prepare_data(mon_locations, monloc_id_col, subcatchments,
     )
 
     return subcatchment_wq
+"""
+=======
+    arcpy.analysis.Intersect([raw_cat, raw_ml], _cat_ml_int, "ALL", "", "INPUT")
+    
+    # Step 2. Create a new point file (_reduced_ml) that pairs 
+    # with only one set of ranking data to each catchment.        
+    arr = utils.load_attribute_table(_cat_ml_int, 'Catch_ID_a')
+    catid = numpy.unique(arr['Catch_ID_a'])
+    
+    lc = 0
+    for ucat in catid:
+        sqlexp = '"Catch_ID_a" = ' + "'%s'" % ucat
+        arcpy.analysis.Select(_cat_ml_int, _ml, sqlexp)
+        
+        if lc == 0:
+            arcpy.management.Copy(_reduce(_ml, _out_ml, wq_fields), _reduced_ml)
+        else:
+            arcpy.management.Append(_reduce(_ml, _out_ml, wq_fields), _reduced_ml)
+        lc = lc+1
+        
+    # Step 3. Spatial join _reduced_ml with raw_cat, so that the 
+    # new cathcment feature will inherit water quality data from 
+    # the only monitoring location in it.
+    arcpy.analysis.SpatialJoin(raw_cat, _reduced_ml, cat_wq)
+    fields_to_remove = filter(lambda name: name not in header_fields and name not in wq_fields, [f.name for f in arcpy.ListFields(cat_wq)])
+    utils.delete_columns(cat_wq, *fields_to_remove)
+"""    
+    
 
 
-def _reduce(_ml, _out_ml):
+def _reduce(_ml, _out_ml, wq_fields,subcatch_id_col):
     """
     Aggregates water quality ranksing from all monitoring locations
     in the same subcatchment.
@@ -362,21 +383,66 @@ def _reduce(_ml, _out_ml):
     _out_ml : str
         File path to an empty temporary feature class that will be
         filled in this function.
+    wq_fields : list
+        Lisf of water quality parameters to be analyzed
+    subcatch_id_col : str
+        Field name of the subcatchment ID column in ``subcatchments``.
 
     Returns
     -------
     _out_ml : str
-
+    
     """
 
-    #load water quality data - place holder for now
-    _arr = utils.load_attribute_table(_ml, 'FID_ml', 'Catch_ID_a')
-
-    # for testing purpose at the moment, export the feature with the
-    # smallest FID as output
+    # Load water quality data 
+    _arr = utils.load_attribute_table(_ml, 'FID_ml', *[f for f in wq_fields])
+    
+    # Copy and paste the monitoring location with the smallest FID.
+    # This is essentially an arbiutary pick. What matters is we need
+    # to only output one point back to the upstream function.
     _sqlexp = '"FID_ml" = ' + "%i" % numpy.min(_arr['FID_ml'])
     arcpy.analysis.Select(_ml, _out_ml, _sqlexp)
-
-    #process the WQ data - [e.g. out_ml.wq = average(temp_ml.wq)]
+    
+    # Loop through each water quality parameter.
+    for wq_par in wq_fields:
+        wq_value  = utils.groupby_and_aggregate(
+            input_path= _ml,
+            groupfield=subcatch_id_col,
+            valuefield=wq_par,
+            # If at futre stage it is decided to compute the water quality 
+            # value with a different methods (i.e. median), either revise 
+            # the existing _non_zero_means function, or (preferrably) write
+            # a new function (i.e. non_zero_median) and call the new function
+            # at the line below.
+            aggfxn= _non_zero_means
+        )
+        
+        # Overwrite field [wq_par] of _out_ml with the computed value.
+        utils.populate_field(_out_ml, lambda row: wq_value.values()[0], wq_par)
     return _out_ml
 
+def _non_zero_means(_arr):
+    """
+    Compute average value of all non-zero values in the 
+    list.
+    
+    Parameters
+    ----------
+    _arr : object 
+        Contains the list of interested values, which 
+        are extracted from the parental feature.
+
+    Returns
+    -------
+    numpy.mean(numlst): float
+        Zero-excluded average of the list. If the list 
+        contains no value, return a value of 0. 
+    """
+    
+    _numlst = filter(lambda n: n > 0, [r[1] for r in _arr])
+    if numpy.isnan(numpy.mean(_numlst)):
+        return 0
+    else:
+        return numpy.mean(_numlst)
+  
+    
