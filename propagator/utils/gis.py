@@ -1337,3 +1337,7 @@ def delete_columns(layerpath, *columns):
     """
     col_str = ";".join(columns)
     arcpy.management.DeleteField(layerpath, col_str)
+
+
+def get_field_names(layerpath):
+    return [f.name for f in arcpy.ListFields(layerpath)]

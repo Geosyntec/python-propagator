@@ -1013,3 +1013,10 @@ def test_update_attribute_table():
 
     pptest.assert_shapefiles_are_close(testpath, expected)
     gis.cleanup_temp_results(testpath)
+
+
+def test_get_field_names():
+    expected = [u'FID', u'Shape', u'Station', u'Latitude', u'Longitude']
+    layer = resource_filename('propagator.testing.get_field_names', 'input.shp')
+    result = gis.get_field_names(layer)
+    nt.assert_list_equal(result, expected)
