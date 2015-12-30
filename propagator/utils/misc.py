@@ -225,3 +225,48 @@ def rec_groupby(array, group_cols, *stats):
     names.extend(outnames)
     record_array = numpy.rec.fromrecords(output_rows, names=names)
     return record_array
+
+
+def stats_with_ignored_values(array, statfxn, ignored_value=None):
+    """
+    Compute statistics on arrays while ignoring certain values
+
+    Parameters
+    ----------
+    array : numyp.array (of floats)
+        The values to be summarized
+    statfxn : callable
+        Function, lambda, or classmethod that can be called with
+        ``array`` as the only input and returns a scalar value.
+    ignored_value : float, optional
+        The values in ``array`` that should be ignored.
+
+    Returns
+    -------
+    res : float
+        Scalar result of ``statfxn``. In that case that all values in
+        ``array`` are ignored, ``ignored_value`` is returned.
+
+    Examples
+    --------
+    >>> import numpy
+    >>> from propagator import utils
+    >>> x = [1., 2., 3., 4., 5.]
+    >>> utils.stats_with_ignored_values(x, numpy.mean, ignored_value=5)
+    2.5
+
+    """
+
+    # ensure that we're working with an array
+    array = numpy.asarray(array)
+
+    # drop ignored values if we know what to ignore
+    if ignored_value is not None:
+        array = array[numpy.nonzero(array != ignored_value)]
+
+    # if empty, return the ignored value
+    if len(array) == 0:
+        res = ignored_value
+    else:
+        res = statfxn(array)
+    return res
