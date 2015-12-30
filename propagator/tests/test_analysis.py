@@ -148,23 +148,23 @@ def test_find_downstream_scores():
     nt.assert_tuple_equal(tuple(value), expected)
 
 
-def test_prepdata():
+def test_prepare_data():
     ws = resource_filename("propagator.testing", "prepare_data")
     with utils.OverwriteState(True), utils.WorkSpace(ws):
-        cat = resource_filename("propagator.testing.prepare_data", "cat.shp") 
+        cat = resource_filename("propagator.testing.prepare_data", "cat.shp")
         ml = resource_filename("propagator.testing.prepare_data", "ml.shp")
         expected_cat_wq = resource_filename("propagator.testing.prepare_data", "cat_wq.shp")
         final_field = [
             "FID",
             "Shape",
-            "Catch_ID_a", 
-            "Dwn_Catch_", 
-            "Watershed", 
-            "Station", 
+            "Catch_ID_a",
+            "Dwn_Catch_",
+            "Watershed",
+            "Station",
             "Latitude",
             "Longitude"
         ]
-        cat_wq = analysis.prepare_data(ml, cat, final_field)
+        cat_wq = analysis.prepare_data(ml, "Station", cat, "Catch_ID_a", final_field, 'testout.shp')
         pgtest.assert_shapefiles_are_close(cat_wq, expected_cat_wq)
         utils.cleanup_temp_results(cat_wq)
-        
+
