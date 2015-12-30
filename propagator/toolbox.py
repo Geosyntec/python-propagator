@@ -20,7 +20,7 @@ import arcpy
 import numpy
 try:
     from tqdm import tqdm
-except ImportError:
+except ImportError: # pragma: no cover
     tqdm = lambda x: x
 
 import propagator
@@ -46,7 +46,6 @@ def propagate(**params):
     return output_layer
 
 
-
 def accumulate(**params):
     workspace = params.pop('workspace', '.')
     subcatchments = params.pop('subcatchments', None)
@@ -67,6 +66,7 @@ def accumulate(**params):
 
 class BaseToolbox_Mixin(object):
     canRunInBackground = True
+    multivals = ['value_columns']
 
     def isLicensed(self):
         """ PART OF THE ESRI BLACK BOX.
@@ -221,7 +221,7 @@ class BaseToolbox_Mixin(object):
         """
         underline = ''.join(['-'] * len(title))
         header = '\n{}\n{}'.format(title, underline)
-        utils._status(header, verbose=verbose, asMessage=True, addTab=False)
+        utils.misc._status(header, verbose=verbose, asMessage=True, addTab=False)
         return header
 
     @staticmethod
@@ -250,7 +250,7 @@ class BaseToolbox_Mixin(object):
         return ezmd
 
     @staticmethod
-    def _get_parameter_values(parameters, multivals=None):
+    def _get_parameter_values(parameters):
         """ Returns a dictionary of the parameters values as passed in from
         the ESRI black box. Keys are the parameter names, values are the
         actual values (as text) of the parameters.
@@ -271,36 +271,14 @@ class BaseToolbox_Mixin(object):
 
         """
 
-        if multivals is None:
-            multivals = []
-        elif numpy.isscalar(multivals):
-            multivals = [multivals]
-
         params = {}
         for p in parameters:
             value = p.valueAsText
-            if p.name in multivals:
+            if p.multiValue:
                 value = value.split(';')
             params[p.name] = value
 
         return params
-
-    @staticmethod
-    def _prep_input(**kwargs):
-        """ TODO:
-        Prepares the basic inputs to the :meth:`.analyze` method.
-
-        Parameters
-        ----------
-        TODO
-
-        Returns
-        -------
-        TODO
-
-        """
-
-        return None
 
     @property
     def workspace(self):
@@ -366,8 +344,8 @@ class BaseToolbox_Mixin(object):
 
         """
 
-        if self._ID_column is None:
-            self._ID_column = arcpy.Parameter(
+        if self._downstream_ID_column is None:
+            self._downstream_ID_column = arcpy.Parameter(
                 displayName="Column with the Downstream Subcatchment IDs",
                 name="downstream_ID_column",
                 datatype="Field",
@@ -412,14 +390,14 @@ class Propagator(BaseToolbox_Mixin):
     direction = 'upstream'
 
     def __init__(self):
-        """Define the tool (tool name is the name of the class)."""
+        """
+        Define the tool (tool name is the name of the class).
+        """
         # std attributes
-        self.label = "1 - Propagate values via subcatchments"
+        self.label = "1 - Propagate WQ scores to upstream subcatchments"
         self.description = dedent("""
         TDB
         """)
-
-        self.multivals = None
 
         # lazy properties
         self._workspace = None
@@ -427,11 +405,13 @@ class Propagator(BaseToolbox_Mixin):
         self._ID_column = None
         self._downstream_ID_column = None
         self._monitoring_locations = None
+        self._value_columns = None
         self._output_layer = None
 
     @property
     def monitoring_locations(self):
-        """ The monitoring location points whose data will be propagated
+        """
+        The monitoring location points whose data will be propagated
         to the subcatchments.
 
         """
@@ -448,6 +428,20 @@ class Propagator(BaseToolbox_Mixin):
             self._set_parameter_dependency(self._monitoring_locations, self.workspace)
         return self._monitoring_locations
 
+    @property
+    def value_columns(self):
+        if self._value_columns is None:
+            self._value_columns = arcpy.Parameter(
+                displayName="Values to be Propagated",
+                name="value_columns",
+                datatype="Field",
+                parameterType="Required",
+                direction="Input",
+                multiValue=True
+            )
+            self._set_parameter_dependency(self._value_columns, self.monitoring_locations)
+        return self._value_columns
+
     def _params_as_list(self):
         params = [
             self.workspace,
@@ -455,6 +449,7 @@ class Propagator(BaseToolbox_Mixin):
             self.ID_column,
             self.downstream_ID_column,
             self.monitoring_locations,
+            self.value_columns,
             self.output_layer,
         ]
         return params
@@ -488,17 +483,17 @@ class Accumulator(BaseToolbox_Mixin):
     def __init__(self):
         """Define the tool (tool name is the name of the class)."""
         # std attributes
-        self.label = "2 - Accumulate values via subcatchments"
+        self.label = "2 - Accumulate subcatchment properties to stream"
         self.description = dedent("""
         TDB
         """)
 
-        self.multivals = None
-
         # lazy properties
         self._workspace = None
         self._subcatchments = None
-        self._direction = None
+        self._ID_column = None
+        self._downstream_ID_column = None
+        self._value_columns = None
         self._streams = None
         self._output_layer = None
 
@@ -506,6 +501,9 @@ class Accumulator(BaseToolbox_Mixin):
         params = [
             self.workspace,
             self.subcatchments,
+            self.ID_column,
+            self.downstream_ID_column,
+            self.value_columns,
             self.streams,
             self.output_layer,
         ]
@@ -529,6 +527,20 @@ class Accumulator(BaseToolbox_Mixin):
             )
             self._set_parameter_dependency(self._streams, self.workspace)
         return self._streams
+
+    @property
+    def value_columns(self):
+        if self._value_columns is None:
+            self._value_columns = arcpy.Parameter(
+                displayName="Values to be Accumulated",
+                name="value_columns",
+                datatype="Field",
+                parameterType="Required",
+                direction="Input",
+                multiValue=True
+            )
+            self._set_parameter_dependency(self._value_columns, self.subcatchments)
+        return self._value_columns
 
     @staticmethod
     def analyze(self, **params):
