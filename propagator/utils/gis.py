@@ -365,9 +365,7 @@ def create_temp_filename(filepath, filetype=None, prefix='_temp_', num=None):
 def check_fields(table, *fieldnames, **kwargs):
     """
     Checks that field are (or are not) in a table. The check fails, a
-    ``ValueError`` is raised. Relies on `arcpy.ListFields`_.
-
-    .. _arcpy.ListFields: http://goo.gl/Siq5y7
+    ``ValueError`` is raised.
 
     Parameters
     ----------
@@ -388,7 +386,7 @@ def check_fields(table, *fieldnames, **kwargs):
 
     should_exist = kwargs.pop('should_exist', False)
 
-    existing_fields = [field.name for field in arcpy.ListFields(table)]
+    existing_fields = get_field_names(table)
     bad_names = []
     for name in fieldnames:
         exists = name in existing_fields
@@ -751,9 +749,9 @@ def raster_to_polygons(zonal_raster, filename, newfield=None):
         )
 
     if newfield is not None:
-        for field in arcpy.ListFields(filename):
-            if field.name.lower() == 'gridcode':
-                gridfield = field.name
+        for fieldname in get_field_names(filename):
+            if fieldname.lower() == 'gridcode':
+                gridfield = fieldname
 
         add_field_with_value(filename, newfield, field_type="LONG")
         populate_field(filename, lambda x: x[0], newfield, gridfield)
@@ -1100,10 +1098,7 @@ def rename_column(table, oldname, newname, newalias=None): # pragma: no cover
     if newalias is None:
         newalias = newname
 
-    oldfield = filter(
-        lambda f: f.name == oldname,
-        arcpy.ListFields(table)
-    )[0]
+    oldfield = filter(lambda f: name == oldname, get_field_names(table))[0]
 
     arcpy.management.AlterField(
         in_table=table,
@@ -1340,4 +1335,21 @@ def delete_columns(layerpath, *columns):
 
 
 def get_field_names(layerpath):
+    """
+    Gets the names of fields/columns in a feature class or table.
+    Relies on `arcpy.ListFields`_.
+
+    .. _arcpy.ListFields: http://goo.gl/Siq5y7
+
+    Parameters
+    ----------
+    layerpath : str, arcpy.Layer, or arcpy.table
+        The thing that has fields.
+
+    Returns
+    -------
+    fieldnames : list of str
+
+    """
+
     return [f.name for f in arcpy.ListFields(layerpath)]
