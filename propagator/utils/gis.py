@@ -1318,7 +1318,7 @@ def update_attribute_table(layerpath, attribute_array, id_column, *update_column
             # update the row
             cur.updateRow(oldrow)
 
-            
+
 def delete_columns(layerpath, *columns):
     """
     Delete unwanted fields from an attribute table of a feature class.
@@ -1337,5 +1337,3 @@ def delete_columns(layerpath, *columns):
     """
     col_str = ";".join(columns)
     arcpy.management.DeleteField(layerpath, col_str)
-    
-
