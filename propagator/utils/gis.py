@@ -830,8 +830,8 @@ def add_field_with_value(table, field_name, field_value=None,
         `arcpy.management.AddField` if ``field_type`` is itself not
         explicitly provided.
     overwrite : bool, optonal (False)
-        If True, an existing field will be overwritting. The default
-        behaviour will raise a `ValueError` if the field already exists.
+        If True, an existing field will be overwritten. The default
+        behavior will raise a `ValueError` if the field already exists.
     **field_opts : keyword options
         Keyword arguments that are passed directly to
         `arcpy.management.AddField`.
@@ -1010,6 +1010,9 @@ def load_attribute_table(input_path, *fields):
     # load the data
     layer = load_data(input_path, "layer")
 
+    if len(fields) == 0:
+        fields = get_field_names(input_path)
+
     # check that fields are valid
     check_fields(layer.dataSource, *fields, should_exist=True)
 
@@ -1075,15 +1078,11 @@ def groupby_and_aggregate(input_path, groupfield, valuefield,
     if aggfxn is None:
         aggfxn = lambda x: int(numpy.unique(list(x)).shape[0])
 
-
     table = load_attribute_table(input_path, groupfield, valuefield)
-    #_status((table.dtype), verbose=True, asMessage=True)
-    #table.sort(order=groupfield)
     table.sort()
 
     counts = {}
     for groupname, shapes in itertools.groupby(table, lambda row: row[groupfield]):
-        #values  = numpy.unique(list(shapes))
         counts[groupname] = aggfxn(shapes)
 
     return counts
@@ -1201,6 +1200,27 @@ def copy_data_to_folder(destfolder, *source_layers, **kwargs):
     return copied
 
 
+@misc.update_status()
+def copy_layer(existing_layer, new_layer):
+    """
+    Makes copies of features classes, shapefiles, and maybe rasters.
+
+    Parameters
+    ----------
+    existing_layer : str
+        Path to the data to be copied
+    new_layer : str
+        Path to where ``existing_layer`` should be copied.
+
+    Returns
+    -------
+    new_layer : str
+
+    """
+
+    arcpy.management.Copy(in_data=existing_layer, out_data=new_layer)
+    return new_layer
+
 @misc.update_status() # layer
 def concat_results(destination, *input_files):
     """ Concatentates (merges) serveral datasets into a single shapefile
@@ -1307,11 +1327,14 @@ def update_attribute_table(layerpath, attribute_array, id_column, *update_column
             # find the current row in the new array
             newrow = misc.find_row_in_array(attribute_array, id_column, oldrow[0])
             # loop through the value colums, setting them to the new values
-            for n, col in enumerate(update_columns, 1):
-                oldrow[n] = newrow[col]
+            if newrow is not None:
+                for n, col in enumerate(update_columns, 1):
+                    oldrow[n] = newrow[col]
 
             # update the row
             cur.updateRow(oldrow)
+
+    return layerpath
 
 
 def delete_columns(layerpath, *columns):
@@ -1332,6 +1355,43 @@ def delete_columns(layerpath, *columns):
     """
     col_str = ";".join(columns)
     arcpy.management.DeleteField(layerpath, col_str)
+    return layerpath
+
+
+def spatial_join(left, right, outputfile, **kwargs):
+    arcpy.analysis.SpatialJoin(
+        target_features=left,
+        join_features=right,
+        out_feature_class=outputfile,
+        **kwargs
+    )
+
+    return outputfile
+
+
+def count_features(layer):
+    return arcpy.management.GetCount(layer).getOutput(0)
+
+
+def query_layer(inputpath, outputpath, sql):
+    arcpy.analysis.Select(
+        in_features=inputpath,
+        out_feature_class=outputpath,
+        where_clause=sql
+    )
+
+    return outputpath
+
+
+def intersect_layers(input_paths, output_path, how='all'):
+    arcpy.analysis.Intersect(
+        in_features=input_paths,
+        out_feature_class=output_path,
+        join_attributes=how.upper(),
+        output_type="INPUT"
+    )
+
+    return output_path
 
 
 def get_field_names(layerpath):

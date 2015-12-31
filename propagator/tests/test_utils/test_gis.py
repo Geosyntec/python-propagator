@@ -916,15 +916,15 @@ class Test_populate_field(object):
 
 
 class Test_copy_data_to_folder(object):
-    destfolder = resource_filename("propagator.testing.copy_data", "output")
+    destfolder = resource_filename("propagator.testing.copy_data_to_folder", "output")
     srclayers = [
-        resource_filename("propagator.testing.copy_data", "copy2.shp"),
-        resource_filename("propagator.testing.copy_data", "copy1.shp"),
+        resource_filename("propagator.testing.copy_data_to_folder", "copy2.shp"),
+        resource_filename("propagator.testing.copy_data_to_folder", "copy1.shp"),
     ]
 
     output = [
-        resource_filename("propagator.testing.copy_data.output", "copy2.shp"),
-        resource_filename("propagator.testing.copy_data.output", "copy1.shp"),
+        resource_filename("propagator.testing.copy_data_to_folder.output", "copy2.shp"),
+        resource_filename("propagator.testing.copy_data_to_folder.output", "copy1.shp"),
     ]
 
     def teardown(self):
@@ -963,6 +963,15 @@ class Test_copy_data_to_folder(object):
         nt.assert_true(isinstance(newlayer, arcpy.mapping.Layer))
         pptest.assert_shapefiles_are_close(self.output[0], self.srclayers[0])
 
+
+def test_copy_layer():
+    with mock.patch.object(arcpy.management, 'Copy') as _copy:
+        in_data = 'input'
+        out_data = 'new_copy'
+
+        result = gis.copy_layer(in_data, out_data)
+        _copy.assert_called_once_with(in_data=in_data, out_data=out_data)
+        nt.assert_equal(result, out_data)
 
 @nptest.dec.skipif(not pptest.has_fiona)
 def test_concat_results():
