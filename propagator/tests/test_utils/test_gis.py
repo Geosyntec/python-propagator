@@ -1025,6 +1025,15 @@ def test_delete_columns():
         expected_col_string = 'ThisColumn;ThatColumn;AnotherColumn'
 
         result = gis.delete_columns(in_data, 'ThisColumn', 'ThatColumn', 'AnotherColumn')
-        query.assert_called_once_with(in_data, expected_col_string )
+        delete.assert_called_once_with(in_data, expected_col_string)
         nt.assert_equal(result, in_data)
 
+
+def test_delete_columns_no_columns():
+    with mock.patch.object(arcpy.management, 'DeleteField') as delete:
+        in_data = 'input'
+        expected_col_string = 'ThisColumn;ThatColumn;AnotherColumn'
+
+        result = gis.delete_columns(in_data)
+        delete.assert_not_called()
+        nt.assert_equal(result, in_data)
