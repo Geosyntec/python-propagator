@@ -17,12 +17,14 @@ import sys
 import glob
 import datetime
 import itertools
+from functools import partial
 
 import numpy
 
 import arcpy
 
 from . import utils
+from . import validate
 
 
 def trace_upstream(subcatchment_array, subcatchment_ID, id_col='ID',
@@ -231,6 +233,103 @@ def find_downstream_scores(subcatchment_array, subcatchment_ID, wq_column,
         return vals.copy()
 
 
+def preprocess_wq(monitoring_locations, subcatchments, id_col, ds_col,
+                  output_path, wq_columns=None, aggfxn=numpy.mean,
+                  ignored_value=0, cleanup=True):
+    """
+    Preprocess the water quality data to have to averaged score for
+    each sub
+
+    Parameters
+    ----------
+    monitoring_locations : str
+        Path to the feature class containing the monitoring locations
+        and their water quality scores.
+    subcatchments : str
+        Path to the feature class containing the subcatchment
+        boundaries.
+    id_col : str, ds_col
+        Name of the column in ``subcatchments`` that contains the
+        (ds = downstream) subcatchment IDs.
+    output_path : str
+        Path of the new feature class where the preprocessed data
+        should be saved.
+    wq_columns : list of str
+        A list of the names of the fields containing water quality
+        scores that need to be analyzed.
+    aggfxn : callable, optional
+        A function, lambda, or class method that reduces arrays into
+        scalar values. By default, this is ``numpy.mean``.
+    ignored_value : int, optional
+        The values in ``monitoring_locations`` that should be ignored.
+        Given the default input datasets, zero has been chosen to
+        signal that a value is missing.
+    cleanup : bool, optional
+        Toggles the deletion of temporary files.
+
+    Returns
+    -------
+    array : numpy.recarray
+        A numpy record array of the subcatchments with their aggregated
+        water quality scores.
+
+    """
+
+    # validate wq_columns
+    wq_columns = validate.non_empty_list(wq_columns, msg="you must provide `wq_columns` to aggregate")
+
+    # create the output feature class as a copy of the `subcatchments`
+    output_path = utils.copy_layer(subcatchments, output_path)
+
+    # associate subcatchment IDs with all of the monitoring locations
+    joined = utils.intersect_layers(
+        input_paths=[monitoring_locations, subcatchments],
+        output_path=utils.create_temp_filename("joined_ml_sc", filetype='shape'),
+        how="ALL",
+    )
+
+    # define the Statistic objects that will be passed to `rec_groupby`
+    statfxn = partial(
+        utils.stats_with_ignored_values,
+        statfxn=aggfxn,
+        ignored_value=ignored_value
+    )
+    statistics = [utils.Statistic(col, statfxn, 'avg{}'.format(col)) for col in wq_columns]
+
+    # compile the original fields to read in from the joined table
+    orig_fields = [id_col, ds_col]
+    orig_fields.extend([stat.srccol for stat in statistics])
+    array = utils.load_attribute_table(joined, *orig_fields)
+
+    # compile the final results (aggregated) fields for the output
+    final_fields = [id_col, ds_col]
+    final_fields.extend([stat.rescol for stat in statistics])
+
+    # aggregate the data within each subcatchment
+    aggregated = utils.rec_groupby(array, orig_fields[:2], *statistics)
+
+    # add the new columns for the aggregated data to the output
+    for stat in statistics:
+        utils.add_field_with_value(
+            table=output_path,
+            field_name=stat.rescol,
+            field_value=float(ignored_value),
+            overwrite=True
+        )
+
+    # update the output's attribute table with the aggegated data
+    output_path = utils.update_attribute_table(
+        output_path, aggregated, id_col,
+        *[s.rescol for s in statistics]
+    )
+
+    # remove the temporary data
+    if cleanup:
+        utils.cleanup_temp_results(joined)
+
+    return utils.load_attribute_table(output_path)
+
+
 def update_water_quality_layer(layer, water_quality):
     raise NotImplementedError
 
@@ -298,7 +397,11 @@ def prepare_data(mon_locations, subcatchments, subcatch_id_col,
     # Step 1. Intersect ml and cat to generate a point shapefile
     # that contains an additional catid field showing where the ML
     # is located at.
-    arcpy.analysis.Intersect([raw_subcatchments, raw_ml], _cat_ml_int, "ALL", "", "INPUT")
+    utils.intersect_layers(
+        input_paths=[raw_subcatchments, raw_ml],
+        output_path=_cat_ml_int,
+        how="ALL",
+    )
 
     # Step 2. Create a new point file (_reduced_ml) that pairs only one
     # set of ranking data to each catchment.
@@ -310,7 +413,7 @@ def prepare_data(mon_locations, subcatchments, subcatch_id_col,
 
     for lc, ucat in enumerate(catid):
         sqlexp = '"{}" = \'{}\''.format(subcatch_id_col, ucat)
-        arcpy.analysis.Select(_cat_ml_int, _ml, sqlexp)
+        _ml = utils.query_layer(_cat_ml_int, _ml, sqlexp)
 
         # if there is only one monitoring location  in the subcatchment,
         # this monitoring location is direclty copied to a new point
@@ -327,7 +430,11 @@ def prepare_data(mon_locations, subcatchments, subcatch_id_col,
     # Step 3. Spatial join _reduced_ml with raw_subcatchments, so that
     # the new cathcment shapefile will inherit water quality data from
     # the only monitoring location in it.
-    arcpy.analysis.SpatialJoin(raw_subcatchments, _reduced_ml, subcatchment_wq)
+    subcatchment_wq = utils.spatial_join(
+        left=raw_subcatchments,
+        right=_reduced_ml,
+        outputfile=subcatchment_wq
+    )
 
     # Remove extraneous columns
     fields_to_remove = filter(

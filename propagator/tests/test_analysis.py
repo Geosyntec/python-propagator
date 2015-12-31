@@ -6,7 +6,7 @@ import numpy
 
 import nose.tools as nt
 import numpy.testing as nptest
-import propagator.testing as pgtest
+import propagator.testing as pptest
 
 from propagator import analysis
 from propagator import utils
@@ -148,6 +148,44 @@ def test_find_downstream_scores():
     nt.assert_tuple_equal(tuple(value), expected)
 
 
+class Test_preprocess_wq(object):
+    def setup(self):
+        self.ws = resource_filename('propagator.testing', 'preprocess_wq')
+        self.ml = 'monitoring_locations.shp'
+        self.sc = 'subcatchments.shp'
+        self.expected = 'expected.shp'
+        self.results = 'test.shp'
+        self.wq = [u'Dry_B', u'Dry_M', u'Dry_N', u'Wet_B', u'Wet_M', u'Wet_N',]
+
+    def test_baseline(self):
+        with utils.OverwriteState(True), utils.WorkSpace(self.ws):
+            wq = analysis.preprocess_wq(
+                monitoring_locations=self.ml,
+                subcatchments=self.sc,
+                id_col='CID',
+                ds_col='DS_CID',
+                output_path=self.results,
+                wq_columns=self.wq
+            )
+
+        pptest.assert_shapefiles_are_close(
+            os.path.join(self.ws, self.expected),
+            os.path.join(self.ws, self.results),
+        )
+        nt.assert_true(isinstance(wq, numpy.ndarray))
+        utils.cleanup_temp_results(os.path.join(self.ws, self.results))
+
+    @nt.raises(ValueError)
+    def test_no_wq_col_error(self):
+        with utils.OverwriteState(True), utils.WorkSpace(self.ws):
+            wq = analysis.preprocess_wq(
+                monitoring_locations=self.ml,
+                subcatchments=self.sc,
+                id_col='CID',
+                ds_col='DS_CID',
+                output_path=self.results,
+            )
+
 def test_prepare_data():
     ws = resource_filename("propagator.testing", "prepare_data")
     with utils.OverwriteState(True), utils.WorkSpace(ws):
@@ -157,9 +195,9 @@ def test_prepare_data():
         header_fields = [
             "FID",
             "Shape",
-            "Catch_ID_a", 
-            "Dwn_Catch_", 
-            "Watershed", 
+            "Catch_ID_a",
+            "Dwn_Catch_",
+            "Watershed",
         ]
         wq_fields = [
             "Dry_WQI_Ba",
@@ -184,12 +222,12 @@ def test_reduce():
         mon_locations = resource_filename("propagator.testing._reduce", "point.shp")
         expected_reduced_mon_locations = resource_filename("propagator.testing._reduce", "reduced_point.shp")
         # Create a placeholder for output first, since the function takes the output file as an input.
-        
+
         reduced_mon_locations = utils.create_temp_filename("reduced_point", filetype='shape')
         reduced_mon_locations = analysis._reduce(mon_locations, reduced_mon_locations, ["WQ1","WQ2","WQ3"],'ID','FID')
         pgtest.assert_shapefiles_are_close(reduced_mon_locations, expected_reduced_mon_locations)
         utils.cleanup_temp_results(reduced_mon_locations)
-        
+
 def test_non_zero_means():
     num_lst = [1, 2, 3, 0 ]
     num_lst2 = [0, 0 ,0 ,0]
@@ -199,6 +237,3 @@ def test_non_zero_means():
     lst2_mean = analysis._non_zero_means(num_lst2)
     nt.assert_equal(lst_mean, expected_lst_mean)
     nt.assert_equal(lst2_mean, expected_lst2_mean)
-
-        
-        
