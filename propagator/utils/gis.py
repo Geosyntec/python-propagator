@@ -1287,7 +1287,7 @@ def spatial_join(left, right, outputfile, **kwargs):
 
 
 def count_features(layer):
-    return arcpy.management.GetCount(layer).getOutput(0)
+    return int(arcpy.management.GetCount(layer).getOutput(0))
 
 
 def query_layer(inputpath, outputpath, sql):
