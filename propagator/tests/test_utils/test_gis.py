@@ -1002,3 +1002,29 @@ def test_get_field_names():
 def test_count_features():
     layer = resource_filename('propagator.testing.count_features', 'monitoring_locations.shp')
     nt.assert_equal(gis.count_features(layer), 14)
+
+
+def test_query_layer():
+    with mock.patch.object(arcpy.analysis, 'Select') as query:
+        in_data = 'input'
+        out_data = 'new_copy'
+        sql = "fake SQL string"
+
+        result = gis.query_layer(in_data, out_data, sql)
+        query.assert_called_once_with(
+            in_features=in_data,
+            out_feature_class=out_data,
+            where_clause=sql,
+        )
+        nt.assert_equal(result, out_data)
+
+
+def test_delete_columns():
+    with mock.patch.object(arcpy.management, 'DeleteField') as delete:
+        in_data = 'input'
+        expected_col_string = 'ThisColumn;ThatColumn;AnotherColumn'
+
+        result = gis.delete_columns(in_data, 'ThisColumn', 'ThatColumn', 'AnotherColumn')
+        query.assert_called_once_with(in_data, expected_col_string )
+        nt.assert_equal(result, in_data)
+
