@@ -27,3 +27,21 @@ def test_flow_direction_good():
 @nt.raises(ValueError)
 def test_flow_direction_bad():
     validate.flow_direction("sideways")
+
+
+class Test_non_empty_list(object):
+    def test_baseline(self):
+        x = [1, 2, 3]
+        nt.assert_list_equal(validate.non_empty_list(x), x)
+
+    def test_scalar(self):
+        x = 1
+        nt.assert_list_equal(validate.non_empty_list(x), [x])
+
+    @nt.raises(ValueError)
+    def test_None_raises(self):
+        validate.non_empty_list(None)
+
+    @nt.raises(ValueError)
+    def test_empty_list_raises(self):
+        validate.non_empty_list([])

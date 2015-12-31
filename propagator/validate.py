@@ -11,6 +11,7 @@ Written by Paul Hobson (phobson@geosyntec.com)
 
 """
 
+import numpy
 
 def flow_direction(up_or_down):
     """
@@ -39,3 +40,17 @@ def flow_direction(up_or_down):
         raise ValueError("{} is not one of {}".format(up_or_down, valid_directions))
     else:
         return up_or_down.lower()
+
+
+def non_empty_list(list_obj, msg=None):
+    if msg is None:
+        msg = "list cannot be empty or None"
+
+    if numpy.isscalar(list_obj):
+        list_obj = [list_obj]
+
+    if list_obj is None or len(list_obj) == 0:
+        raise ValueError(msg)
+
+    return list_obj
+
