@@ -958,16 +958,16 @@ def test_concat_results():
 
 
 @nptest.dec.skipif(not pptest.has_fiona)
-def test_join_results_to_baseline():
-    known = resource_filename('propagator.testing.join_results', 'merge_result.shp')
+def test_spatial_join():
+    known = resource_filename('propagator.testing.spatial_join', 'merge_result.shp')
+    left = resource_filename('propagator.testing.spatial_join', 'merge_baseline.shp')
+    right = resource_filename('propagator.testing.spatial_join', 'merge_join.shp')
+    outputfile = resource_filename('propagator.testing.spatial_join', 'merge_result.shp')
     with gis.OverwriteState(True):
-        test = gis.join_results_to_baseline(
-            resource_filename('propagator.testing.join_results', 'merge_result.shp'),
-            resource_filename('propagator.testing.join_results', 'merge_join.shp'),
-            resource_filename('propagator.testing.join_results', 'merge_baseline.shp')
-        )
-    nt.assert_true(isinstance(test, arcpy.mapping.Layer))
-    pptest.assert_shapefiles_are_close(test.dataSource, known)
+        test = gis.spatial_join(left=left, right=right, outputfile=outputfile)
+
+    nt.assert_equal(test, outputfile)
+    pptest.assert_shapefiles_are_close(test, known)
 
     gis.cleanup_temp_results(test)
 
@@ -997,3 +997,8 @@ def test_get_field_names():
     layer = resource_filename('propagator.testing.get_field_names', 'input.shp')
     result = gis.get_field_names(layer)
     nt.assert_list_equal(result, expected)
+
+
+def test_count_features():
+    layer = resource_filename('propagator.testing.count_features', 'monitoring_locations.shp')
+    nt.assert_equal(gis.count_features(layer), 14)

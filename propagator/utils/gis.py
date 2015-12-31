@@ -1209,47 +1209,6 @@ def concat_results(destination, *input_files):
     return result_to_layer(result)
 
 
-@misc.update_status() # layer
-def join_results_to_baseline(destination, result_file, baseline_file):
-    """ Joins attributes of a geoprocessing result to a baseline dataset
-    and saves the results to another file.
-
-    Relies on `arcpy.analysis.SpatialJoin`_.
-
-    .. _arcpy.analysis.SpatialJoin: http://resources.arcgis.com/en/help/main/10.2/index.html#//00080000000q000000
-
-    Parameters
-    ----------
-    destination : str
-        Path to where the final joined dataset should be saved.
-    results_file : str
-        Path to the results file whose attributes will be added to the
-        ``baseline_file``.
-    baseline_file : str
-        Path to the baseline_file with the desired geometry.
-
-    Returns
-    -------
-    arcpy.mapping.Layer
-
-    See also
-    --------
-    concat_results
-
-    """
-
-    result = arcpy.analysis.SpatialJoin(
-        target_features=baseline_file,
-        join_features=result_file,
-        out_feature_class=destination,
-        join_operation="JOIN_ONE_TO_MANY",
-        join_type="KEEP_COMMON",
-        match_option="INTERSECT",
-    )
-
-    return result_to_layer(result)
-
-
 def update_attribute_table(layerpath, attribute_array, id_column, *update_columns):
     """
     Update the attribute table of a feature class from a record array.
