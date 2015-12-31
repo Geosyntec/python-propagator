@@ -973,6 +973,23 @@ def test_copy_layer():
         _copy.assert_called_once_with(in_data=in_data, out_data=out_data)
         nt.assert_equal(result, out_data)
 
+
+def test_intersect_layers():
+    ws = resource_filename('propagator.testing', 'intersect_layers')
+    with gis.OverwriteState(True), gis.WorkSpace(ws):
+        gis.intersect_layers(
+            ['subcatchments.shp', 'monitoring_locations.shp'],
+            'test.shp',
+        )
+
+    pptest.assert_shapefiles_are_close(
+        os.path.join(ws, 'expected.shp'),
+        os.path.join(ws, 'test.shp'),
+    )
+
+    gis.cleanup_temp_results(os.path.join(ws, 'test.shp'))
+
+
 @nptest.dec.skipif(not pptest.has_fiona)
 def test_concat_results():
     known = resource_filename('propagator.testing.concat_results', 'known.shp')
