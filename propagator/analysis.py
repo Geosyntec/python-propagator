@@ -239,8 +239,8 @@ def split_streams(stream_layer, subcatchment_layer):
 
 
 @utils.update_status()
-def prepare_data(mon_locations, subcatchments,
-                 subcatch_id_col, header_fields, wq_fields, outputfile,
+def prepare_data(mon_locations, subcatchments,subcatch_id_col, 
+                 sort_id, header_fields, wq_fields, outputfile,
                  **verbose_options):
     """
     Assigns water quality ranking from monitoring locations to the
@@ -256,6 +256,8 @@ def prepare_data(mon_locations, subcatchments,
         File path to the subcatchments feature class.
     subcatch_id_col : str
         Field name of the subcatchment ID column in ``subcatchments``.
+    sort_id: str
+        Arbituary field name for sorting purpose. Default value is 'FID'
     header_fields : list
         List of header field names to be retained in the output feature class.
     wq_fields : list
@@ -319,7 +321,7 @@ def prepare_data(mon_locations, subcatchments,
             fxn = arcpy.management.Append
 
         # count number of MLs within each catchment
-        fxn(_reduce(_ml, _out_ml, wq_fields,subcatch_id_col), _reduced_ml)
+        fxn(_reduce(_ml, _out_ml, wq_fields, subcatch_id_col, sort_id), _reduced_ml)
 
     # Step 3. Spatial join _reduced_ml with raw_subcatchments, so that
     # the new cathcment shapefile will inherit water quality data from
@@ -341,37 +343,8 @@ def prepare_data(mon_locations, subcatchments,
     )
 
     return subcatchment_wq
-"""
-=======
-    arcpy.analysis.Intersect([raw_cat, raw_ml], _cat_ml_int, "ALL", "", "INPUT")
-    
-    # Step 2. Create a new point file (_reduced_ml) that pairs 
-    # with only one set of ranking data to each catchment.        
-    arr = utils.load_attribute_table(_cat_ml_int, 'Catch_ID_a')
-    catid = numpy.unique(arr['Catch_ID_a'])
-    
-    lc = 0
-    for ucat in catid:
-        sqlexp = '"Catch_ID_a" = ' + "'%s'" % ucat
-        arcpy.analysis.Select(_cat_ml_int, _ml, sqlexp)
-        
-        if lc == 0:
-            arcpy.management.Copy(_reduce(_ml, _out_ml, wq_fields), _reduced_ml)
-        else:
-            arcpy.management.Append(_reduce(_ml, _out_ml, wq_fields), _reduced_ml)
-        lc = lc+1
-        
-    # Step 3. Spatial join _reduced_ml with raw_cat, so that the 
-    # new cathcment feature will inherit water quality data from 
-    # the only monitoring location in it.
-    arcpy.analysis.SpatialJoin(raw_cat, _reduced_ml, cat_wq)
-    fields_to_remove = filter(lambda name: name not in header_fields and name not in wq_fields, [f.name for f in arcpy.ListFields(cat_wq)])
-    utils.delete_columns(cat_wq, *fields_to_remove)
-"""    
-    
 
-
-def _reduce(_ml, _out_ml, wq_fields,subcatch_id_col):
+def _reduce(_ml, _out_ml, wq_fields, subcatch_id_col, sort_id):
     """
     Aggregates water quality ranksing from all monitoring locations
     in the same subcatchment.
@@ -395,13 +368,15 @@ def _reduce(_ml, _out_ml, wq_fields,subcatch_id_col):
     """
 
     # Load water quality data 
-    _arr = utils.load_attribute_table(_ml, 'FID_ml', *[f for f in wq_fields])
+    _arr = utils.load_attribute_table(_ml, sort_id, *[f for f in wq_fields])
     
     # Copy and paste the monitoring location with the smallest FID.
     # This is essentially an arbiutary pick. What matters is we need
     # to only output one point back to the upstream function.
-    _sqlexp = '"FID_ml" = ' + "%i" % numpy.min(_arr['FID_ml'])
+    _sqlexp = '"{}" = {}'.format(sort_id, numpy.min(_arr[sort_id]))
     arcpy.analysis.Select(_ml, _out_ml, _sqlexp)
+    #_sqlexp = "%s" + '= ' + "%i" % sort_id, numpy.min(_arr[sort_id])
+    
     
     # Loop through each water quality parameter.
     for wq_par in wq_fields:
@@ -439,7 +414,16 @@ def _non_zero_means(_arr):
         contains no value, return a value of 0. 
     """
     
-    _numlst = filter(lambda n: n > 0, [r[1] for r in _arr])
+    
+    try:
+        # For some reason when this function is called from _reduce, _arr
+        # is not treated as a regular list, and only the following line
+        # will work to correctly extract numeric values from _arr
+        _numlst = filter(lambda n: n>0, [r[1] for r in _arr])
+    except:
+        # This line works when _arr is a regular list (for which case the
+        # code above will not work).
+        _numlst = filter(lambda n: n > 0, _arr)      
     if numpy.isnan(numpy.mean(_numlst)):
         return 0
     else:

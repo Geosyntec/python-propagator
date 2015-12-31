@@ -174,8 +174,30 @@ def test_prepare_data():
             "Storm_WQ_2",
             "Storm_WQ_3",
         ]
-
-        cat_wq = analysis.prepare_data(ml, cat, "Catch_ID_a", header_fields, wq_fields, 'testout.shp')
+        cat_wq = analysis.prepare_data(ml, cat, "Catch_ID_a", 'FID_ml', header_fields, wq_fields, 'testout.shp')
         pgtest.assert_shapefiles_are_close(cat_wq, expected_cat_wq)
-        utils.cleanup_temp_results(cat_wq)
+        #utils.cleanup_temp_results(cat_wq)
 
+def test_reduce():
+    ws = resource_filename("propagator.testing", "_reduce")
+    with utils.OverwriteState(True), utils.WorkSpace(ws):
+        mon_locations = resource_filename("propagator.testing._reduce", "point.shp")
+        expected_reduced_mon_locations = resource_filename("propagator.testing._reduce", "reduced_point.shp")
+        # Create a placeholder for output first, since the function takes the output file as an input.
+        
+        reduced_mon_locations = utils.create_temp_filename("reduced_point", filetype='shape')
+        reduced_mon_locations = analysis._reduce(mon_locations, reduced_mon_locations, ["WQ1","WQ2","WQ3"],'ID','FID')
+        pgtest.assert_shapefiles_are_close(reduced_mon_locations, expected_reduced_mon_locations)
+        utils.cleanup_temp_results(reduced_mon_locations)
+        
+def test_non_zero_means():
+    ws = resource_filename("propagator.testing", "_non_zero_means")
+    num_lst = [1, 2, 3, 0 ]
+    #num_lst2 = [0, 0 ,0 ,0]
+    expected_lst_mean = 2
+    lst_mean = analysis._non_zero_means(num_lst)
+    nt.assert_equal(lst_mean, expected_lst_mean)
+    #with utils.OverwriteState(True), utils.WorkSpace(ws):
+    #    sample_shp = resource_filename("propagator.testing._non_zero_means", "point.shp")
+        
+        
