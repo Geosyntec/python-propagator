@@ -25,6 +25,7 @@ import numpy
 import arcpy
 
 from . import misc
+from propagator import validate
 
 
 class RasterTemplate(object):
@@ -1270,8 +1271,10 @@ def delete_columns(layerpath, *columns):
     None
 
     """
-    col_str = ";".join(columns)
-    arcpy.management.DeleteField(layerpath, col_str)
+    if len(columns) > 0:
+        col_str = ";".join(columns)
+        arcpy.management.DeleteField(layerpath, col_str)
+
     return layerpath
 
 
