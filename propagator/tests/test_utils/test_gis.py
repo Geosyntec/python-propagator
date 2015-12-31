@@ -915,7 +915,7 @@ class Test_populate_field(object):
                 nt.assert_equal(row[0], row[1] ** 2)
 
 
-class Test_copy_data(object):
+class Test_copy_data_to_folder(object):
     destfolder = resource_filename("propagator.testing.copy_data", "output")
     srclayers = [
         resource_filename("propagator.testing.copy_data", "copy2.shp"),
@@ -934,7 +934,7 @@ class Test_copy_data(object):
     @nptest.dec.skipif(not pptest.has_fiona)
     def test_list(self):
         with gis.OverwriteState(True):
-            newlayers = gis.copy_data(self.destfolder, *self.srclayers)
+            newlayers = gis.copy_data_to_folder(self.destfolder, *self.srclayers)
 
         nt.assert_true(isinstance(newlayers, list))
 
@@ -945,7 +945,7 @@ class Test_copy_data(object):
     @nptest.dec.skipif(not pptest.has_fiona)
     def test_single_squeeze_false(self):
         with gis.OverwriteState(True):
-            newlayers = gis.copy_data(self.destfolder, *self.srclayers[:1])
+            newlayers = gis.copy_data_to_folder(self.destfolder, *self.srclayers[:1])
 
         nt.assert_true(isinstance(newlayers, list))
 
@@ -956,7 +956,7 @@ class Test_copy_data(object):
     @nptest.dec.skipif(not pptest.has_fiona)
     def test_single_squeeze_true(self):
         with gis.OverwriteState(True):
-            newlayer = gis.copy_data(self.destfolder, *self.srclayers[:1], squeeze=True)
+            newlayer = gis.copy_data_to_folder(self.destfolder, *self.srclayers[:1], squeeze=True)
 
         nt.assert_true(isinstance(newlayer, arcpy.mapping.Layer))
 

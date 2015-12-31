@@ -1160,7 +1160,7 @@ def populate_field(table, value_fxn, valuefield, *keyfields):
 
 
 @misc.update_status() # layers
-def copy_data(destfolder, *source_layers, **kwargs):
+def copy_data_to_folder(destfolder, *source_layers, **kwargs):
     """ Copies an arbitrary number of spatial files to a new folder.
 
     Relies on `arcpy.conversion.FeatureClassToShapefile`_.
