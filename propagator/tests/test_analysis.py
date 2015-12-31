@@ -191,13 +191,14 @@ def test_reduce():
         utils.cleanup_temp_results(reduced_mon_locations)
         
 def test_non_zero_means():
-    ws = resource_filename("propagator.testing", "_non_zero_means")
     num_lst = [1, 2, 3, 0 ]
-    #num_lst2 = [0, 0 ,0 ,0]
+    num_lst2 = [0, 0 ,0 ,0]
     expected_lst_mean = 2
+    expected_lst2_mean = 0
     lst_mean = analysis._non_zero_means(num_lst)
+    lst2_mean = analysis._non_zero_means(num_lst2)
     nt.assert_equal(lst_mean, expected_lst_mean)
-    #with utils.OverwriteState(True), utils.WorkSpace(ws):
-    #    sample_shp = resource_filename("propagator.testing._non_zero_means", "point.shp")
+    nt.assert_equal(lst2_mean, expected_lst2_mean)
+
         
         
