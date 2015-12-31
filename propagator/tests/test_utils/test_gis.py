@@ -915,55 +915,6 @@ class Test_populate_field(object):
                 nt.assert_equal(row[0], row[1] ** 2)
 
 
-class Test_copy_data_to_folder(object):
-    destfolder = resource_filename("propagator.testing.copy_data_to_folder", "output")
-    srclayers = [
-        resource_filename("propagator.testing.copy_data_to_folder", "copy2.shp"),
-        resource_filename("propagator.testing.copy_data_to_folder", "copy1.shp"),
-    ]
-
-    output = [
-        resource_filename("propagator.testing.copy_data_to_folder.output", "copy2.shp"),
-        resource_filename("propagator.testing.copy_data_to_folder.output", "copy1.shp"),
-    ]
-
-    def teardown(self):
-        gis.cleanup_temp_results(*self.output)
-
-
-    @nptest.dec.skipif(not pptest.has_fiona)
-    def test_list(self):
-        with gis.OverwriteState(True):
-            newlayers = gis.copy_data_to_folder(self.destfolder, *self.srclayers)
-
-        nt.assert_true(isinstance(newlayers, list))
-
-        for newlyr, newname, oldname in zip(newlayers, self.output, self.srclayers):
-            nt.assert_true(isinstance(newlyr, arcpy.mapping.Layer))
-            pptest.assert_shapefiles_are_close(newname, oldname)
-
-    @nptest.dec.skipif(not pptest.has_fiona)
-    def test_single_squeeze_false(self):
-        with gis.OverwriteState(True):
-            newlayers = gis.copy_data_to_folder(self.destfolder, *self.srclayers[:1])
-
-        nt.assert_true(isinstance(newlayers, list))
-
-        for newlyr, newname, oldname in zip(newlayers[:1], self.output[:1], self.srclayers[:1]):
-            nt.assert_true(isinstance(newlyr, arcpy.mapping.Layer))
-            pptest.assert_shapefiles_are_close(newname, oldname)
-
-    @nptest.dec.skipif(not pptest.has_fiona)
-    def test_single_squeeze_true(self):
-        with gis.OverwriteState(True):
-            newlayer = gis.copy_data_to_folder(self.destfolder, *self.srclayers[:1], squeeze=True)
-
-        nt.assert_true(isinstance(newlayer, arcpy.mapping.Layer))
-
-        nt.assert_true(isinstance(newlayer, arcpy.mapping.Layer))
-        pptest.assert_shapefiles_are_close(self.output[0], self.srclayers[0])
-
-
 def test_copy_layer():
     with mock.patch.object(arcpy.management, 'Copy') as _copy:
         in_data = 'input'
