@@ -42,7 +42,7 @@ def flow_direction(up_or_down):
         return up_or_down.lower()
 
 
-def non_empty_list(list_obj, msg=None):
+def non_empty_list(list_obj, msg=None, on_fail='error'):
     if msg is None:
         msg = "list cannot be empty or None"
 
@@ -50,7 +50,10 @@ def non_empty_list(list_obj, msg=None):
         list_obj = [list_obj]
 
     if list_obj is None or len(list_obj) == 0:
-        raise ValueError(msg)
+        if on_fail in ('error', 'raise'):
+            raise ValueError(msg)
+        elif on_fail in ('empty', 'create'):
+            list_obj = []
 
     return list_obj
 
