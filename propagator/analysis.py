@@ -330,9 +330,6 @@ def preprocess_wq(monitoring_locations, subcatchments, id_col, ds_col,
     return utils.load_attribute_table(output_path)
 
 
-def
-
-
 def split_streams(stream_layer, subcatchment_layer):
     raise NotImplementedError
 
