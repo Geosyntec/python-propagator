@@ -238,7 +238,7 @@ def preprocess_wq(monitoring_locations, subcatchments, id_col, ds_col,
                   ignored_value=0, cleanup=True):
     """
     Preprocess the water quality data to have to averaged score for
-    each sub
+    each subcatchment.
 
     Parameters
     ----------
@@ -330,8 +330,7 @@ def preprocess_wq(monitoring_locations, subcatchments, id_col, ds_col,
     return utils.load_attribute_table(output_path)
 
 
-def update_water_quality_layer(layer, water_quality):
-    raise NotImplementedError
+def
 
 
 def split_streams(stream_layer, subcatchment_layer):
