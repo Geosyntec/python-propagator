@@ -16,6 +16,7 @@ import os
 import sys
 import glob
 import datetime
+import itertools
 
 import numpy
 
@@ -239,7 +240,7 @@ def split_streams(stream_layer, subcatchment_layer):
 
 
 @utils.update_status()
-def prepare_data(mon_locations, subcatchments,subcatch_id_col, 
+def prepare_data(mon_locations, subcatchments, subcatch_id_col,
                  sort_id, header_fields, wq_fields, outputfile,
                  **verbose_options):
     """
@@ -364,69 +365,66 @@ def _reduce(_ml, _out_ml, wq_fields, subcatch_id_col, sort_id):
     Returns
     -------
     _out_ml : str
-    
+
     """
 
-    # Load water quality data 
+    # Load water quality data
     _arr = utils.load_attribute_table(_ml, sort_id, *[f for f in wq_fields])
-    
+
     # Copy and paste the monitoring location with the smallest FID.
     # This is essentially an arbiutary pick. What matters is we need
     # to only output one point back to the upstream function.
     _sqlexp = '"{}" = {}'.format(sort_id, numpy.min(_arr[sort_id]))
     arcpy.analysis.Select(_ml, _out_ml, _sqlexp)
-    #_sqlexp = "%s" + '= ' + "%i" % sort_id, numpy.min(_arr[sort_id])
-    
-    
+
     # Loop through each water quality parameter.
+    # If at futre stage it is decided to compute the water quality
+    # value with a different methods (i.e. median), either revise
+    # the existing _non_zero_means function, or (preferrably) write
+    # a new function (i.e. non_zero_median) and assign the new
+    # function to the aggfxn varible.
     for wq_par in wq_fields:
-        wq_value  = utils.groupby_and_aggregate(
-            input_path= _ml,
+        wq_value = utils.groupby_and_aggregate(
+            input_path=_ml,
             groupfield=subcatch_id_col,
             valuefield=wq_par,
-            # If at futre stage it is decided to compute the water quality 
-            # value with a different methods (i.e. median), either revise 
-            # the existing _non_zero_means function, or (preferrably) write
-            # a new function (i.e. non_zero_median) and call the new function
-            # at the line below.
-            aggfxn= _non_zero_means
+            aggfxn=_non_zero_means
         )
-        
+
         # Overwrite field [wq_par] of _out_ml with the computed value.
         utils.populate_field(_out_ml, lambda row: wq_value.values()[0], wq_par)
     return _out_ml
 
 def _non_zero_means(_arr):
     """
-    Compute average value of all non-zero values in the 
+    Compute average value of all non-zero values in the
     list.
-    
+
     Parameters
     ----------
-    _arr : object 
-        Contains the list of interested values, which 
+    _arr : object or list
+        Contains the list of interested values, which
         are extracted from the parental feature.
 
     Returns
     -------
     numpy.mean(numlst): float
-        Zero-excluded average of the list. If the list 
-        contains no value, return a value of 0. 
+        Zero-excluded average of the list. If the list
+        contains no value, return a value of 0.
+
+    See also
+    --------
+    utils.groupby_and_aggregate
     """
-    
-    
-    try:
-        # For some reason when this function is called from _reduce, _arr
-        # is not treated as a regular list, and only the following line
-        # will work to correctly extract numeric values from _arr
-        _numlst = filter(lambda n: n>0, [r[1] for r in _arr])
-    except:
-        # This line works when _arr is a regular list (for which case the
-        # code above will not work).
-        _numlst = filter(lambda n: n > 0, _arr)      
+
+    if isinstance (_arr, list) or isinstance(_arr, numpy.ndarray):
+        _numlst = filter(lambda n: n > 0, _arr)
+    else:
+        # This hanldes the case when the function is
+        # an input for utils.groupby_and_aggregate.
+        _numlst = filter(lambda n: n > 0, [r[1] for r in _arr])
+
     if numpy.isnan(numpy.mean(_numlst)):
         return 0
     else:
         return numpy.mean(_numlst)
-  
-    
