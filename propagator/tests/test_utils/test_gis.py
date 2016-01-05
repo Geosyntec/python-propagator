@@ -915,53 +915,30 @@ class Test_populate_field(object):
                 nt.assert_equal(row[0], row[1] ** 2)
 
 
-class Test_copy_data(object):
-    destfolder = resource_filename("propagator.testing.copy_data", "output")
-    srclayers = [
-        resource_filename("propagator.testing.copy_data", "copy2.shp"),
-        resource_filename("propagator.testing.copy_data", "copy1.shp"),
-    ]
+def test_copy_layer():
+    with mock.patch.object(arcpy.management, 'Copy') as _copy:
+        in_data = 'input'
+        out_data = 'new_copy'
 
-    output = [
-        resource_filename("propagator.testing.copy_data.output", "copy2.shp"),
-        resource_filename("propagator.testing.copy_data.output", "copy1.shp"),
-    ]
-
-    def teardown(self):
-        gis.cleanup_temp_results(*self.output)
+        result = gis.copy_layer(in_data, out_data)
+        _copy.assert_called_once_with(in_data=in_data, out_data=out_data)
+        nt.assert_equal(result, out_data)
 
 
-    @nptest.dec.skipif(not pptest.has_fiona)
-    def test_list(self):
-        with gis.OverwriteState(True):
-            newlayers = gis.copy_data(self.destfolder, *self.srclayers)
+def test_intersect_layers():
+    ws = resource_filename('propagator.testing', 'intersect_layers')
+    with gis.OverwriteState(True), gis.WorkSpace(ws):
+        gis.intersect_layers(
+            ['subcatchments.shp', 'monitoring_locations.shp'],
+            'test.shp',
+        )
 
-        nt.assert_true(isinstance(newlayers, list))
+    pptest.assert_shapefiles_are_close(
+        os.path.join(ws, 'expected.shp'),
+        os.path.join(ws, 'test.shp'),
+    )
 
-        for newlyr, newname, oldname in zip(newlayers, self.output, self.srclayers):
-            nt.assert_true(isinstance(newlyr, arcpy.mapping.Layer))
-            pptest.assert_shapefiles_are_close(newname, oldname)
-
-    @nptest.dec.skipif(not pptest.has_fiona)
-    def test_single_squeeze_false(self):
-        with gis.OverwriteState(True):
-            newlayers = gis.copy_data(self.destfolder, *self.srclayers[:1])
-
-        nt.assert_true(isinstance(newlayers, list))
-
-        for newlyr, newname, oldname in zip(newlayers[:1], self.output[:1], self.srclayers[:1]):
-            nt.assert_true(isinstance(newlyr, arcpy.mapping.Layer))
-            pptest.assert_shapefiles_are_close(newname, oldname)
-
-    @nptest.dec.skipif(not pptest.has_fiona)
-    def test_single_squeeze_true(self):
-        with gis.OverwriteState(True):
-            newlayer = gis.copy_data(self.destfolder, *self.srclayers[:1], squeeze=True)
-
-        nt.assert_true(isinstance(newlayer, arcpy.mapping.Layer))
-
-        nt.assert_true(isinstance(newlayer, arcpy.mapping.Layer))
-        pptest.assert_shapefiles_are_close(self.output[0], self.srclayers[0])
+    gis.cleanup_temp_results(os.path.join(ws, 'test.shp'))
 
 
 @nptest.dec.skipif(not pptest.has_fiona)
@@ -981,16 +958,16 @@ def test_concat_results():
 
 
 @nptest.dec.skipif(not pptest.has_fiona)
-def test_join_results_to_baseline():
-    known = resource_filename('propagator.testing.join_results', 'merge_result.shp')
+def test_spatial_join():
+    known = resource_filename('propagator.testing.spatial_join', 'merge_result.shp')
+    left = resource_filename('propagator.testing.spatial_join', 'merge_baseline.shp')
+    right = resource_filename('propagator.testing.spatial_join', 'merge_join.shp')
+    outputfile = resource_filename('propagator.testing.spatial_join', 'merge_result.shp')
     with gis.OverwriteState(True):
-        test = gis.join_results_to_baseline(
-            resource_filename('propagator.testing.join_results', 'merge_result.shp'),
-            resource_filename('propagator.testing.join_results', 'merge_join.shp'),
-            resource_filename('propagator.testing.join_results', 'merge_baseline.shp')
-        )
-    nt.assert_true(isinstance(test, arcpy.mapping.Layer))
-    pptest.assert_shapefiles_are_close(test.dataSource, known)
+        test = gis.spatial_join(left=left, right=right, outputfile=outputfile)
+
+    nt.assert_equal(test, outputfile)
+    pptest.assert_shapefiles_are_close(test, known)
 
     gis.cleanup_temp_results(test)
 
@@ -1013,3 +990,50 @@ def test_update_attribute_table():
 
     pptest.assert_shapefiles_are_close(testpath, expected)
     gis.cleanup_temp_results(testpath)
+
+
+def test_get_field_names():
+    expected = [u'FID', u'Shape', u'Station', u'Latitude', u'Longitude']
+    layer = resource_filename('propagator.testing.get_field_names', 'input.shp')
+    result = gis.get_field_names(layer)
+    nt.assert_list_equal(result, expected)
+
+
+def test_count_features():
+    layer = resource_filename('propagator.testing.count_features', 'monitoring_locations.shp')
+    nt.assert_equal(gis.count_features(layer), 14)
+
+
+def test_query_layer():
+    with mock.patch.object(arcpy.analysis, 'Select') as query:
+        in_data = 'input'
+        out_data = 'new_copy'
+        sql = "fake SQL string"
+
+        result = gis.query_layer(in_data, out_data, sql)
+        query.assert_called_once_with(
+            in_features=in_data,
+            out_feature_class=out_data,
+            where_clause=sql,
+        )
+        nt.assert_equal(result, out_data)
+
+
+def test_delete_columns():
+    with mock.patch.object(arcpy.management, 'DeleteField') as delete:
+        in_data = 'input'
+        expected_col_string = 'ThisColumn;ThatColumn;AnotherColumn'
+
+        result = gis.delete_columns(in_data, 'ThisColumn', 'ThatColumn', 'AnotherColumn')
+        delete.assert_called_once_with(in_data, expected_col_string)
+        nt.assert_equal(result, in_data)
+
+
+def test_delete_columns_no_columns():
+    with mock.patch.object(arcpy.management, 'DeleteField') as delete:
+        in_data = 'input'
+        expected_col_string = 'ThisColumn;ThatColumn;AnotherColumn'
+
+        result = gis.delete_columns(in_data)
+        delete.assert_not_called()
+        nt.assert_equal(result, in_data)

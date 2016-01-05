@@ -10,7 +10,7 @@ class Toolbox(object):
 
         """
 
-        self.label = "Propagator"
+        self.label = "python-propagator"
         self.alias = "Propagator"
 
         # List of tool classes associated with this toolbox

@@ -27,23 +27,30 @@ import propagator
 from propagator import utils
 
 
-def propagate(**params):
-    workspace = params.pop('workspace', '.')
-    subcatchments = params.pop('subcatchments', None)
-    id_col = params.pop('ID_column', None)
-    ds_col = params.pop('downstream_ID_column', None)
-    monitoring_locations = params.pop('monitoring_locations', None)
-    output_layer = params.pop('output_layer', None)
-    water_quality_columns = params.pop('water_quality_columns', None)
+def propagate(monitoring_locations=None, subcatchments=None,
+              id_col=None, ds_col=None, output_path=None,
+              value_columns=None):
 
-    with utils.WorkSpace(workspace), utils.OverwriteState(True):
-        subcatchment_array = propagator.prep_water_quality(subcatchments, monitoring_locations)
-        for wqcol in water_quality_columns:
-            wq = propagator.propagate_scores(subcatchment_array, wqcol)
+    wq, result_columns = propagator.preprocess_wq(
+        monitoring_locations=monitoring_locations,
+        subcatchments=subcatchments,
+        id_col=id_col,
+        ds_col=ds_col,
+        output_path=output_path,
+        value_columns=value_columns,
+    )
 
-        propagator.update_attribute_table(output_layer, wq)
+    for res_col in result_columns:
+        wq = propagator.propagate_scores(
+            subcatchment_array=wq,
+            id_col=id_col,
+            ds_col=ds_col,
+            value_column=res_col,
+        )
 
-    return output_layer
+    utils.update_attribute_table(output_path, wq, id_col, *result_columns)
+
+    return output_path
 
 
 def accumulate(**params):
@@ -65,8 +72,6 @@ def accumulate(**params):
 
 
 class BaseToolbox_Mixin(object):
-    canRunInBackground = True
-    multivals = ['value_columns']
 
     def isLicensed(self):
         """ PART OF THE ESRI BLACK BOX.
@@ -169,7 +174,6 @@ class BaseToolbox_Mixin(object):
 
         params = self._get_parameter_values(parameters)
         self.analyze(**params)
-
         return None
 
     @staticmethod
@@ -387,13 +391,14 @@ class Propagator(BaseToolbox_Mixin):
     Accumulator
 
     """
-    direction = 'upstream'
 
     def __init__(self):
         """
         Define the tool (tool name is the name of the class).
         """
+
         # std attributes
+        self.canRunInBackground = False
         self.label = "1 - Propagate WQ scores to upstream subcatchments"
         self.description = dedent("""
         TDB
@@ -454,15 +459,36 @@ class Propagator(BaseToolbox_Mixin):
         ]
         return params
 
-    @staticmethod
     def analyze(self, **params):
         """ Propagates water quality scores from monitoring locations
         to upstream subcatchments. Calls directly to :func:`propagate`.
 
         """
+        utils.misc._status(params, verbose=True, asMessage=True)
+        ws = params.pop('workspace', '.')
+        overwrite = params.pop('overwrite', True)
+        sc = params.pop('subcatchments', None)
+        ID_col = params.pop('ID_column', None)
+        downstream_ID_col = params.pop('downstream_ID_column', None)
+        ml = params.pop('monitoring_locations', None)
+        value_cols = params.pop('value_columns', None)
+        output_layer = params.pop('output_layer', None)
+        add_to_map = params.pop('add_to_map', True)
 
-        return propagate(**params)
+        with utils.WorkSpace(ws), utils.OverwriteState(overwrite):
+            output_layer = propagate(
+                monitoring_locations=ml,
+                subcatchments=sc,
+                id_col=ID_col,
+                ds_col=downstream_ID_col,
+                output_path=output_layer,
+                value_columns=value_cols,
+            )
 
+            if add_to_map:
+                self._add_to_map(output_layer)
+
+        return output_layer
 
 class Accumulator(BaseToolbox_Mixin):
     """

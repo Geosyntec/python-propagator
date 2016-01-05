@@ -25,6 +25,7 @@ import numpy
 import arcpy
 
 from . import misc
+from propagator import validate
 
 
 class RasterTemplate(object):
@@ -365,9 +366,7 @@ def create_temp_filename(filepath, filetype=None, prefix='_temp_', num=None):
 def check_fields(table, *fieldnames, **kwargs):
     """
     Checks that field are (or are not) in a table. The check fails, a
-    ``ValueError`` is raised. Relies on `arcpy.ListFields`_.
-
-    .. _arcpy.ListFields: http://goo.gl/Siq5y7
+    ``ValueError`` is raised.
 
     Parameters
     ----------
@@ -388,7 +387,7 @@ def check_fields(table, *fieldnames, **kwargs):
 
     should_exist = kwargs.pop('should_exist', False)
 
-    existing_fields = [field.name for field in arcpy.ListFields(table)]
+    existing_fields = get_field_names(table)
     bad_names = []
     for name in fieldnames:
         exists = name in existing_fields
@@ -751,9 +750,9 @@ def raster_to_polygons(zonal_raster, filename, newfield=None):
         )
 
     if newfield is not None:
-        for field in arcpy.ListFields(filename):
-            if field.name.lower() == 'gridcode':
-                gridfield = field.name
+        for fieldname in get_field_names(filename):
+            if fieldname.lower() == 'gridcode':
+                gridfield = fieldname
 
         add_field_with_value(filename, newfield, field_type="LONG")
         populate_field(filename, lambda x: x[0], newfield, gridfield)
@@ -832,8 +831,8 @@ def add_field_with_value(table, field_name, field_value=None,
         `arcpy.management.AddField` if ``field_type`` is itself not
         explicitly provided.
     overwrite : bool, optonal (False)
-        If True, an existing field will be overwritting. The default
-        behaviour will raise a `ValueError` if the field already exists.
+        If True, an existing field will be overwritten. The default
+        behavior will raise a `ValueError` if the field already exists.
     **field_opts : keyword options
         Keyword arguments that are passed directly to
         `arcpy.management.AddField`.
@@ -1012,6 +1011,9 @@ def load_attribute_table(input_path, *fields):
     # load the data
     layer = load_data(input_path, "layer")
 
+    if len(fields) == 0:
+        fields = get_field_names(input_path)
+
     # check that fields are valid
     check_fields(layer.dataSource, *fields, should_exist=True)
 
@@ -1077,15 +1079,11 @@ def groupby_and_aggregate(input_path, groupfield, valuefield,
     if aggfxn is None:
         aggfxn = lambda x: int(numpy.unique(list(x)).shape[0])
 
-
     table = load_attribute_table(input_path, groupfield, valuefield)
-    #_status((table.dtype), verbose=True, asMessage=True)
-    #table.sort(order=groupfield)
     table.sort()
 
     counts = {}
     for groupname, shapes in itertools.groupby(table, lambda row: row[groupfield]):
-        #values  = numpy.unique(list(shapes))
         counts[groupname] = aggfxn(shapes)
 
     return counts
@@ -1100,10 +1098,7 @@ def rename_column(table, oldname, newname, newalias=None): # pragma: no cover
     if newalias is None:
         newalias = newname
 
-    oldfield = filter(
-        lambda f: f.name == oldname,
-        arcpy.ListFields(table)
-    )[0]
+    oldfield = filter(lambda f: name == oldname, get_field_names(table))[0]
 
     arcpy.management.AlterField(
         in_table=table,
@@ -1164,47 +1159,26 @@ def populate_field(table, value_fxn, valuefield, *keyfields):
             cur.updateRow(row)
 
 
-@misc.update_status() # layers
-def copy_data(destfolder, *source_layers, **kwargs):
-    """ Copies an arbitrary number of spatial files to a new folder.
-
-    Relies on `arcpy.conversion.FeatureClassToShapefile`_.
-
-    .. _arcpy.conversion.FeatureClassToShapefile: http://goo.gl/8c83s1
+@misc.update_status()
+def copy_layer(existing_layer, new_layer):
+    """
+    Makes copies of features classes, shapefiles, and maybe rasters.
 
     Parameters
     ----------
-    destfolder : str
-        Path the folder that is the destination for the files.
-    *source_layers : str
-        Paths to the files that need to be copied
-    squeeze : bool, optional (False)
-        When one layer is copied and this is True, the copied layer is
-        returned. Otherwise, this function returns a list of layers.
+    existing_layer : str
+        Path to the data to be copied
+    new_layer : str
+        Path to where ``existing_layer`` should be copied.
 
     Returns
     -------
-    copied : list of arcpy.mapping Layers or just a single Layer.
+    new_layer : str
 
     """
 
-    squeeze = kwargs.pop("squeeze", False)
-    arcpy.conversion.FeatureClassToShapefile(
-        Input_Features=source_layers,
-        Output_Folder=destfolder
-    )
-
-    outputnames = [
-        os.path.join(destfolder, os.path.basename(lyr))
-        for lyr in source_layers
-    ]
-
-    copied = [load_data(name, "layer") for name in outputnames]
-    if squeeze and len(copied) == 1:
-        copied = copied[0]
-
-    return copied
-
+    arcpy.management.Copy(in_data=existing_layer, out_data=new_layer)
+    return new_layer
 
 @misc.update_status() # layer
 def concat_results(destination, *input_files):
@@ -1233,47 +1207,6 @@ def concat_results(destination, *input_files):
     """
 
     result = arcpy.management.Merge(input_files, destination)
-    return result_to_layer(result)
-
-
-@misc.update_status() # layer
-def join_results_to_baseline(destination, result_file, baseline_file):
-    """ Joins attributes of a geoprocessing result to a baseline dataset
-    and saves the results to another file.
-
-    Relies on `arcpy.analysis.SpatialJoin`_.
-
-    .. _arcpy.analysis.SpatialJoin: http://resources.arcgis.com/en/help/main/10.2/index.html#//00080000000q000000
-
-    Parameters
-    ----------
-    destination : str
-        Path to where the final joined dataset should be saved.
-    results_file : str
-        Path to the results file whose attributes will be added to the
-        ``baseline_file``.
-    baseline_file : str
-        Path to the baseline_file with the desired geometry.
-
-    Returns
-    -------
-    arcpy.mapping.Layer
-
-    See also
-    --------
-    concat_results
-
-    """
-
-    result = arcpy.analysis.SpatialJoin(
-        target_features=baseline_file,
-        join_features=result_file,
-        out_feature_class=destination,
-        join_operation="JOIN_ONE_TO_MANY",
-        join_type="KEEP_COMMON",
-        match_option="INTERSECT",
-    )
-
     return result_to_layer(result)
 
 
@@ -1312,11 +1245,14 @@ def update_attribute_table(layerpath, attribute_array, id_column, *update_column
             # find the current row in the new array
             newrow = misc.find_row_in_array(attribute_array, id_column, oldrow[0])
             # loop through the value colums, setting them to the new values
-            for n, col in enumerate(update_columns, 1):
-                oldrow[n] = newrow[col]
+            if newrow is not None:
+                for n, col in enumerate(update_columns, 1):
+                    oldrow[n] = newrow[col]
 
             # update the row
             cur.updateRow(oldrow)
+
+    return layerpath
 
 
 def delete_columns(layerpath, *columns):
@@ -1335,5 +1271,65 @@ def delete_columns(layerpath, *columns):
     None
 
     """
-    col_str = ";".join(columns)
-    arcpy.management.DeleteField(layerpath, col_str)
+    if len(columns) > 0:
+        col_str = ";".join(columns)
+        arcpy.management.DeleteField(layerpath, col_str)
+
+    return layerpath
+
+
+def spatial_join(left, right, outputfile, **kwargs):
+    arcpy.analysis.SpatialJoin(
+        target_features=left,
+        join_features=right,
+        out_feature_class=outputfile,
+        **kwargs
+    )
+
+    return outputfile
+
+
+def count_features(layer):
+    return int(arcpy.management.GetCount(layer).getOutput(0))
+
+
+def query_layer(inputpath, outputpath, sql):
+    arcpy.analysis.Select(
+        in_features=inputpath,
+        out_feature_class=outputpath,
+        where_clause=sql
+    )
+
+    return outputpath
+
+
+def intersect_layers(input_paths, output_path, how='all'):
+    arcpy.analysis.Intersect(
+        in_features=input_paths,
+        out_feature_class=output_path,
+        join_attributes=how.upper(),
+        output_type="INPUT"
+    )
+
+    return output_path
+
+
+def get_field_names(layerpath):
+    """
+    Gets the names of fields/columns in a feature class or table.
+    Relies on `arcpy.ListFields`_.
+
+    .. _arcpy.ListFields: http://goo.gl/Siq5y7
+
+    Parameters
+    ----------
+    layerpath : str, arcpy.Layer, or arcpy.table
+        The thing that has fields.
+
+    Returns
+    -------
+    fieldnames : list of str
+
+    """
+
+    return [f.name for f in arcpy.ListFields(layerpath)]
