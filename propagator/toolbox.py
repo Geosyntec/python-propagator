@@ -27,9 +27,52 @@ import propagator
 from propagator import utils
 
 
-def propagate(monitoring_locations=None, subcatchments=None,
-              id_col=None, ds_col=None, output_path=None,
-              value_columns=None):
+def propagate(subcatchments=None, id_col=None, ds_col=None,
+              monitoring_locations=None, value_columns=None,
+              output_path=None):
+    """
+    Propgate water quality scores upstream from the subcatchments of
+    a watershed.
+
+    Parameters
+    ----------
+    subcatchments : str
+        Path to the feature class containing the subcatchments.
+        Attribute table must contain fields for the subcatchment ID
+        and the ID of the downstream subcatchment.
+    id_col, ds_col : str
+        Names of the fields in the ``subcatchments`` feature class that
+        specifies the subcatchment ID and the ID of the downstream
+        subcatchment, respectively.
+    monitoring_locations : str
+        Path to the feature class containing the monitoring locations
+        and water quality scores.
+    value_columns : list of str
+        List of the fields in ``monitoring_locations`` that contains
+        water quality score that should be propagated.
+    output_path : str
+        Path to where the the new subcatchments feature class with the
+        propagated water quality scores should be saved.
+
+    Returns
+    -------
+    output_path : str
+
+    Examples
+    --------
+    >>> import propagator
+    >>> from propagator import utils
+    >>> with utils.WorkSpace('C:/gis/SOC.gdb'):
+    ...     propagator.propagate(
+    ...         subcatchments='subbasins',
+    ...         id_col='Catch_ID',
+    ...         ds_col='DS_ID',
+    ...         monitoring_locations='wq_data',
+    ...         value_columns=['Dry_Metals', 'Wet_Metals', 'Wet_TSS'],
+    ...         output_path='propagated_metals'
+    ...     )
+
+    """
 
     wq, result_columns = propagator.preprocess_wq(
         monitoring_locations=monitoring_locations,
@@ -464,25 +507,29 @@ class Propagator(BaseToolbox_Mixin):
         to upstream subcatchments. Calls directly to :func:`propagate`.
 
         """
-        utils.misc._status(params, verbose=True, asMessage=True)
+
+        # analysis options
         ws = params.pop('workspace', '.')
         overwrite = params.pop('overwrite', True)
+        add_to_map = params.pop('add_to_map', True)
+
+        # input parameters
         sc = params.pop('subcatchments', None)
         ID_col = params.pop('ID_column', None)
         downstream_ID_col = params.pop('downstream_ID_column', None)
         ml = params.pop('monitoring_locations', None)
         value_cols = params.pop('value_columns', None)
         output_layer = params.pop('output_layer', None)
-        add_to_map = params.pop('add_to_map', True)
 
+        # performe the analysis
         with utils.WorkSpace(ws), utils.OverwriteState(overwrite):
             output_layer = propagate(
-                monitoring_locations=ml,
                 subcatchments=sc,
                 id_col=ID_col,
                 ds_col=downstream_ID_col,
-                output_path=output_layer,
+                monitoring_locations=ml,
                 value_columns=value_cols,
+                output_path=output_layer,
             )
 
             if add_to_map:
