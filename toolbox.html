@@ -141,7 +141,7 @@ infrastructure.</p>
 <p>Written by Paul Hobson (<a class="reference external" href="mailto:phobson&#37;&#52;&#48;geosyntec&#46;com">phobson<span>&#64;</span>geosyntec<span>&#46;</span>com</a>)</p>
 <dl class="function">
 <dt id="propagator.toolbox.propagate">
-<code class="descclassname">propagator.toolbox.</code><code class="descname">propagate</code><span class="sig-paren">(</span><em>**params</em><span class="sig-paren">)</span><a class="headerlink" href="#propagator.toolbox.propagate" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">propagator.toolbox.</code><code class="descname">propagate</code><span class="sig-paren">(</span><em>monitoring_locations=None</em>, <em>subcatchments=None</em>, <em>id_col=None</em>, <em>ds_col=None</em>, <em>output_path=None</em>, <em>value_columns=None</em><span class="sig-paren">)</span><a class="headerlink" href="#propagator.toolbox.propagate" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="function">
@@ -153,11 +153,6 @@ infrastructure.</p>
 <dt id="propagator.toolbox.BaseToolbox_Mixin">
 <em class="property">class </em><code class="descclassname">propagator.toolbox.</code><code class="descname">BaseToolbox_Mixin</code><a class="headerlink" href="#propagator.toolbox.BaseToolbox_Mixin" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference external" href="https://docs.python.org/library/functions.html#object" title="(in Python v2.7)"><code class="xref py py-class docutils literal"><span class="pre">object</span></code></a></p>
-<dl class="attribute">
-<dt id="propagator.toolbox.BaseToolbox_Mixin.canRunInBackground">
-<code class="descname">canRunInBackground</code><em class="property"> = True</em><a class="headerlink" href="#propagator.toolbox.BaseToolbox_Mixin.canRunInBackground" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
 <dl class="method">
 <dt id="propagator.toolbox.BaseToolbox_Mixin.isLicensed">
 <code class="descname">isLicensed</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#propagator.toolbox.BaseToolbox_Mixin.isLicensed" title="Permalink to this definition">¶</a></dt>
@@ -242,7 +237,7 @@ means, instead of doing something like</li>
 magically know where in the list of parameters e.g., the
 DEM is found. Take note, Esri.</p>
 <ol class="arabic simple" start="2">
-<li>call <a class="reference internal" href="#propagator.toolbox.Accumulator.analyze" title="propagator.toolbox.Accumulator.analyze"><code class="xref py py-meth docutils literal"><span class="pre">analyze()</span></code></a>.</li>
+<li>call <a class="reference internal" href="#propagator.toolbox.Propagator.analyze" title="propagator.toolbox.Propagator.analyze"><code class="xref py py-meth docutils literal"><span class="pre">analyze()</span></code></a>.</li>
 </ol>
 </dd></dl>
 
@@ -300,20 +295,20 @@ through subcatchments in a watershed.</p>
 <p class="last"><a class="reference internal" href="#propagator.toolbox.Accumulator" title="propagator.toolbox.Accumulator"><code class="xref py py-obj docutils literal"><span class="pre">Accumulator</span></code></a></p>
 </div>
 <dl class="attribute">
-<dt id="propagator.toolbox.Propagator.direction">
-<code class="descname">direction</code><em class="property"> = 'upstream'</em><a class="headerlink" href="#propagator.toolbox.Propagator.direction" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="attribute">
 <dt id="propagator.toolbox.Propagator.monitoring_locations">
 <code class="descname">monitoring_locations</code><a class="headerlink" href="#propagator.toolbox.Propagator.monitoring_locations" title="Permalink to this definition">¶</a></dt>
 <dd><p>The monitoring location points whose data will be propagated
 to the subcatchments.</p>
 </dd></dl>
 
-<dl class="staticmethod">
+<dl class="attribute">
+<dt id="propagator.toolbox.Propagator.value_columns">
+<code class="descname">value_columns</code><a class="headerlink" href="#propagator.toolbox.Propagator.value_columns" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
 <dt id="propagator.toolbox.Propagator.analyze">
-<em class="property">static </em><code class="descname">analyze</code><span class="sig-paren">(</span><em>**params</em><span class="sig-paren">)</span><a class="headerlink" href="#propagator.toolbox.Propagator.analyze" title="Permalink to this definition">¶</a></dt>
+<code class="descname">analyze</code><span class="sig-paren">(</span><em>**params</em><span class="sig-paren">)</span><a class="headerlink" href="#propagator.toolbox.Propagator.analyze" title="Permalink to this definition">¶</a></dt>
 <dd><p>Propagates water quality scores from monitoring locations
 to upstream subcatchments. Calls directly to <a class="reference internal" href="#propagator.toolbox.propagate" title="propagator.toolbox.propagate"><code class="xref py py-func docutils literal"><span class="pre">propagate()</span></code></a>.</p>
 </dd></dl>
@@ -349,6 +344,11 @@ water quality parameters downstream through a stream.</p>
 <dd><p>The streams who will accumulate attributes from
 subcatchments.</p>
 </dd></dl>
+
+<dl class="attribute">
+<dt id="propagator.toolbox.Accumulator.value_columns">
+<code class="descname">value_columns</code><a class="headerlink" href="#propagator.toolbox.Accumulator.value_columns" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
 
 <dl class="staticmethod">
 <dt id="propagator.toolbox.Accumulator.analyze">

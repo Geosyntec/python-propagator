@@ -454,7 +454,7 @@ filename.</p>
 <dt id="propagator.utils.gis.check_fields">
 <code class="descclassname">propagator.utils.gis.</code><code class="descname">check_fields</code><span class="sig-paren">(</span><em>table</em>, <em>*fieldnames</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#propagator.utils.gis.check_fields" title="Permalink to this definition">¶</a></dt>
 <dd><p>Checks that field are (or are not) in a table. The check fails, a
-<code class="docutils literal"><span class="pre">ValueError</span></code> is raised. Relies on <a class="reference external" href="http://goo.gl/Siq5y7">arcpy.ListFields</a>.</p>
+<code class="docutils literal"><span class="pre">ValueError</span></code> is raised.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -847,8 +847,8 @@ explicitly provided.</p>
 </div></blockquote>
 <p><strong>overwrite</strong> : bool, optonal (False)</p>
 <blockquote>
-<div><p>If True, an existing field will be overwritting. The default
-behaviour will raise a <cite>ValueError</cite> if the field already exists.</p>
+<div><p>If True, an existing field will be overwritten. The default
+behavior will raise a <cite>ValueError</cite> if the field already exists.</p>
 </div></blockquote>
 <p><strong>**field_opts</strong> : keyword options</p>
 <blockquote>
@@ -1111,30 +1111,24 @@ In other words, <cite>row[0]</cite> will return the first values in
 </dd></dl>
 
 <dl class="function">
-<dt id="propagator.utils.gis.copy_data">
-<code class="descclassname">propagator.utils.gis.</code><code class="descname">copy_data</code><span class="sig-paren">(</span><em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#propagator.utils.gis.copy_data" title="Permalink to this definition">¶</a></dt>
-<dd><p>Copies an arbitrary number of spatial files to a new folder.</p>
-<p>Relies on <a class="reference external" href="http://goo.gl/8c83s1">arcpy.conversion.FeatureClassToShapefile</a>.</p>
+<dt id="propagator.utils.gis.copy_layer">
+<code class="descclassname">propagator.utils.gis.</code><code class="descname">copy_layer</code><span class="sig-paren">(</span><em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#propagator.utils.gis.copy_layer" title="Permalink to this definition">¶</a></dt>
+<dd><p>Makes copies of features classes, shapefiles, and maybe rasters.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>destfolder</strong> : str</p>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>existing_layer</strong> : str</p>
 <blockquote>
-<div><p>Path the folder that is the destination for the files.</p>
+<div><p>Path to the data to be copied</p>
 </div></blockquote>
-<p><strong>*source_layers</strong> : str</p>
+<p><strong>new_layer</strong> : str</p>
 <blockquote>
-<div><p>Paths to the files that need to be copied</p>
-</div></blockquote>
-<p><strong>squeeze</strong> : bool, optional (False)</p>
-<blockquote>
-<div><p>When one layer is copied and this is True, the copied layer is
-returned. Otherwise, this function returns a list of layers.</p>
+<div><p>Path to where <code class="docutils literal"><span class="pre">existing_layer</span></code> should be copied.</p>
 </div></blockquote>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"><strong>copied</strong> : list of arcpy.mapping Layers or just a single Layer.</p>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"><strong>new_layer</strong> : str</p>
 </td>
 </tr>
 </tbody>
@@ -1168,43 +1162,7 @@ or feature class.</p>
 </table>
 <div class="admonition seealso">
 <p class="first admonition-title">See also</p>
-<p class="last"><a class="reference internal" href="#propagator.utils.gis.join_results_to_baseline" title="propagator.utils.gis.join_results_to_baseline"><code class="xref py py-obj docutils literal"><span class="pre">join_results_to_baseline</span></code></a></p>
-</div>
-</dd></dl>
-
-<dl class="function">
-<dt id="propagator.utils.gis.join_results_to_baseline">
-<code class="descclassname">propagator.utils.gis.</code><code class="descname">join_results_to_baseline</code><span class="sig-paren">(</span><em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#propagator.utils.gis.join_results_to_baseline" title="Permalink to this definition">¶</a></dt>
-<dd><p>Joins attributes of a geoprocessing result to a baseline dataset
-and saves the results to another file.</p>
-<p>Relies on <a class="reference external" href="http://resources.arcgis.com/en/help/main/10.2/index.html#//00080000000q000000">arcpy.analysis.SpatialJoin</a>.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>destination</strong> : str</p>
-<blockquote>
-<div><p>Path to where the final joined dataset should be saved.</p>
-</div></blockquote>
-<p><strong>results_file</strong> : str</p>
-<blockquote>
-<div><p>Path to the results file whose attributes will be added to the
-<code class="docutils literal"><span class="pre">baseline_file</span></code>.</p>
-</div></blockquote>
-<p><strong>baseline_file</strong> : str</p>
-<blockquote>
-<div><p>Path to the baseline_file with the desired geometry.</p>
-</div></blockquote>
-</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">arcpy.mapping.Layer</p>
-</td>
-</tr>
-</tbody>
-</table>
-<div class="admonition seealso">
-<p class="first admonition-title">See also</p>
-<p class="last"><a class="reference internal" href="#propagator.utils.gis.concat_results" title="propagator.utils.gis.concat_results"><code class="xref py py-obj docutils literal"><span class="pre">concat_results</span></code></a></p>
+<p class="last"><code class="xref py py-obj docutils literal"><span class="pre">join_results_to_baseline</span></code></p>
 </div>
 </dd></dl>
 
@@ -1238,6 +1196,73 @@ both <code class="docutils literal"><span class="pre">layerpath</span></code> an
 </td>
 </tr>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">None</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="propagator.utils.gis.delete_columns">
+<code class="descclassname">propagator.utils.gis.</code><code class="descname">delete_columns</code><span class="sig-paren">(</span><em>layerpath</em>, <em>*columns</em><span class="sig-paren">)</span><a class="headerlink" href="#propagator.utils.gis.delete_columns" title="Permalink to this definition">¶</a></dt>
+<dd><p>Delete unwanted fields from an attribute table of a feature class.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>layerpath</strong> : str</p>
+<blockquote>
+<div><p>Path to the feature class to be updated.</p>
+</div></blockquote>
+<p><strong>*columns</strong> : str</p>
+<blockquote>
+<div><p>Names of the columns in <code class="docutils literal"><span class="pre">layerpath</span></code> that will be deleted</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">None</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="propagator.utils.gis.spatial_join">
+<code class="descclassname">propagator.utils.gis.</code><code class="descname">spatial_join</code><span class="sig-paren">(</span><em>left</em>, <em>right</em>, <em>outputfile</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#propagator.utils.gis.spatial_join" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="propagator.utils.gis.count_features">
+<code class="descclassname">propagator.utils.gis.</code><code class="descname">count_features</code><span class="sig-paren">(</span><em>layer</em><span class="sig-paren">)</span><a class="headerlink" href="#propagator.utils.gis.count_features" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="propagator.utils.gis.query_layer">
+<code class="descclassname">propagator.utils.gis.</code><code class="descname">query_layer</code><span class="sig-paren">(</span><em>inputpath</em>, <em>outputpath</em>, <em>sql</em><span class="sig-paren">)</span><a class="headerlink" href="#propagator.utils.gis.query_layer" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="propagator.utils.gis.intersect_layers">
+<code class="descclassname">propagator.utils.gis.</code><code class="descname">intersect_layers</code><span class="sig-paren">(</span><em>input_paths</em>, <em>output_path</em>, <em>how='all'</em><span class="sig-paren">)</span><a class="headerlink" href="#propagator.utils.gis.intersect_layers" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="propagator.utils.gis.get_field_names">
+<code class="descclassname">propagator.utils.gis.</code><code class="descname">get_field_names</code><span class="sig-paren">(</span><em>layerpath</em><span class="sig-paren">)</span><a class="headerlink" href="#propagator.utils.gis.get_field_names" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gets the names of fields/columns in a feature class or table.
+Relies on <a class="reference external" href="http://goo.gl/Siq5y7">arcpy.ListFields</a>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>layerpath</strong> : str, arcpy.Layer, or arcpy.table</p>
+<blockquote>
+<div><p>The thing that has fields.</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"><strong>fieldnames</strong> : list of str</p>
 </td>
 </tr>
 </tbody>

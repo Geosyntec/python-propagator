@@ -137,6 +137,29 @@ to support the python-propagator library.</p>
 </ol>
 <p>Released under the BSD 3-clause license (see LICENSE file for more info)</p>
 <p>Written by Paul Hobson (<a class="reference external" href="mailto:phobson&#37;&#52;&#48;geosyntec&#46;com">phobson<span>&#64;</span>geosyntec<span>&#46;</span>com</a>)</p>
+<dl class="class">
+<dt id="propagator.utils.misc.Statistic">
+<em class="property">class </em><code class="descclassname">propagator.utils.misc.</code><code class="descname">Statistic</code><a class="headerlink" href="#propagator.utils.misc.Statistic" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="attribute">
+<dt id="propagator.utils.misc.Statistic.aggfxn">
+<code class="descname">aggfxn</code><a class="headerlink" href="#propagator.utils.misc.Statistic.aggfxn" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 1</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="propagator.utils.misc.Statistic.rescol">
+<code class="descname">rescol</code><a class="headerlink" href="#propagator.utils.misc.Statistic.rescol" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 2</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="propagator.utils.misc.Statistic.srccol">
+<code class="descname">srccol</code><a class="headerlink" href="#propagator.utils.misc.Statistic.srccol" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 0</p>
+</dd></dl>
+
+</dd></dl>
+
 <dl class="function">
 <dt id="propagator.utils.misc.update_status">
 <code class="descclassname">propagator.utils.misc.</code><code class="descname">update_status</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#propagator.utils.misc.update_status" title="Permalink to this definition">¶</a></dt>
@@ -224,6 +247,109 @@ messages.</p>
 <span class="go">    )</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">utils</span><span class="o">.</span><span class="n">find_row_in_array</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="s">&#39;ID&#39;</span><span class="p">,</span> <span class="s">&#39;A1&#39;</span><span class="p">)</span>
 <span class="go">(&#39;A1&#39;, &#39;Ocean&#39;, &#39;A1_x&#39;, &#39;A1_y&#39;)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="propagator.utils.misc.rec_groupby">
+<code class="descclassname">propagator.utils.misc.</code><code class="descname">rec_groupby</code><span class="sig-paren">(</span><em>array</em>, <em>group_cols</em>, <em>*stats</em><span class="sig-paren">)</span><a class="headerlink" href="#propagator.utils.misc.rec_groupby" title="Permalink to this definition">¶</a></dt>
+<dd><p>Perform a groupby-apply operation on a numpy record array.</p>
+<p>Returned record array has <em>dtype</em> names for each attribute name in
+the <em>groupby</em> argument, with the associated group values, and
+for each outname name in the <em>stats</em> argument, with the associated
+stat summary output. Adapted from <a class="reference external" href="https://goo.gl/NgwOID">https://goo.gl/NgwOID</a>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>array</strong> : numpy.recarray</p>
+<blockquote>
+<div><p>The data to be grouped and aggregated.</p>
+</div></blockquote>
+<p><strong>group_cols</strong> : str or sequence of str</p>
+<blockquote>
+<div><p>The columns that identify each group</p>
+</div></blockquote>
+<p><strong>*stats</strong> : namedtuples or object</p>
+<blockquote>
+<div><p>Any number of namedtuples or objects specifying which columns
+should be aggregated, how they should be aggregated, and what
+the resulting column name should be. The keys/attributes for
+these tuples/objects must be: &#8220;srccol&#8221;, &#8220;aggfxn&#8221;, and &#8220;rescol&#8221;.</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"><strong>aggregated</strong> : numpy.recarray</p>
+</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition seealso">
+<p class="first admonition-title">See also</p>
+<p class="last"><a class="reference internal" href="#propagator.utils.misc.Statistic" title="propagator.utils.misc.Statistic"><code class="xref py py-obj docutils literal"><span class="pre">Statistic</span></code></a></p>
+</div>
+<p class="rubric">Examples</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">namedtuple</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">propagator</span> <span class="kn">import</span> <span class="n">utils</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">numpy</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">Statistic</span> <span class="o">=</span> <span class="n">namedtuple</span><span class="p">(</span><span class="s">&quot;Statistic&quot;</span><span class="p">,</span> <span class="p">(</span><span class="s">&quot;srccol&quot;</span><span class="p">,</span> <span class="s">&quot;aggfxn&quot;</span><span class="p">,</span> <span class="s">&quot;rescol&quot;</span><span class="p">))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">data</span> <span class="o">=</span> <span class="n">data</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">([</span>
+<span class="go">        (u&#39;050SC&#39;, 88.3, 0.0),  (u&#39;050SC&#39;, 0.0, 0.1),</span>
+<span class="go">        (u&#39;045SC&#39;, 49.2, 0.04), (u&#39;045SC&#39;, 0.0, 0.08),</span>
+<span class="go">    ], dtype=[(&#39;ID&#39;, &#39;&lt;U10&#39;), (&#39;Cu&#39;, &#39;&lt;f8&#39;), (&#39;Pb&#39;, &#39;&lt;f8&#39;),])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">stats</span> <span class="o">=</span> <span class="p">[</span>
+<span class="go">        Statistic(&#39;Cu&#39;, numpy.max, &#39;MaxCu&#39;),</span>
+<span class="go">        Statistic(&#39;Pb&#39;, numpy.min, &#39;MinPb&#39;)</span>
+<span class="go">    ]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">utils</span><span class="o">.</span><span class="n">rec_groupby</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="p">[</span><span class="s">&#39;ID&#39;</span><span class="p">],</span> <span class="o">*</span><span class="n">stats</span><span class="p">)</span>
+<span class="go">rec.array(</span>
+<span class="go">    [(u&#39;045SC&#39;, 49.2, 0.04),</span>
+<span class="go">     (u&#39;050SC&#39;, 88.3, 0.0)],</span>
+<span class="go">    dtype=[(&#39;ID&#39;, &#39;&lt;U5&#39;), (&#39;MaxCu&#39;, &#39;&lt;f8&#39;), (&#39;MinPb&#39;, &#39;&lt;f8&#39;)]</span>
+<span class="go">)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="propagator.utils.misc.stats_with_ignored_values">
+<code class="descclassname">propagator.utils.misc.</code><code class="descname">stats_with_ignored_values</code><span class="sig-paren">(</span><em>array</em>, <em>statfxn</em>, <em>ignored_value=None</em><span class="sig-paren">)</span><a class="headerlink" href="#propagator.utils.misc.stats_with_ignored_values" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute statistics on arrays while ignoring certain values</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>array</strong> : numyp.array (of floats)</p>
+<blockquote>
+<div><p>The values to be summarized</p>
+</div></blockquote>
+<p><strong>statfxn</strong> : callable</p>
+<blockquote>
+<div><p>Function, lambda, or classmethod that can be called with
+<code class="docutils literal"><span class="pre">array</span></code> as the only input and returns a scalar value.</p>
+</div></blockquote>
+<p><strong>ignored_value</strong> : float, optional</p>
+<blockquote>
+<div><p>The values in <code class="docutils literal"><span class="pre">array</span></code> that should be ignored.</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>res</strong> : float</p>
+<blockquote class="last">
+<div><p>Scalar result of <code class="docutils literal"><span class="pre">statfxn</span></code>. In that case that all values in
+<code class="docutils literal"><span class="pre">array</span></code> are ignored, <code class="docutils literal"><span class="pre">ignored_value</span></code> is returned.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Examples</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">numpy</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">propagator</span> <span class="kn">import</span> <span class="n">utils</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">x</span> <span class="o">=</span> <span class="p">[</span><span class="mf">1.</span><span class="p">,</span> <span class="mf">2.</span><span class="p">,</span> <span class="mf">3.</span><span class="p">,</span> <span class="mf">4.</span><span class="p">,</span> <span class="mf">5.</span><span class="p">]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">utils</span><span class="o">.</span><span class="n">stats_with_ignored_values</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">numpy</span><span class="o">.</span><span class="n">mean</span><span class="p">,</span> <span class="n">ignored_value</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>
+<span class="go">2.5</span>
 </pre></div>
 </div>
 </dd></dl>

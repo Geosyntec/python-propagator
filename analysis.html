@@ -141,7 +141,7 @@ properties in a larger watershed.</p>
 <p>Written by Paul Hobson (<a class="reference external" href="mailto:phobson&#37;&#52;&#48;geosyntec&#46;com">phobson<span>&#64;</span>geosyntec<span>&#46;</span>com</a>)</p>
 <dl class="function">
 <dt id="propagator.analysis.trace_upstream">
-<code class="descclassname">propagator.analysis.</code><code class="descname">trace_upstream</code><span class="sig-paren">(</span><em>subcatchment_array</em>, <em>subcatchment_ID</em>, <em>id_col='ID'</em>, <em>ds_col='DS_ID'</em>, <em>downstream=None</em><span class="sig-paren">)</span><a class="headerlink" href="#propagator.analysis.trace_upstream" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">propagator.analysis.</code><code class="descname">trace_upstream</code><span class="sig-paren">(</span><em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#propagator.analysis.trace_upstream" title="Permalink to this definition">¶</a></dt>
 <dd><p>Recursively traces an upstream path of subcatchments through a
 watetershed.</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -171,8 +171,8 @@ subcatchment.</p>
 <p><strong>downstream</strong> : list, optional</p>
 <blockquote>
 <div><p>A list of already known downstream catchments in the trace.</p>
-<div class="admonition note">
-<p class="first admonition-title">Note</p>
+<div class="admonition warning">
+<p class="first admonition-title">Warning</p>
 <p class="last">This is <em>only</em> used in the recursive calls to this function.
 You should never provide this value.</p>
 </div>
@@ -192,7 +192,7 @@ have the same schema as <code class="docutils literal"><span class="pre">subcatc
 
 <dl class="function">
 <dt id="propagator.analysis.find_bottoms">
-<code class="descclassname">propagator.analysis.</code><code class="descname">find_bottoms</code><span class="sig-paren">(</span><em>subcatchment_array</em>, <em>bottom_ID='ocean'</em>, <em>ds_col='DS_ID'</em><span class="sig-paren">)</span><a class="headerlink" href="#propagator.analysis.find_bottoms" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">propagator.analysis.</code><code class="descname">find_bottoms</code><span class="sig-paren">(</span><em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#propagator.analysis.find_bottoms" title="Permalink to this definition">¶</a></dt>
 <dd><p>Finds the lowest, non-ocean subcatchments in a watershed.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -228,7 +228,7 @@ ocean.</p>
 
 <dl class="function">
 <dt id="propagator.analysis.find_tops">
-<code class="descclassname">propagator.analysis.</code><code class="descname">find_tops</code><span class="sig-paren">(</span><em>subcatchment_array</em>, <em>id_col='ID'</em>, <em>ds_col='DS_ID'</em><span class="sig-paren">)</span><a class="headerlink" href="#propagator.analysis.find_tops" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">propagator.analysis.</code><code class="descname">find_tops</code><span class="sig-paren">(</span><em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#propagator.analysis.find_tops" title="Permalink to this definition">¶</a></dt>
 <dd><p>Finds the the subcatchments in a watershed that do not accept
 any upstrea tributary flow.</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -269,7 +269,7 @@ subcatchment.</p>
 
 <dl class="function">
 <dt id="propagator.analysis.propagate_scores">
-<code class="descclassname">propagator.analysis.</code><code class="descname">propagate_scores</code><span class="sig-paren">(</span><em>subcatchment_array</em>, <em>wq_column</em>, <em>null_value='None'</em>, <em>id_col='ID'</em>, <em>ds_col='DS_ID'</em>, <em>bottom_ID='Ocean'</em><span class="sig-paren">)</span><a class="headerlink" href="#propagator.analysis.propagate_scores" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">propagator.analysis.</code><code class="descname">propagate_scores</code><span class="sig-paren">(</span><em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#propagator.analysis.propagate_scores" title="Permalink to this definition">¶</a></dt>
 <dd><p>Propagate values into upstream subcatchments through a watershed.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -281,17 +281,6 @@ subcatchment.</p>
 This array must have a &#8220;downstrea ID&#8221; column in which each
 subcatchment identifies as single, downstream neighbor.</p>
 </div></blockquote>
-<p><strong>wq_column</strong> : str</p>
-<blockquote>
-<div><p>Name of a representative water quality column that can be used
-to indicate if the given subcatchment has or has not been
-populated with water quality data.</p>
-</div></blockquote>
-<p><strong>null_value</strong> : str, optional</p>
-<blockquote>
-<div><p>The string representing unpopulated values in the array of
-subcatchment and water quality data.</p>
-</div></blockquote>
 <p><strong>id_col</strong> : str, optional</p>
 <blockquote>
 <div><p>The name of the column that specifies the current subcatchment.</p>
@@ -300,6 +289,17 @@ subcatchment and water quality data.</p>
 <blockquote>
 <div><p>The name of the column that identifies the downstream
 subcatchment.</p>
+</div></blockquote>
+<p><strong>value_column</strong> : str</p>
+<blockquote>
+<div><p>Name of a representative water quality column that can be used
+to indicate if the given subcatchment has or has not been
+populated with water quality data.</p>
+</div></blockquote>
+<p><strong>ignored_value</strong> : float, optional</p>
+<blockquote>
+<div><p>The values representing unpopulated records in the array of
+subcatchment and water quality data.</p>
 </div></blockquote>
 <p><strong>bottom_ID</strong> : str, optional</p>
 <blockquote>
@@ -319,50 +319,60 @@ records populated.</p>
 </dd></dl>
 
 <dl class="function">
-<dt id="propagator.analysis.find_downstream_scores">
-<code class="descclassname">propagator.analysis.</code><code class="descname">find_downstream_scores</code><span class="sig-paren">(</span><em>subcatchment_array</em>, <em>subcatchment_ID</em>, <em>wq_column</em>, <em>null_value='None'</em>, <em>id_col='ID'</em>, <em>ds_col='DS_ID'</em><span class="sig-paren">)</span><a class="headerlink" href="#propagator.analysis.find_downstream_scores" title="Permalink to this definition">¶</a></dt>
-<dd><p>Recursively look for populated water quality score in downstream
-subcatchments.</p>
+<dt id="propagator.analysis.preprocess_wq">
+<code class="descclassname">propagator.analysis.</code><code class="descname">preprocess_wq</code><span class="sig-paren">(</span><em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#propagator.analysis.preprocess_wq" title="Permalink to this definition">¶</a></dt>
+<dd><p>Preprocess the water quality data to have to averaged score for
+each subcatchment.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>subcatchment_array</strong> : numpy.recarry</p>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>monitoring_locations</strong> : str</p>
 <blockquote>
-<div><p>A record array of all of the subcatchments in the watershed.
-This array must have a &#8220;downstrea ID&#8221; column in which each
-subcatchment identifies as single, downstream neighbor.</p>
+<div><p>Path to the feature class containing the monitoring locations
+and their water quality scores.</p>
 </div></blockquote>
-<p><strong>subcatchment_ID</strong> : str</p>
+<p><strong>subcatchments</strong> : str</p>
 <blockquote>
-<div><p>ID of the subcatchment whose water quality scores need to be
-populated.</p>
+<div><p>Path to the feature class containing the subcatchment
+boundaries.</p>
 </div></blockquote>
-<p><strong>wq_column</strong> : str</p>
+<p><strong>id_col</strong> : str, ds_col</p>
 <blockquote>
-<div><p>Name of a representative water quality column that can be used
-to indicate if the given subcatchment has or has not been
-populated with water quality data.</p>
+<div><p>Name of the column in <code class="docutils literal"><span class="pre">subcatchments</span></code> that contains the
+(ds = downstream) subcatchment IDs.</p>
 </div></blockquote>
-<p><strong>null_value</strong> : str, optional</p>
+<p><strong>output_path</strong> : str</p>
 <blockquote>
-<div><p>The string representing unpopulated values in the array of
-subcatchment and water quality data.</p>
+<div><p>Path of the new feature class where the preprocessed data
+should be saved.</p>
 </div></blockquote>
-<p><strong>id_col</strong> : str, optional</p>
+<p><strong>value_columns</strong> : list of str</p>
 <blockquote>
-<div><p>The name of the column that specifies the current subcatchment.</p>
+<div><p>A list of the names of the fields containing water quality
+scores that need to be analyzed.</p>
 </div></blockquote>
-<p><strong>ds_col</strong> : str, optional</p>
+<p><strong>aggfxn</strong> : callable, optional</p>
 <blockquote>
-<div><p>The name of the column that identifies the downstream
-subcatchment.</p>
+<div><p>A function, lambda, or class method that reduces arrays into
+scalar values. By default, this is <code class="docutils literal"><span class="pre">numpy.mean</span></code>.</p>
+</div></blockquote>
+<p><strong>ignored_value</strong> : int, optional</p>
+<blockquote>
+<div><p>The values in <code class="docutils literal"><span class="pre">monitoring_locations</span></code> that should be ignored.
+Given the default input datasets, zero has been chosen to
+signal that a value is missing.</p>
+</div></blockquote>
+<p><strong>cleanup</strong> : bool, optional</p>
+<blockquote>
+<div><p>Toggles the deletion of temporary files.</p>
 </div></blockquote>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>vals</strong> : numpy.recarray</p>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>array</strong> : numpy.recarray</p>
 <blockquote class="last">
-<div><p>Row of water quality score to be used for the subcatchment.</p>
+<div><p>A numpy record array of the subcatchments with their aggregated
+water quality scores.</p>
 </div></blockquote>
 </td>
 </tr>
@@ -371,14 +381,61 @@ subcatchment.</p>
 </dd></dl>
 
 <dl class="function">
-<dt id="propagator.analysis.update_water_quality_layer">
-<code class="descclassname">propagator.analysis.</code><code class="descname">update_water_quality_layer</code><span class="sig-paren">(</span><em>layer</em>, <em>water_quality</em><span class="sig-paren">)</span><a class="headerlink" href="#propagator.analysis.update_water_quality_layer" title="Permalink to this definition">¶</a></dt>
+<dt id="propagator.analysis.split_streams">
+<code class="descclassname">propagator.analysis.</code><code class="descname">split_streams</code><span class="sig-paren">(</span><em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#propagator.analysis.split_streams" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="function">
-<dt id="propagator.analysis.split_streams">
-<code class="descclassname">propagator.analysis.</code><code class="descname">split_streams</code><span class="sig-paren">(</span><em>stream_layer</em>, <em>subcatchment_layer</em><span class="sig-paren">)</span><a class="headerlink" href="#propagator.analysis.split_streams" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dt id="propagator.analysis.prepare_data">
+<code class="descclassname">propagator.analysis.</code><code class="descname">prepare_data</code><span class="sig-paren">(</span><em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#propagator.analysis.prepare_data" title="Permalink to this definition">¶</a></dt>
+<dd><p>Assigns water quality ranking from monitoring locations to the
+subcatchments. If multiple monitoring locations are present in
+one subcatchment, water quality rankings are aggregated prior to
+assignment.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>mon_locations</strong> : str</p>
+<blockquote>
+<div><p>File path to the monitoring locations feature class.</p>
+</div></blockquote>
+<p><strong>subcatchments</strong> : str</p>
+<blockquote>
+<div><p>File path to the subcatchments feature class.</p>
+</div></blockquote>
+<p><strong>subcatch_id_col</strong> : str</p>
+<blockquote>
+<div><p>Field name of the subcatchment ID column in <code class="docutils literal"><span class="pre">subcatchments</span></code>.</p>
+</div></blockquote>
+<p><strong>sort_id: str</strong></p>
+<blockquote>
+<div><p>Arbituary field name for sorting purpose. Default value is &#8216;FID&#8217;</p>
+</div></blockquote>
+<p><strong>header_fields</strong> : list</p>
+<blockquote>
+<div><p>List of header field names to be retained in the output feature class.</p>
+</div></blockquote>
+<p><strong>wq_fields</strong> : list</p>
+<blockquote>
+<div><p>List of water quality field names to be analyzed</p>
+</div></blockquote>
+<p><strong>outputfile</strong> : str</p>
+<blockquote>
+<div><p>Filename where the output should be saved.</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>subcatchment_wq</strong> : arcpy.Layer</p>
+<blockquote class="last">
+<div><p>A subcatchment class that inherited water quality rankings
+from respective monitoring locations.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
 
 </div>
 
