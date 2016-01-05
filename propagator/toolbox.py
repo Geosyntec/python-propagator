@@ -269,7 +269,7 @@ class BaseToolbox_Mixin(object):
         """
         underline = ''.join(['-'] * len(title))
         header = '\n{}\n{}'.format(title, underline)
-        utils.misc._status(header, verbose=verbose, asMessage=True, addTab=False)
+        utils._status(header, verbose=verbose, asMessage=True, addTab=False)
         return header
 
     @staticmethod

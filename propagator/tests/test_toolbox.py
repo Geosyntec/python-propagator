@@ -204,7 +204,7 @@ class BaseToolboxChecker_Mixin(object):
         nt.assert_false(self.tbx.add_output_to_map.multiValue)
 
 
-@mock.patch('propagator.utils.misc._status', mock_status)
+@mock.patch('propagator.utils._status', mock_status)
 class Test_Propagator(BaseToolboxChecker_Mixin):
     def setup(self):
         self.tbx = toolbox.Propagator()
@@ -264,7 +264,7 @@ class Test_Propagator(BaseToolboxChecker_Mixin):
             atm.assert_called_once_with(output_layer)
 
 
-@mock.patch('propagator.utils.misc._status', mock_status)
+@mock.patch('propagator.utils._status', mock_status)
 class Test_Accumulator(BaseToolboxChecker_Mixin):
     def setup(self):
         self.tbx = toolbox.Accumulator()

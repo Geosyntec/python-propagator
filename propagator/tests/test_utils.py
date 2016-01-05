@@ -11,7 +11,7 @@ import propagator.testing as pptest
 import mock
 
 import propagator
-from propagator.utils import gis
+from propagator import utils
 
 
 @nt.nottest
@@ -25,7 +25,7 @@ class MockResult(object):
 
 def test_RasterTemplate():
     size, x, y = 8, 1, 2
-    template = gis.RasterTemplate(size, x, y)
+    template = utils.RasterTemplate(size, x, y)
     nt.assert_equal(template.meanCellWidth, size)
     nt.assert_equal(template.meanCellHeight, size)
     nt.assert_equal(template.extent.lowerLeft.X, x)
@@ -34,8 +34,8 @@ def test_RasterTemplate():
 
 def test_RasterTemplate_from_raster():
     _raster = resource_filename('propagator.testing._Template', 'dem.tif')
-    raster = gis.load_data(_raster, 'raster')
-    template = gis.RasterTemplate.from_raster(raster)
+    raster = utils.load_data(_raster, 'raster')
+    template = utils.RasterTemplate.from_raster(raster)
     nt.assert_equal(template.meanCellWidth, raster.meanCellWidth)
     nt.assert_equal(template.meanCellHeight, raster.meanCellHeight)
     nt.assert_equal(template.extent.lowerLeft.X, raster.extent.lowerLeft.X)
@@ -45,7 +45,7 @@ def test_RasterTemplate_from_raster():
 class Test_EasyMapDoc(object):
     def setup(self):
         self.mxd = resource_filename("propagator.testing.EasyMapDoc", "test.mxd")
-        self.ezmd = gis.EasyMapDoc(self.mxd)
+        self.ezmd = utils.EasyMapDoc(self.mxd)
 
         self.knownlayer_names = ['ZOI', 'wetlands', 'ZOI_first_few', 'wetlands_first_few']
         self.knowndataframe_names = ['Main', 'Subset']
@@ -94,12 +94,12 @@ class Test_Extension(object):
 
     @nt.raises(RuntimeError)
     def test_unlicensed_extension(self):
-        with gis.Extension(self.known_unavailable):
+        with utils.Extension(self.known_unavailable):
             pass
 
     def test_licensed_extension(self):
         nt.assert_equal(arcpy.CheckExtension(self.known_available), u'Available')
-        with gis.Extension(self.known_available) as ext:
+        with utils.Extension(self.known_available) as ext:
             nt.assert_equal(ext, 'CheckedOut')
 
         nt.assert_equal(arcpy.CheckExtension(self.known_available), u'Available')
@@ -113,7 +113,7 @@ class Test_OverwriteState(object):
         arcpy.env.overwriteOutput = True
 
         nt.assert_true(arcpy.env.overwriteOutput)
-        with gis.OverwriteState(True):
+        with utils.OverwriteState(True):
             nt.assert_true(arcpy.env.overwriteOutput)
 
         nt.assert_true(arcpy.env.overwriteOutput)
@@ -122,7 +122,7 @@ class Test_OverwriteState(object):
         arcpy.env.overwriteOutput = False
 
         nt.assert_false(arcpy.env.overwriteOutput)
-        with gis.OverwriteState(False):
+        with utils.OverwriteState(False):
             nt.assert_false(arcpy.env.overwriteOutput)
 
         nt.assert_false(arcpy.env.overwriteOutput)
@@ -131,7 +131,7 @@ class Test_OverwriteState(object):
         arcpy.env.overwriteOutput = True
 
         nt.assert_true(arcpy.env.overwriteOutput)
-        with gis.OverwriteState(False):
+        with utils.OverwriteState(False):
             nt.assert_false(arcpy.env.overwriteOutput)
 
         nt.assert_true(arcpy.env.overwriteOutput)
@@ -140,7 +140,7 @@ class Test_OverwriteState(object):
         arcpy.env.overwriteOutput = False
 
         nt.assert_false(arcpy.env.overwriteOutput)
-        with gis.OverwriteState(True):
+        with utils.OverwriteState(True):
             nt.assert_true(arcpy.env.overwriteOutput)
 
         nt.assert_false(arcpy.env.overwriteOutput)
@@ -155,7 +155,7 @@ class Test_WorkSpace(object):
 
     def test_workspace(self):
         nt.assert_equal(arcpy.env.workspace, self.baseline)
-        with gis.WorkSpace(self.new_ws):
+        with utils.WorkSpace(self.new_ws):
             nt.assert_equal(arcpy.env.workspace, self.new_ws)
 
         nt.assert_equal(arcpy.env.workspace, self.baseline)
@@ -167,129 +167,129 @@ class Test_create_temp_filename():
         self.geodbworkspace = os.path.join('another', 'geodb.gdb')
 
     def test_folderworkspace_withsubfolder(self):
-        with gis.WorkSpace(self.folderworkspace):
+        with utils.WorkSpace(self.folderworkspace):
             known_raster = os.path.join(self.folderworkspace, 'subfolder', '_temp_test.tif')
-            temp_raster = gis.create_temp_filename(os.path.join('subfolder', 'test'), filetype='raster')
+            temp_raster = utils.create_temp_filename(os.path.join('subfolder', 'test'), filetype='raster')
             nt.assert_equal(temp_raster, known_raster)
 
             known_shape = os.path.join(self.folderworkspace, 'subfolder', '_temp_test.shp')
-            temp_shape = gis.create_temp_filename(os.path.join('subfolder','test'), filetype='shape')
+            temp_shape = utils.create_temp_filename(os.path.join('subfolder','test'), filetype='shape')
             nt.assert_equal(temp_shape, known_shape)
 
     def test_folderworkspace_withsubfolder_with_num(self):
-        with gis.WorkSpace(self.folderworkspace):
+        with utils.WorkSpace(self.folderworkspace):
             known_raster = os.path.join(self.folderworkspace, 'subfolder', '_temp_test_1.tif')
-            temp_raster = gis.create_temp_filename(os.path.join('subfolder', 'test'), filetype='raster', num=1)
+            temp_raster = utils.create_temp_filename(os.path.join('subfolder', 'test'), filetype='raster', num=1)
             nt.assert_equal(temp_raster, known_raster)
 
             known_shape = os.path.join(self.folderworkspace, 'subfolder', '_temp_test_12.shp')
-            temp_shape = gis.create_temp_filename(os.path.join('subfolder','test'), filetype='shape', num=12)
+            temp_shape = utils.create_temp_filename(os.path.join('subfolder','test'), filetype='shape', num=12)
             nt.assert_equal(temp_shape, known_shape)
 
     def test_folderworkspace_barefile(self):
-        with gis.WorkSpace(self.folderworkspace):
+        with utils.WorkSpace(self.folderworkspace):
             known_raster = os.path.join(self.folderworkspace, '_temp_test.tif')
-            temp_raster = gis.create_temp_filename('test', filetype='raster')
+            temp_raster = utils.create_temp_filename('test', filetype='raster')
             nt.assert_equal(temp_raster, known_raster)
 
             known_shape = os.path.join(self.folderworkspace, '_temp_test.shp')
-            temp_shape = gis.create_temp_filename('test', filetype='shape')
+            temp_shape = utils.create_temp_filename('test', filetype='shape')
             nt.assert_equal(temp_shape, known_shape)
 
     def test_folderworkspace_barefile_with_num(self):
-        with gis.WorkSpace(self.folderworkspace):
+        with utils.WorkSpace(self.folderworkspace):
             known_raster = os.path.join(self.folderworkspace, '_temp_test_14.tif')
-            temp_raster = gis.create_temp_filename('test', filetype='raster', num=14)
+            temp_raster = utils.create_temp_filename('test', filetype='raster', num=14)
             nt.assert_equal(temp_raster, known_raster)
 
             known_shape = os.path.join(self.folderworkspace, '_temp_test_3.shp')
-            temp_shape = gis.create_temp_filename('test', filetype='shape', num=3)
+            temp_shape = utils.create_temp_filename('test', filetype='shape', num=3)
             nt.assert_equal(temp_shape, known_shape)
 
     def test_geodb_barefile(self):
-        with gis.WorkSpace(self.geodbworkspace):
+        with utils.WorkSpace(self.geodbworkspace):
             known_raster = os.path.join(self.geodbworkspace, '_temp_test')
-            temp_raster = gis.create_temp_filename('test', filetype='raster')
+            temp_raster = utils.create_temp_filename('test', filetype='raster')
             nt.assert_equal(temp_raster, known_raster)
 
             known_shape = os.path.join(self.geodbworkspace, '_temp_test')
-            temp_shape = gis.create_temp_filename('test', filetype='shape')
+            temp_shape = utils.create_temp_filename('test', filetype='shape')
             nt.assert_equal(temp_shape, known_shape)
 
     def test_geodb_barefile_with_num(self):
-        with gis.WorkSpace(self.geodbworkspace):
+        with utils.WorkSpace(self.geodbworkspace):
             known_raster = os.path.join(self.geodbworkspace, '_temp_test_7')
-            temp_raster = gis.create_temp_filename('test', filetype='raster', num=7)
+            temp_raster = utils.create_temp_filename('test', filetype='raster', num=7)
             nt.assert_equal(temp_raster, known_raster)
 
             known_shape = os.path.join(self.geodbworkspace, '_temp_test_22')
-            temp_shape = gis.create_temp_filename('test', filetype='shape', num=22)
+            temp_shape = utils.create_temp_filename('test', filetype='shape', num=22)
             nt.assert_equal(temp_shape, known_shape)
 
     def test_geodb_as_subfolder(self):
-        with gis.WorkSpace(self.folderworkspace):
+        with utils.WorkSpace(self.folderworkspace):
             filename = os.path.join(self.geodbworkspace, 'test')
             known_raster = os.path.join(self.folderworkspace, self.geodbworkspace, '_temp_test')
-            temp_raster = gis.create_temp_filename(filename, filetype='raster')
+            temp_raster = utils.create_temp_filename(filename, filetype='raster')
             nt.assert_equal(temp_raster, known_raster)
 
             known_shape = os.path.join(self.folderworkspace, self.geodbworkspace, '_temp_test')
-            temp_shape = gis.create_temp_filename(filename, filetype='shape')
+            temp_shape = utils.create_temp_filename(filename, filetype='shape')
             nt.assert_equal(temp_shape, known_shape)
 
     def test_geodb_as_subfolder_with_num(self):
-        with gis.WorkSpace(self.folderworkspace):
+        with utils.WorkSpace(self.folderworkspace):
             filename = os.path.join(self.geodbworkspace, 'test')
             known_raster = os.path.join(self.folderworkspace, self.geodbworkspace, '_temp_test_5')
-            temp_raster = gis.create_temp_filename(filename, filetype='raster', num=5)
+            temp_raster = utils.create_temp_filename(filename, filetype='raster', num=5)
             nt.assert_equal(temp_raster, known_raster)
 
             known_shape = os.path.join(self.folderworkspace, self.geodbworkspace, '_temp_test_99')
-            temp_shape = gis.create_temp_filename(filename, filetype='shape', num=99)
+            temp_shape = utils.create_temp_filename(filename, filetype='shape', num=99)
             nt.assert_equal(temp_shape, known_shape)
 
     def test_with_extension_geodb(self):
-        with gis.WorkSpace(self.folderworkspace):
+        with utils.WorkSpace(self.folderworkspace):
             filename = os.path.join(self.geodbworkspace, 'test')
             known_raster = os.path.join(self.folderworkspace, self.geodbworkspace, '_temp_test')
-            temp_raster = gis.create_temp_filename(filename + '.tif', filetype='raster')
+            temp_raster = utils.create_temp_filename(filename + '.tif', filetype='raster')
             nt.assert_equal(temp_raster, known_raster)
 
             known_shape = os.path.join(self.folderworkspace, self.geodbworkspace, '_temp_test')
-            temp_shape = gis.create_temp_filename(filename + '.tif', filetype='shape')
+            temp_shape = utils.create_temp_filename(filename + '.tif', filetype='shape')
             nt.assert_equal(temp_shape, known_shape)
 
     def test_with_extension_geodb_with_num(self):
-        with gis.WorkSpace(self.folderworkspace):
+        with utils.WorkSpace(self.folderworkspace):
             filename = os.path.join(self.geodbworkspace, 'test')
             known_raster = os.path.join(self.folderworkspace, self.geodbworkspace, '_temp_test_2000')
-            temp_raster = gis.create_temp_filename(filename + '.tif', filetype='raster', num=2000)
+            temp_raster = utils.create_temp_filename(filename + '.tif', filetype='raster', num=2000)
             nt.assert_equal(temp_raster, known_raster)
 
             known_shape = os.path.join(self.folderworkspace, self.geodbworkspace, '_temp_test_999')
-            temp_shape = gis.create_temp_filename(filename + '.tif', filetype='shape', num=999)
+            temp_shape = utils.create_temp_filename(filename + '.tif', filetype='shape', num=999)
             nt.assert_equal(temp_shape, known_shape)
 
     def test_with_extension_folder(self):
-        with gis.WorkSpace(self.folderworkspace):
+        with utils.WorkSpace(self.folderworkspace):
             filename = 'test'
             known_raster = os.path.join(self.folderworkspace, '_temp_test.tif')
-            temp_raster = gis.create_temp_filename(filename + '.tif', filetype='raster')
+            temp_raster = utils.create_temp_filename(filename + '.tif', filetype='raster')
             nt.assert_equal(temp_raster, known_raster)
 
             known_shape = os.path.join(self.folderworkspace, '_temp_test.shp')
-            temp_shape = gis.create_temp_filename(filename + '.shp', filetype='shape')
+            temp_shape = utils.create_temp_filename(filename + '.shp', filetype='shape')
             nt.assert_equal(temp_shape, known_shape)
 
     def test_with_extension_folder_with_num(self):
-        with gis.WorkSpace(self.folderworkspace):
+        with utils.WorkSpace(self.folderworkspace):
             filename = 'test'
             known_raster = os.path.join(self.folderworkspace, '_temp_test_4.tif')
-            temp_raster = gis.create_temp_filename(filename + '.tif', filetype='raster', num=4)
+            temp_raster = utils.create_temp_filename(filename + '.tif', filetype='raster', num=4)
             nt.assert_equal(temp_raster, known_raster)
 
             known_shape = os.path.join(self.folderworkspace, '_temp_test_4.shp')
-            temp_shape = gis.create_temp_filename(filename + '.shp', filetype='shape', num=4)
+            temp_shape = utils.create_temp_filename(filename + '.shp', filetype='shape', num=4)
             nt.assert_equal(temp_shape, known_shape)
 
 
@@ -297,37 +297,37 @@ class Test_check_fields(object):
     table = resource_filename("propagator.testing.check_fields", "test_file.shp")
 
     def test_should_exist_uni(self):
-        gis.check_fields(self.table, "Id", should_exist=True)
+        utils.check_fields(self.table, "Id", should_exist=True)
 
     def test_should_exist_multi(self):
-        gis.check_fields(self.table, "Id", "existing", should_exist=True)
+        utils.check_fields(self.table, "Id", "existing", should_exist=True)
 
     def test_should_exist_multi_witharea(self):
-        gis.check_fields(self.table, "Id", "existing", "SHAPE@AREA", should_exist=True)
+        utils.check_fields(self.table, "Id", "existing", "SHAPE@AREA", should_exist=True)
 
     @nt.raises(ValueError)
     def test_should_exist_bad_vals(self):
-        gis.check_fields(self.table, "Id", "existing", "JUNK", "GARBAGE", should_exist=True)
+        utils.check_fields(self.table, "Id", "existing", "JUNK", "GARBAGE", should_exist=True)
 
     def test_should_not_exist_uni(self):
-        gis.check_fields(self.table, "NEWFIELD", should_exist=False)
+        utils.check_fields(self.table, "NEWFIELD", should_exist=False)
 
     def test_should_not_exist_multi(self):
-        gis.check_fields(self.table, "NEWFIELD", "YANFIELD", should_exist=False)
+        utils.check_fields(self.table, "NEWFIELD", "YANFIELD", should_exist=False)
 
     def test_should_not_exist_multi_witharea(self):
-        gis.check_fields(self.table, "NEWFIELD", "YANFIELD", "SHAPE@AREA", should_exist=False)
+        utils.check_fields(self.table, "NEWFIELD", "YANFIELD", "SHAPE@AREA", should_exist=False)
 
     @nt.raises(ValueError)
     def test_should_not_exist_bad_vals(self):
-        gis.check_fields(self.table, "NEWFIELD", "YANFIELD", "existing", should_exist=False)
+        utils.check_fields(self.table, "NEWFIELD", "YANFIELD", "existing", should_exist=False)
 
 
 def test_result_to_raster():
     mockResult = mock.Mock(spec=arcpy.Result)
     mockRaster = mock.Mock(spec=arcpy.Raster)
     with mock.patch('arcpy.Raster', mockRaster):
-        raster = gis.result_to_raster(mockResult)
+        raster = utils.result_to_raster(mockResult)
         mockResult.getOutput.assert_called_once_with(0)
 
 
@@ -335,7 +335,7 @@ def test_result_to_Layer():
     mockResult = mock.Mock(spec=arcpy.Result)
     mockLayer = mock.Mock(spec=arcpy.mapping.Layer)
     with mock.patch('arcpy.mapping.Layer', mockLayer):
-        layer = gis.result_to_layer(mockResult)
+        layer = utils.result_to_layer(mockResult)
         mockResult.getOutput.assert_called_once_with(0)
 
 
@@ -345,56 +345,56 @@ class Test_load_data(object):
 
     @nt.raises(ValueError)
     def test_bad_datatype(self):
-        gis.load_data(self.rasterpath, 'JUNK')
+        utils.load_data(self.rasterpath, 'JUNK')
 
     @nt.raises(ValueError)
     def test_datapath_doesnt_exist(self):
-        gis.load_data('junk.shp', 'grid')
+        utils.load_data('junk.shp', 'grid')
 
     @nt.raises(ValueError)
     def test_datapath_bad_value(self):
-        gis.load_data(12345, 'grid')
+        utils.load_data(12345, 'grid')
 
     @nt.raises(ValueError)
     def test_vector_as_grid_should_fail(self):
-        x = gis.load_data(self.vectorpath, 'grid')
+        x = utils.load_data(self.vectorpath, 'grid')
 
     @nt.raises(ValueError)
     def test_vector_as_raster_should_fail(self):
-        x = gis.load_data(self.vectorpath, 'raster')
+        x = utils.load_data(self.vectorpath, 'raster')
 
     def test_raster_as_raster(self):
-        x = gis.load_data(self.rasterpath, 'raster')
+        x = utils.load_data(self.rasterpath, 'raster')
         nt.assert_true(isinstance(x, arcpy.Raster))
 
     def test_raster_as_grid_with_caps(self):
-        x = gis.load_data(self.rasterpath, 'gRId')
+        x = utils.load_data(self.rasterpath, 'gRId')
         nt.assert_true(isinstance(x, arcpy.Raster))
 
     def test_raster_as_layer_not_greedy(self):
-        x = gis.load_data(self.rasterpath, 'layer', greedyRasters=False)
+        x = utils.load_data(self.rasterpath, 'layer', greedyRasters=False)
         nt.assert_true(isinstance(x, arcpy.mapping.Layer))
 
     def test_raster_as_layer_greedy(self):
-        x = gis.load_data(self.rasterpath, 'layer')
+        x = utils.load_data(self.rasterpath, 'layer')
         nt.assert_true(isinstance(x, arcpy.Raster))
 
     def test_vector_as_shape(self):
-        x = gis.load_data(self.vectorpath, 'shape')
+        x = utils.load_data(self.vectorpath, 'shape')
         nt.assert_true(isinstance(x, arcpy.mapping.Layer))
 
     def test_vector_as_layer_with_caps(self):
-        x = gis.load_data(self.vectorpath, 'LAyeR')
+        x = utils.load_data(self.vectorpath, 'LAyeR')
         nt.assert_true(isinstance(x, arcpy.mapping.Layer))
 
     def test_already_a_layer(self):
         lyr = arcpy.mapping.Layer(self.vectorpath)
-        x = gis.load_data(lyr, 'layer')
+        x = utils.load_data(lyr, 'layer')
         nt.assert_equal(x, lyr)
 
     def test_already_a_raster(self):
         raster = arcpy.Raster(self.rasterpath)
-        x = gis.load_data(raster, 'raster')
+        x = utils.load_data(raster, 'raster')
         nt.assert_true(isinstance(x, arcpy.Raster))
 
 
@@ -411,7 +411,7 @@ class Test_add_field_with_value(object):
 
     def test_float(self):
         name = "_float"
-        gis.add_field_with_value(self.shapefile, name,
+        utils.add_field_with_value(self.shapefile, name,
                                    field_value=5.0)
         nt.assert_true(name in [f.name for f in arcpy.ListFields(self.shapefile)])
 
@@ -420,7 +420,7 @@ class Test_add_field_with_value(object):
 
     def test_int(self):
         name = "_int"
-        gis.add_field_with_value(self.shapefile, name,
+        utils.add_field_with_value(self.shapefile, name,
                                    field_value=5)
         nt.assert_true(name in [f.name for f in arcpy.ListFields(self.shapefile)])
 
@@ -429,7 +429,7 @@ class Test_add_field_with_value(object):
 
     def test_string(self):
         name = "_text"
-        gis.add_field_with_value(self.shapefile, name,
+        utils.add_field_with_value(self.shapefile, name,
                                    field_value="example_value",
                                    field_length=15)
 
@@ -441,7 +441,7 @@ class Test_add_field_with_value(object):
 
     def test_unicode(self):
         name = "_unicode"
-        gis.add_field_with_value(self.shapefile, name,
+        utils.add_field_with_value(self.shapefile, name,
                                    field_value=u"example_value",
                                    field_length=15)
 
@@ -453,7 +453,7 @@ class Test_add_field_with_value(object):
 
     def test_no_value_string(self):
         name = "_no_valstr"
-        gis.add_field_with_value(self.shapefile, name,
+        utils.add_field_with_value(self.shapefile, name,
                                    field_type='TEXT',
                                    field_length=15)
 
@@ -465,7 +465,7 @@ class Test_add_field_with_value(object):
 
     def test_no_value_number(self):
         name = "_no_valnum"
-        gis.add_field_with_value(self.shapefile, name,
+        utils.add_field_with_value(self.shapefile, name,
                                    field_type='DOUBLE')
 
         nt.assert_true(name in [f.name for f in arcpy.ListFields(self.shapefile)])
@@ -475,14 +475,14 @@ class Test_add_field_with_value(object):
 
     @nt.raises(ValueError)
     def test_no_value_no_field_type(self):
-        gis.add_field_with_value(self.shapefile, "_willfail")
+        utils.add_field_with_value(self.shapefile, "_willfail")
 
     @nt.raises(ValueError)
     def test_overwrite_existing_no(self):
-        gis.add_field_with_value(self.shapefile, "existing")
+        utils.add_field_with_value(self.shapefile, "existing")
 
     def test_overwrite_existing_yes(self):
-        gis.add_field_with_value(self.shapefile, "existing",
+        utils.add_field_with_value(self.shapefile, "existing",
                                    overwrite=True,
                                    field_type="LONG")
 
@@ -495,22 +495,22 @@ def test_cleanup_temp_results():
     name1 = 'temp_1.tif'
     name2 = 'temp_2.tif'
 
-    with gis.WorkSpace(workspace):
-        raster1 = gis.copy_layer(template_file, name1)
-        raster2 = gis.copy_layer(template_file, name2)
+    with utils.WorkSpace(workspace):
+        raster1 = utils.copy_layer(template_file, name1)
+        raster2 = utils.copy_layer(template_file, name2)
 
     nt.assert_true(os.path.exists(os.path.join(workspace, 'temp_1.tif')))
     nt.assert_true(os.path.exists(os.path.join(workspace, 'temp_2.tif')))
 
-    with gis.WorkSpace(workspace):
-        gis.cleanup_temp_results(name1, name2)
+    with utils.WorkSpace(workspace):
+        utils.cleanup_temp_results(name1, name2)
 
     nt.assert_false(os.path.exists(os.path.join(workspace, 'temp_1.tif')))
     nt.assert_false(os.path.exists(os.path.join(workspace, 'temp_2.tif')))
 
 @nt.raises(ValueError)
 def test_cleanup_with_bad_input():
-    gis.cleanup_temp_results(1, 2, ['a', 'b', 'c'])
+    utils.cleanup_temp_results(1, 2, ['a', 'b', 'c'])
 
 
 @nptest.dec.skipif(not pptest.has_fiona)
@@ -520,8 +520,8 @@ def test_intersect_polygon_layers():
     known_file = resource_filename("propagator.testing.intersect_polygons", "intersect_known.shp")
     output_file = resource_filename("propagator.testing.intersect_polygons", "intersect_output.shp")
 
-    with gis.OverwriteState(True):
-        output = gis.intersect_polygon_layers(
+    with utils.OverwriteState(True):
+        output = utils.intersect_polygon_layers(
             output_file,
             input1_file,
             input2_file,
@@ -530,7 +530,7 @@ def test_intersect_polygon_layers():
     nt.assert_true(isinstance(output, arcpy.mapping.Layer))
     pptest.assert_shapefiles_are_close(output_file, known_file)
 
-    gis.cleanup_temp_results(output)
+    utils.cleanup_temp_results(output)
 
 
 def test_load_attribute_table():
@@ -550,7 +550,7 @@ def test_load_attribute_table():
         ]
     )
 
-    result = gis.load_attribute_table(path, 'CatchID', 'DwnCatchID', 'Watershed')
+    result = utils.load_attribute_table(path, 'CatchID', 'DwnCatchID', 'Watershed')
     nptest.assert_array_equal(result[:5], expected_top_five)
 
 
@@ -565,7 +565,7 @@ class Test_groupby_and_aggregate():
     known_areas = {2: 1327042.1024, 7: 1355433.0192, 12: 1054529.2882}
 
     def test_defaults(self):
-        counts = gis.groupby_and_aggregate(
+        counts = utils.groupby_and_aggregate(
             self.buildings,
             self.group_col,
             self.count_col,
@@ -575,7 +575,7 @@ class Test_groupby_and_aggregate():
         nt.assert_dict_equal(counts, self.known_counts)
 
     def test_area(self):
-        areadict = gis.groupby_and_aggregate(
+        areadict = utils.groupby_and_aggregate(
             self.areas,
             self.group_col,
             self.area_op,
@@ -606,7 +606,7 @@ class Test_groupby_and_aggregate():
 
     @nt.raises(ValueError)
     def test_bad_group_col(self):
-        counts = gis.groupby_and_aggregate(
+        counts = utils.groupby_and_aggregate(
             self.buildings,
             "JUNK",
             self.count_col
@@ -614,7 +614,7 @@ class Test_groupby_and_aggregate():
 
     @nt.raises(ValueError)
     def test_bad_count_col(self):
-        counts = gis.groupby_and_aggregate(
+        counts = utils.groupby_and_aggregate(
             self.buildings,
             self.group_col,
             "JUNK"
@@ -627,15 +627,15 @@ def test_rename_column():
     oldname = "existing"
     newname = "exists"
 
-    #layer = gis.load_data(inputfile, "layer")
+    #layer = utils.load_data(inputfile, "layer")
 
-    gis.rename_column(layer, oldname, newname)
-    gis.check_fields(layer, newname, should_exist=True)
-    gis.check_fields(layer, oldname, should_exist=False)
+    utils.rename_column(layer, oldname, newname)
+    utils.check_fields(layer, newname, should_exist=True)
+    utils.check_fields(layer, oldname, should_exist=False)
 
-    gis.rename_column(layer, newname, oldname)
-    gis.check_fields(layer, newname, should_exist=False)
-    gis.check_fields(layer, oldname, should_exist=True)
+    utils.rename_column(layer, newname, oldname)
+    utils.check_fields(layer, newname, should_exist=False)
+    utils.check_fields(layer, oldname, should_exist=True)
 
 
 class Test_populate_field(object):
@@ -649,9 +649,9 @@ class Test_populate_field(object):
     def test_with_dictionary(self):
         value_dict = {n: n for n in range(7)}
         value_fxn = lambda row: value_dict.get(row[0], -1)
-        gis.add_field_with_value(self.shapefile, self.field_added, field_type="LONG")
+        utils.add_field_with_value(self.shapefile, self.field_added, field_type="LONG")
 
-        gis.populate_field(
+        utils.populate_field(
             self.shapefile,
             lambda row: value_dict.get(row[0], -1),
             self.field_added,
@@ -663,8 +663,8 @@ class Test_populate_field(object):
                 nt.assert_equal(row[0], row[1])
 
     def test_with_general_function(self):
-        gis.add_field_with_value(self.shapefile, self.field_added, field_type="LONG")
-        gis.populate_field(
+        utils.add_field_with_value(self.shapefile, self.field_added, field_type="LONG")
+        utils.populate_field(
             self.shapefile,
             lambda row: row[0]**2,
             self.field_added,
@@ -681,15 +681,15 @@ def test_copy_layer():
         in_data = 'input'
         out_data = 'new_copy'
 
-        result = gis.copy_layer(in_data, out_data)
+        result = utils.copy_layer(in_data, out_data)
         _copy.assert_called_once_with(in_data=in_data, out_data=out_data)
         nt.assert_equal(result, out_data)
 
 
 def test_intersect_layers():
     ws = resource_filename('propagator.testing', 'intersect_layers')
-    with gis.OverwriteState(True), gis.WorkSpace(ws):
-        gis.intersect_layers(
+    with utils.OverwriteState(True), utils.WorkSpace(ws):
+        utils.intersect_layers(
             ['subcatchments.shp', 'monitoring_locations.shp'],
             'test.shp',
         )
@@ -699,14 +699,14 @@ def test_intersect_layers():
         os.path.join(ws, 'test.shp'),
     )
 
-    gis.cleanup_temp_results(os.path.join(ws, 'test.shp'))
+    utils.cleanup_temp_results(os.path.join(ws, 'test.shp'))
 
 
 @nptest.dec.skipif(not pptest.has_fiona)
 def test_concat_results():
     known = resource_filename('propagator.testing.concat_results', 'known.shp')
-    with gis.OverwriteState(True):
-        test = gis.concat_results(
+    with utils.OverwriteState(True):
+        test = utils.concat_results(
             resource_filename('propagator.testing.concat_results', 'result.shp'),
             resource_filename('propagator.testing.concat_results', 'input1.shp'),
             resource_filename('propagator.testing.concat_results', 'input2.shp')
@@ -715,7 +715,7 @@ def test_concat_results():
     nt.assert_true(isinstance(test, arcpy.mapping.Layer))
     pptest.assert_shapefiles_are_close(test.dataSource, known)
 
-    gis.cleanup_temp_results(test)
+    utils.cleanup_temp_results(test)
 
 
 @nptest.dec.skipif(not pptest.has_fiona)
@@ -724,13 +724,13 @@ def test_spatial_join():
     left = resource_filename('propagator.testing.spatial_join', 'merge_baseline.shp')
     right = resource_filename('propagator.testing.spatial_join', 'merge_join.shp')
     outputfile = resource_filename('propagator.testing.spatial_join', 'merge_result.shp')
-    with gis.OverwriteState(True):
-        test = gis.spatial_join(left=left, right=right, outputfile=outputfile)
+    with utils.OverwriteState(True):
+        test = utils.spatial_join(left=left, right=right, outputfile=outputfile)
 
     nt.assert_equal(test, outputfile)
     pptest.assert_shapefiles_are_close(test, known)
 
-    gis.cleanup_temp_results(test)
+    utils.cleanup_temp_results(test)
 
 
 @nptest.dec.skipif(not pptest.has_fiona)
@@ -747,22 +747,22 @@ def test_update_attribute_table():
     )
 
     arcpy.management.Copy(inputpath, testpath)
-    gis.update_attribute_table(testpath, new_attributes, 'id', 'Cu', 'Pb')
+    utils.update_attribute_table(testpath, new_attributes, 'id', 'Cu', 'Pb')
 
     pptest.assert_shapefiles_are_close(testpath, expected)
-    gis.cleanup_temp_results(testpath)
+    utils.cleanup_temp_results(testpath)
 
 
 def test_get_field_names():
     expected = [u'FID', u'Shape', u'Station', u'Latitude', u'Longitude']
     layer = resource_filename('propagator.testing.get_field_names', 'input.shp')
-    result = gis.get_field_names(layer)
+    result = utils.get_field_names(layer)
     nt.assert_list_equal(result, expected)
 
 
 def test_count_features():
     layer = resource_filename('propagator.testing.count_features', 'monitoring_locations.shp')
-    nt.assert_equal(gis.count_features(layer), 14)
+    nt.assert_equal(utils.count_features(layer), 14)
 
 
 def test_query_layer():
@@ -771,7 +771,7 @@ def test_query_layer():
         out_data = 'new_copy'
         sql = "fake SQL string"
 
-        result = gis.query_layer(in_data, out_data, sql)
+        result = utils.query_layer(in_data, out_data, sql)
         query.assert_called_once_with(
             in_features=in_data,
             out_feature_class=out_data,
@@ -785,7 +785,7 @@ def test_delete_columns():
         in_data = 'input'
         expected_col_string = 'ThisColumn;ThatColumn;AnotherColumn'
 
-        result = gis.delete_columns(in_data, 'ThisColumn', 'ThatColumn', 'AnotherColumn')
+        result = utils.delete_columns(in_data, 'ThisColumn', 'ThatColumn', 'AnotherColumn')
         delete.assert_called_once_with(in_data, expected_col_string)
         nt.assert_equal(result, in_data)
 
@@ -795,6 +795,113 @@ def test_delete_columns_no_columns():
         in_data = 'input'
         expected_col_string = 'ThisColumn;ThatColumn;AnotherColumn'
 
-        result = gis.delete_columns(in_data)
+        result = utils.delete_columns(in_data)
         delete.assert_not_called()
         nt.assert_equal(result, in_data)
+
+
+class Test_find_row_in_array(object):
+    def setup(self):
+        self.input_array = numpy.array(
+            [
+                ('A1', 'Ocean', 'A1_x', 'A1_y'), ('A2', 'Ocean', 'A2_x', 'A2_y'),
+                ('B1', 'A1', 'None', 'B1_y'), ('B2', 'A1', 'B2_x', 'None'),
+                ('B3', 'A2', 'B3_x', 'B3_y'), ('C1', 'B2', 'C1_x', 'None'),
+            ], dtype=[('ID', '<U5'), ('DS_ID', '<U5'), ('Cu', '<U5'), ('Pb', '<U5'),]
+        )
+
+    def test_no_rows_returned(self):
+        row = utils.find_row_in_array(self.input_array, 'ID', 'Junk')
+        nt.assert_true(row is None)
+
+    def test_normal_1_row(self):
+        row = utils.find_row_in_array(self.input_array, 'ID', 'A1')
+        nt.assert_tuple_equal(tuple(row), tuple(self.input_array[0]))
+
+    @nt.raises(ValueError)
+    def test_too_man_rows(self):
+         row = utils.find_row_in_array(self.input_array, 'DS_ID', 'A1')
+
+
+def test_Statistic():
+    x = utils.Statistic('Cu', numpy.mean, 'MaxCu')
+    nt.assert_true(hasattr(x, 'srccol'))
+    nt.assert_equal(x.srccol, 'Cu')
+
+    nt.assert_true(hasattr(x, 'aggfxn'))
+    nt.assert_equal(x.aggfxn, numpy.mean)
+
+    nt.assert_true(hasattr(x, 'rescol'))
+    nt.assert_equal(x.rescol, 'MaxCu')
+
+
+class Test_rec_groupby(object):
+    def setup(self):
+        self.data = numpy.array([
+            (u'050SC', u'A', 88.3, 0.25), (u'050SC', 'B', 0.0, 0.50),
+            (u'050SC', u'A', 98.3, 0.75), (u'050SC', 'B', 1.0, 1.00),
+            (u'045SC', u'A', 49.2, 0.04), (u'045SC', 'B', 0.0, 0.08),
+            (u'045SC', u'A', 69.2, 0.08), (u'045SC', 'B', 2.0, 0.16),
+        ], dtype=[('ID', '<U5'), ('DS_ID', '<U5'), ('Cu', '<f8'), ('Pb', '<f8'),])
+
+        self.expected_one_group_col = numpy.rec.fromrecords([
+            (u'050SC', 98.3, 0.625),
+            (u'045SC', 69.2, 0.090),
+        ], names=['ID', 'MaxCu', 'AvgPb'])
+
+        self.expected_two_group_col = numpy.rec.fromrecords([
+            (u'050SC', u'A', 98.3, 0.50),
+            (u'050SC', u'B',  1.0, 0.75),
+            (u'045SC', u'A', 69.2, 0.06),
+            (u'045SC', u'B',  2.0, 0.12),
+        ], names=['ID', 'DS_ID', 'MaxCu', 'AvgPb'])
+
+        self.stats = [
+            utils.Statistic('Cu', numpy.max, 'MaxCu'),
+            utils.Statistic('Pb', numpy.mean, 'AvgPb')
+        ]
+
+    def test_one_group_col(self):
+        result = utils.rec_groupby(self.data, 'ID', *self.stats)
+        result.sort()
+
+        expected = self.expected_one_group_col.copy()
+        expected.sort()
+
+        nptest.assert_array_equal(result, expected)
+
+    def test_two_group_col(self):
+        result = utils.rec_groupby(self.data, ['ID', 'DS_ID'], *self.stats)
+        result.sort()
+
+        expected = self.expected_two_group_col.copy()
+        expected.sort()
+
+        nptest.assert_array_equal(result, expected)
+
+
+
+class Test_stats_with_ignored_values(object):
+    def setup(self):
+        self.x1 = [1., 2., 3., 4., 5.]
+        self.x2 = [5.] * 5 # just a list of 5's
+
+    def test_normal(self):
+        expected = 2.5
+        result = utils.stats_with_ignored_values(self.x1, numpy.mean, ignored_value=5)
+        nt.assert_equal(result, expected)
+
+    def test_nothing_ignored(self):
+        expected = 3.
+        result = utils.stats_with_ignored_values(self.x1, numpy.mean, ignored_value=6)
+        nt.assert_equal(result, expected)
+
+    def test_nothing_to_ignore(self):
+        expected = 3.
+        result = utils.stats_with_ignored_values(self.x1, numpy.mean, ignored_value=None)
+        nt.assert_equal(result, expected)
+
+    def test_ignore_everthing(self):
+        expected = 5
+        result = utils.stats_with_ignored_values(self.x2, numpy.mean, ignored_value=5)
+        nt.assert_equal(result, expected)
