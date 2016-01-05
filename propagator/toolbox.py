@@ -452,7 +452,7 @@ class Propagator(BaseToolbox_Mixin):
         """
 
         # std attributes
-        self.canRunInBackground = False
+        self.canRunInBackground = True
         self.label = "1 - Propagate WQ scores to upstream subcatchments"
         self.description = dedent("""
         TDB
