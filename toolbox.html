@@ -85,7 +85,6 @@
 <li class="toctree-l1"><a class="reference internal" href="python.html">Using <strong>python-propagator</strong> from python</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="python.html#common-elements-of-examples">Common elements of examples</a></li>
 <li class="toctree-l2"><a class="reference internal" href="python.html#the-toolbox-api">The <code class="docutils literal"><span class="pre">toolbox</span></code> API</a></li>
-<li class="toctree-l2"><a class="reference internal" href="python.html#the-analysis-api">The <code class="docutils literal"><span class="pre">analysis</span></code> API</a></li>
 </ul>
 </li>
 <li class="toctree-l1 current"><a class="current reference internal" href=""><code class="docutils literal"><span class="pre">toolbox</span></code> API Reference</a></li>
@@ -141,13 +140,68 @@ infrastructure.</p>
 <p>Written by Paul Hobson (<a class="reference external" href="mailto:phobson&#37;&#52;&#48;geosyntec&#46;com">phobson<span>&#64;</span>geosyntec<span>&#46;</span>com</a>)</p>
 <dl class="function">
 <dt id="propagator.toolbox.propagate">
-<code class="descclassname">propagator.toolbox.</code><code class="descname">propagate</code><span class="sig-paren">(</span><em>monitoring_locations=None</em>, <em>subcatchments=None</em>, <em>id_col=None</em>, <em>ds_col=None</em>, <em>output_path=None</em>, <em>value_columns=None</em><span class="sig-paren">)</span><a class="headerlink" href="#propagator.toolbox.propagate" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<code class="descclassname">propagator.toolbox.</code><code class="descname">propagate</code><span class="sig-paren">(</span><em>subcatchments=None</em>, <em>id_col=None</em>, <em>ds_col=None</em>, <em>monitoring_locations=None</em>, <em>value_columns=None</em>, <em>output_path=None</em><span class="sig-paren">)</span><a class="headerlink" href="#propagator.toolbox.propagate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Propgate water quality scores upstream from the subcatchments of
+a watershed.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>subcatchments</strong> : str</p>
+<blockquote>
+<div><p>Path to the feature class containing the subcatchments.
+Attribute table must contain fields for the subcatchment ID
+and the ID of the downstream subcatchment.</p>
+</div></blockquote>
+<p><strong>id_col, ds_col</strong> : str</p>
+<blockquote>
+<div><p>Names of the fields in the <code class="docutils literal"><span class="pre">subcatchments</span></code> feature class that
+specifies the subcatchment ID and the ID of the downstream
+subcatchment, respectively.</p>
+</div></blockquote>
+<p><strong>monitoring_locations</strong> : str</p>
+<blockquote>
+<div><p>Path to the feature class containing the monitoring locations
+and water quality scores.</p>
+</div></blockquote>
+<p><strong>value_columns</strong> : list of str</p>
+<blockquote>
+<div><p>List of the fields in <code class="docutils literal"><span class="pre">monitoring_locations</span></code> that contains
+water quality score that should be propagated.</p>
+</div></blockquote>
+<p><strong>output_path</strong> : str</p>
+<blockquote>
+<div><p>Path to where the the new subcatchments feature class with the
+propagated water quality scores should be saved.</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"><strong>output_path</strong> : str</p>
+</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Examples</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">propagator</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">propagator</span> <span class="kn">import</span> <span class="n">utils</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">with</span> <span class="n">utils</span><span class="o">.</span><span class="n">WorkSpace</span><span class="p">(</span><span class="s">&#39;C:/gis/SOC.gdb&#39;</span><span class="p">):</span>
+<span class="gp">... </span>    <span class="n">propagator</span><span class="o">.</span><span class="n">propagate</span><span class="p">(</span>
+<span class="gp">... </span>        <span class="n">subcatchments</span><span class="o">=</span><span class="s">&#39;subbasins&#39;</span><span class="p">,</span>
+<span class="gp">... </span>        <span class="n">id_col</span><span class="o">=</span><span class="s">&#39;Catch_ID&#39;</span><span class="p">,</span>
+<span class="gp">... </span>        <span class="n">ds_col</span><span class="o">=</span><span class="s">&#39;DS_ID&#39;</span><span class="p">,</span>
+<span class="gp">... </span>        <span class="n">monitoring_locations</span><span class="o">=</span><span class="s">&#39;wq_data&#39;</span><span class="p">,</span>
+<span class="gp">... </span>        <span class="n">value_columns</span><span class="o">=</span><span class="p">[</span><span class="s">&#39;Dry_Metals&#39;</span><span class="p">,</span> <span class="s">&#39;Wet_Metals&#39;</span><span class="p">,</span> <span class="s">&#39;Wet_TSS&#39;</span><span class="p">],</span>
+<span class="gp">... </span>        <span class="n">output_path</span><span class="o">=</span><span class="s">&#39;propagated_metals&#39;</span>
+<span class="gp">... </span>    <span class="p">)</span>
+</pre></div>
+</div>
+</dd></dl>
 
 <dl class="function">
 <dt id="propagator.toolbox.accumulate">
 <code class="descclassname">propagator.toolbox.</code><code class="descname">accumulate</code><span class="sig-paren">(</span><em>**params</em><span class="sig-paren">)</span><a class="headerlink" href="#propagator.toolbox.accumulate" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>Not yet implemented</p>
+</dd></dl>
 
 <dl class="class">
 <dt id="propagator.toolbox.BaseToolbox_Mixin">
@@ -237,7 +291,7 @@ means, instead of doing something like</li>
 magically know where in the list of parameters e.g., the
 DEM is found. Take note, Esri.</p>
 <ol class="arabic simple" start="2">
-<li>call <a class="reference internal" href="#propagator.toolbox.Propagator.analyze" title="propagator.toolbox.Propagator.analyze"><code class="xref py py-meth docutils literal"><span class="pre">analyze()</span></code></a>.</li>
+<li>call <code class="xref py py-meth docutils literal"><span class="pre">self.analyze()</span></code>.</li>
 </ol>
 </dd></dl>
 
@@ -257,21 +311,27 @@ occur.</p>
 <dl class="attribute">
 <dt id="propagator.toolbox.BaseToolbox_Mixin.ID_column">
 <code class="descname">ID_column</code><a class="headerlink" href="#propagator.toolbox.BaseToolbox_Mixin.ID_column" title="Permalink to this definition">¶</a></dt>
-<dd><p>Name of the field in the <cite>subcatchments</cite> layer that uniquely
-identifies each subcatchment.</p>
+<dd><p>Name of the field in the <cite>subcatchments</cite> layer that
+uniquely identifies each subcatchment.</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="propagator.toolbox.BaseToolbox_Mixin.downstream_ID_column">
 <code class="descname">downstream_ID_column</code><a class="headerlink" href="#propagator.toolbox.BaseToolbox_Mixin.downstream_ID_column" title="Permalink to this definition">¶</a></dt>
-<dd><p>Name of the field in the <cite>subcatchments</cite> layer that specifies
-the downstream subcatchment.</p>
+<dd><p>Name of the field in the <cite>subcatchments</cite> layer that
+specifies the downstream subcatchment.</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="propagator.toolbox.BaseToolbox_Mixin.output_layer">
 <code class="descname">output_layer</code><a class="headerlink" href="#propagator.toolbox.BaseToolbox_Mixin.output_layer" title="Permalink to this definition">¶</a></dt>
 <dd><p>Where the propagated/accumulated data will be saved.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="propagator.toolbox.BaseToolbox_Mixin.add_output_to_map">
+<code class="descname">add_output_to_map</code><a class="headerlink" href="#propagator.toolbox.BaseToolbox_Mixin.add_output_to_map" title="Permalink to this definition">¶</a></dt>
+<dd><p>If True, the output layer is added to the current map</p>
 </dd></dl>
 
 </dd></dl>
@@ -297,14 +357,16 @@ through subcatchments in a watershed.</p>
 <dl class="attribute">
 <dt id="propagator.toolbox.Propagator.monitoring_locations">
 <code class="descname">monitoring_locations</code><a class="headerlink" href="#propagator.toolbox.Propagator.monitoring_locations" title="Permalink to this definition">¶</a></dt>
-<dd><p>The monitoring location points whose data will be propagated
-to the subcatchments.</p>
+<dd><p>The monitoring location points whose data will be
+propagated to the subcatchments.</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="propagator.toolbox.Propagator.value_columns">
 <code class="descname">value_columns</code><a class="headerlink" href="#propagator.toolbox.Propagator.value_columns" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>The names of the fields to be propagated into upstream
+subcatchments.</p>
+</dd></dl>
 
 <dl class="method">
 <dt id="propagator.toolbox.Propagator.analyze">

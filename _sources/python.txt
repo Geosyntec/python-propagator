@@ -66,7 +66,15 @@ Below is an example of using the :func:`propagator.toolbox.propagate` class to e
     # define the workspace as a geodatabase
     workspace = r'F:\phobson\propagator\MB_Small.gdb'
 
-    # TBD
+    with utils.WorkSpace(workspace):
+        propagator.propagate(
+            subcatchments='subbasins',
+            id_col='Catch_ID',
+            ds_col='DS_ID',
+            monitoring_locations='wq_data',
+            value_columns=['Dry_Metals', 'Wet_Metals', 'Wet_TSS'],
+            output_path='propagated_metals'
+        )
 
 
 Below is an example of using the :func:`propagator.toolbox.accumulate` class to evaluate custom flood elevations.
@@ -76,40 +84,4 @@ Below is an example of using the :func:`propagator.toolbox.accumulate` class to 
     # define the workspace as a geodatabase
     workspace = r'F:\phobson\propagator\MB_Small.gdb'
 
-    # TBD
-
-
-.. _analysis_guide:
-
-The ``analysis`` API
---------------------
-
-For a full description of the API, see the :mod:`propagator.analysis`.
-
-The ``analysis`` API can be used to taylor a more nuanced, custom analysis of the impacts resulting from a flood event.
-Where the ``toolbox`` API effectively limits the user to computing total area and counts of one asset each, the functions below can be used by a python programmer to assess the impact to any number of assets.
-
-General descriptions
-~~~~~~~~~~~~~~~~~~~~
-
-The :mod:`propagator.analysis` submodule contains five functions:
-
-:func:`propagator.analysis.trace_upstream`
-    TBD
-
-
-Code examples
-~~~~~~~~~~~~~
-
-The classes in :mod:`propagator.toolbox` rely on the functions in :mod:`propagator.analysis` to determine
-   - TBD
-   = TBD
-
-The sample script below does TDB by using :mod:`propagator.analysis` directly.
-
-
-.. code-block:: python
-
-    # common parameters
-    workspace = r'F:\phobson\propagator\MB_Small.gdb'
     # TBD

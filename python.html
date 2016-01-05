@@ -85,7 +85,6 @@
 <li class="toctree-l1 current"><a class="current reference internal" href="">Using <strong>python-propagator</strong> from python</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#common-elements-of-examples">Common elements of examples</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#the-toolbox-api">The <code class="docutils literal"><span class="pre">toolbox</span></code> API</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#the-analysis-api">The <code class="docutils literal"><span class="pre">analysis</span></code> API</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="toolbox.html"><code class="docutils literal"><span class="pre">toolbox</span></code> API Reference</a></li>
@@ -136,7 +135,7 @@ This allows users to directly use the analytical capabilities from a python scri
 <blockquote>
 <div><ol class="arabic simple">
 <li><a class="reference internal" href="#toolbox-guide"><span>The toolbox API</span></a>, which is easier to use and parallels the toolboxes.</li>
-<li><a class="reference internal" href="#analysis-guide"><span>The analysis API</span></a>, which is more powerful but requires precise coding.</li>
+<li><span class="xref std std-ref">analysis_guide</span>, which is more powerful but requires precise coding.</li>
 </ol>
 </div></blockquote>
 <div class="section" id="common-elements-of-examples">
@@ -178,44 +177,21 @@ All parameters are required except where noted.</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="c"># define the workspace as a geodatabase</span>
 <span class="n">workspace</span> <span class="o">=</span> <span class="s">r&#39;F:\phobson\propagator\MB_Small.gdb&#39;</span>
 
-<span class="c"># TBD</span>
+<span class="k">with</span> <span class="n">utils</span><span class="o">.</span><span class="n">WorkSpace</span><span class="p">(</span><span class="n">workspace</span><span class="p">):</span>
+    <span class="n">propagator</span><span class="o">.</span><span class="n">propagate</span><span class="p">(</span>
+        <span class="n">subcatchments</span><span class="o">=</span><span class="s">&#39;subbasins&#39;</span><span class="p">,</span>
+        <span class="n">id_col</span><span class="o">=</span><span class="s">&#39;Catch_ID&#39;</span><span class="p">,</span>
+        <span class="n">ds_col</span><span class="o">=</span><span class="s">&#39;DS_ID&#39;</span><span class="p">,</span>
+        <span class="n">monitoring_locations</span><span class="o">=</span><span class="s">&#39;wq_data&#39;</span><span class="p">,</span>
+        <span class="n">value_columns</span><span class="o">=</span><span class="p">[</span><span class="s">&#39;Dry_Metals&#39;</span><span class="p">,</span> <span class="s">&#39;Wet_Metals&#39;</span><span class="p">,</span> <span class="s">&#39;Wet_TSS&#39;</span><span class="p">],</span>
+        <span class="n">output_path</span><span class="o">=</span><span class="s">&#39;propagated_metals&#39;</span>
+    <span class="p">)</span>
 </pre></div>
 </div>
 <p>Below is an example of using the <a class="reference internal" href="toolbox.html#propagator.toolbox.accumulate" title="propagator.toolbox.accumulate"><code class="xref py py-func docutils literal"><span class="pre">propagator.toolbox.accumulate()</span></code></a> class to evaluate custom flood elevations.</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="c"># define the workspace as a geodatabase</span>
 <span class="n">workspace</span> <span class="o">=</span> <span class="s">r&#39;F:\phobson\propagator\MB_Small.gdb&#39;</span>
 
-<span class="c"># TBD</span>
-</pre></div>
-</div>
-</div>
-</div>
-<div class="section" id="the-analysis-api">
-<span id="analysis-guide"></span><h2>The <code class="docutils literal"><span class="pre">analysis</span></code> API<a class="headerlink" href="#the-analysis-api" title="Permalink to this headline">¶</a></h2>
-<p>For a full description of the API, see the <a class="reference internal" href="analysis.html#module-propagator.analysis" title="propagator.analysis"><code class="xref py py-mod docutils literal"><span class="pre">propagator.analysis</span></code></a>.</p>
-<p>The <code class="docutils literal"><span class="pre">analysis</span></code> API can be used to taylor a more nuanced, custom analysis of the impacts resulting from a flood event.
-Where the <code class="docutils literal"><span class="pre">toolbox</span></code> API effectively limits the user to computing total area and counts of one asset each, the functions below can be used by a python programmer to assess the impact to any number of assets.</p>
-<div class="section" id="general-descriptions">
-<h3>General descriptions<a class="headerlink" href="#general-descriptions" title="Permalink to this headline">¶</a></h3>
-<p>The <a class="reference internal" href="analysis.html#module-propagator.analysis" title="propagator.analysis"><code class="xref py py-mod docutils literal"><span class="pre">propagator.analysis</span></code></a> submodule contains five functions:</p>
-<dl class="docutils">
-<dt><a class="reference internal" href="analysis.html#propagator.analysis.trace_upstream" title="propagator.analysis.trace_upstream"><code class="xref py py-func docutils literal"><span class="pre">propagator.analysis.trace_upstream()</span></code></a></dt>
-<dd>TBD</dd>
-</dl>
-</div>
-<div class="section" id="id1">
-<h3>Code examples<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h3>
-<dl class="docutils">
-<dt>The classes in <a class="reference internal" href="toolbox.html#module-propagator.toolbox" title="propagator.toolbox"><code class="xref py py-mod docutils literal"><span class="pre">propagator.toolbox</span></code></a> rely on the functions in <a class="reference internal" href="analysis.html#module-propagator.analysis" title="propagator.analysis"><code class="xref py py-mod docutils literal"><span class="pre">propagator.analysis</span></code></a> to determine</dt>
-<dd><ul class="first simple">
-<li>TBD</li>
-</ul>
-<p class="last">= TBD</p>
-</dd>
-</dl>
-<p>The sample script below does TDB by using <a class="reference internal" href="analysis.html#module-propagator.analysis" title="propagator.analysis"><code class="xref py py-mod docutils literal"><span class="pre">propagator.analysis</span></code></a> directly.</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="c"># common parameters</span>
-<span class="n">workspace</span> <span class="o">=</span> <span class="s">r&#39;F:\phobson\propagator\MB_Small.gdb&#39;</span>
 <span class="c"># TBD</span>
 </pre></div>
 </div>
