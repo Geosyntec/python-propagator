@@ -227,6 +227,7 @@ class Test_Propagator(BaseToolboxChecker_Mixin):
             'monitoring_locations',
             'value_columns',
             'output_layer',
+            'add_output_to_map',
         ]
         nt.assert_list_equal(names, known_names)
 
@@ -260,6 +261,7 @@ class Test_Accumulator(BaseToolboxChecker_Mixin):
             'value_columns',
             'streams',
             'output_layer',
+            'add_output_to_map',
         ]
         nt.assert_list_equal(names, known_names)
 

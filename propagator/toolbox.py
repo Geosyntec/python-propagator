@@ -422,6 +422,7 @@ class BaseToolbox_Mixin(object):
             )
         return self._add_output_to_map
 
+
 class Propagator(BaseToolbox_Mixin):
     """
     ArcGIS Python toolbox to propagate water quality metrics upstream
