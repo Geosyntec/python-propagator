@@ -97,6 +97,7 @@ def propagate(subcatchments=None, id_col=None, ds_col=None,
 
 
 def accumulate(**params):
+    """ Not yet implemented """
     workspace = params.pop('workspace', '.')
     subcatchments = params.pop('subcatchments', None)
     id_col = params.pop('ID_column', None)
@@ -211,7 +212,7 @@ class BaseToolbox_Mixin(object):
         magically know where in the list of parameters e.g., the
         DEM is found. Take note, Esri.
 
-        2) call :meth:`.analyze`.
+        2) call :meth:`self.analyze`.
 
         """
 
@@ -330,9 +331,7 @@ class BaseToolbox_Mixin(object):
     @property
     def workspace(self):
         """ The directory or geodatabase in which the analysis will
-        occur.
-
-        """
+        occur. """
 
         if self._workspace is None:
             self._workspace = arcpy.Parameter(
@@ -347,9 +346,7 @@ class BaseToolbox_Mixin(object):
 
     @property
     def subcatchments(self):
-        """ The subcatchments polygons to be used in the analysis.
-
-        """
+        """ The subcatchments polygons to be used in the analysis. """
 
         if self._subcatchments is None:
             self._subcatchments = arcpy.Parameter(
@@ -365,11 +362,8 @@ class BaseToolbox_Mixin(object):
 
     @property
     def ID_column(self):
-        """
-        Name of the field in the `subcatchments` layer that uniquely
-        identifies each subcatchment.
-
-        """
+        """ Name of the field in the `subcatchments` layer that
+        uniquely identifies each subcatchment. """
 
         if self._ID_column is None:
             self._ID_column = arcpy.Parameter(
@@ -385,11 +379,8 @@ class BaseToolbox_Mixin(object):
 
     @property
     def downstream_ID_column(self):
-        """
-        Name of the field in the `subcatchments` layer that specifies
-        the downstream subcatchment.
-
-        """
+        """ Name of the field in the `subcatchments` layer that
+        specifies the downstream subcatchment. """
 
         if self._downstream_ID_column is None:
             self._downstream_ID_column = arcpy.Parameter(
@@ -470,11 +461,8 @@ class Propagator(BaseToolbox_Mixin):
 
     @property
     def monitoring_locations(self):
-        """
-        The monitoring location points whose data will be propagated
-        to the subcatchments.
-
-        """
+        """ The monitoring location points whose data will be
+        propagated to the subcatchments. """
 
         if self._monitoring_locations is None:
             self._monitoring_locations = arcpy.Parameter(
@@ -490,6 +478,8 @@ class Propagator(BaseToolbox_Mixin):
 
     @property
     def value_columns(self):
+        """ The names of the fields to be propagated into upstream
+        subcatchments. """
         if self._value_columns is None:
             self._value_columns = arcpy.Parameter(
                 displayName="Values to be Propagated",
@@ -518,7 +508,6 @@ class Propagator(BaseToolbox_Mixin):
     def analyze(self, **params):
         """ Propagates water quality scores from monitoring locations
         to upstream subcatchments. Calls directly to :func:`propagate`.
-
         """
 
         # analysis options
@@ -565,7 +554,6 @@ class Accumulator(BaseToolbox_Mixin):
     Propagator
 
     """
-    direction = 'downstream'
 
     def __init__(self):
         """Define the tool (tool name is the name of the class)."""
@@ -619,6 +607,8 @@ class Accumulator(BaseToolbox_Mixin):
 
     @property
     def value_columns(self):
+        """ The names of the fields to be accumulated into downstream
+        reaches. """
         if self._value_columns is None:
             self._value_columns = arcpy.Parameter(
                 displayName="Values to be Accumulated",
@@ -631,7 +621,6 @@ class Accumulator(BaseToolbox_Mixin):
             self._set_parameter_dependency(self._value_columns, self.subcatchments)
         return self._value_columns
 
-    @staticmethod
     def analyze(self, **params):
         """ Accumulates subcatchments properties from upstream
         subcatchments into stream. Calls directly to :func:`accumulate`.
