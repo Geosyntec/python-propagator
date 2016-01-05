@@ -34,6 +34,26 @@ def mock_status(*args, **kwargs):
     pass
 
 
+def test_propagate():
+    ws = resource_filename('propagator.testing', 'tbx_propagate')
+    columns = ['Dry_B', 'Dry_M', 'Dry_N', 'Wet_B', 'Wet_M', 'Wet_N']
+    with utils.WorkSpace(ws), utils.OverwriteState(True):
+        output_layer = propagator.toolbox.propagate(
+            subcatchments='subcatchments.shp',
+            monitoring_locations='monitoring_locations.shp',
+            id_col='CID',
+            ds_col='DS_CID',
+            value_columns=columns,
+            output_path='test.shp'
+        )
+
+    pptest.assert_shapefiles_are_close(
+        os.path.join(ws, 'expected.shp'),
+        os.path.join(ws, output_layer),
+    )
+
+    utils.cleanup_temp_results(os.path.join(ws, output_layer))
+
 class BaseToolboxChecker_Mixin(object):
     mockMap = mock.Mock(spec=utils.EasyMapDoc)
     mockLayer = mock.Mock(spec=arcpy.mapping.Layer)
