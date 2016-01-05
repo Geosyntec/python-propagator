@@ -193,9 +193,15 @@ class BaseToolboxChecker_Mixin(object):
         nt.assert_list_equal(self.tbx.output_layer.parameterDependencies, [])
         nt.assert_false(self.tbx.output_layer.multiValue)
 
-    @nptest.dec.skipif(not pptest.has_fiona)
-    def test_analyze(self):
-        pass
+    def test_add_output_to_map(self):
+        nt.assert_true(hasattr(self.tbx, 'add_output_to_map'))
+        nt.assert_true(isinstance(self.tbx.add_output_to_map, arcpy.Parameter))
+        nt.assert_equal(self.tbx.add_output_to_map.parameterType, 'Required')
+        nt.assert_equal(self.tbx.add_output_to_map.direction, 'Input')
+        nt.assert_equal(self.tbx.add_output_to_map.datatype, 'Boolean')
+        nt.assert_equal(self.tbx.add_output_to_map.name, 'add_output_to_map')
+        nt.assert_list_equal(self.tbx.add_output_to_map.parameterDependencies, [])
+        nt.assert_false(self.tbx.add_output_to_map.multiValue)
 
 
 @mock.patch('propagator.utils.misc._status', mock_status)
@@ -230,6 +236,32 @@ class Test_Propagator(BaseToolboxChecker_Mixin):
             'add_output_to_map',
         ]
         nt.assert_list_equal(names, known_names)
+
+    @nptest.dec.skipif(not pptest.has_fiona)
+    def test_analyze(self):
+        tbx = toolbox.Propagator()
+        ws = resource_filename('propagator.testing', 'tbx_propagate')
+        columns = ['Dry_B', 'Dry_M', 'Dry_N', 'Wet_B', 'Wet_M', 'Wet_N']
+        with mock.patch.object(toolbox.Propagator, '_add_to_map') as atm:
+            output_layer = tbx.analyze(
+                workspace=ws,
+                overwrite=True,
+                subcatchments='subcatchments.shp',
+                ID_column='CID',
+                downstream_ID_column='DS_CID',
+                monitoring_locations='monitoring_locations.shp',
+                value_columns=columns,
+                output_layer='test.shp',
+                add_output_to_map=True
+            )
+
+            pptest.assert_shapefiles_are_close(
+                os.path.join(ws, 'expected.shp'),
+                os.path.join(ws, output_layer),
+            )
+
+            utils.cleanup_temp_results(os.path.join(ws, output_layer))
+            atm.assert_called_once_with(output_layer)
 
 
 @mock.patch('propagator.utils.misc._status', mock_status)
