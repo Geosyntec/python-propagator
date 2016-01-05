@@ -27,6 +27,7 @@ from . import utils
 from . import validate
 
 
+@utils.update_status()
 def trace_upstream(subcatchment_array, subcatchment_ID, id_col='ID',
                    ds_col='DS_ID', downstream=None):
     """
@@ -50,7 +51,7 @@ def trace_upstream(subcatchment_array, subcatchment_ID, id_col='ID',
     downstream : list, optional
         A list of already known downstream catchments in the trace.
 
-        .. note ::
+        .. warning ::
            This is *only* used in the recursive calls to this function.
            You should never provide this value.
 
@@ -69,11 +70,14 @@ def trace_upstream(subcatchment_array, subcatchment_ID, id_col='ID',
 
     for n in _neighbors:
         downstream.append(n)
-        trace_upstream(subcatchment_array, n[id_col], downstream=downstream)
+        trace_upstream(subcatchment_array, n[id_col],
+                      id_col=id_col, ds_col=ds_col,
+                      downstream=downstream)
 
     return numpy.array(downstream, dtype=subcatchment_array.dtype)
 
 
+@utils.update_status()
 def find_bottoms(subcatchment_array, bottom_ID='ocean', ds_col='DS_ID'):
     """
     Finds the lowest, non-ocean subcatchments in a watershed.
@@ -102,6 +106,7 @@ def find_bottoms(subcatchment_array, bottom_ID='ocean', ds_col='DS_ID'):
     return numpy.array(list(bottoms), dtype=subcatchment_array.dtype)
 
 
+@utils.update_status()
 def find_tops(subcatchment_array, id_col='ID', ds_col='DS_ID'):
     """
     Finds the the subcatchments in a watershed that do not accept
@@ -133,8 +138,9 @@ def find_tops(subcatchment_array, id_col='ID', ds_col='DS_ID'):
     return numpy.array(list(tops), dtype=subcatchment_array.dtype)
 
 
-def propagate_scores(subcatchment_array, wq_column, null_value='None',
-                     id_col='ID', ds_col='DS_ID', bottom_ID='Ocean'):
+@utils.update_status()
+def propagate_scores(subcatchment_array, id_col, ds_col, value_column,
+                     ignored_value=0, bottom_ID='Ocean'):
     """
     Propagate values into upstream subcatchments through a watershed.
 
@@ -144,18 +150,18 @@ def propagate_scores(subcatchment_array, wq_column, null_value='None',
         A record array of all of the subcatchments in the watershed.
         This array must have a "downstrea ID" column in which each
         subcatchment identifies as single, downstream neighbor.
-    wq_column : str
-        Name of a representative water quality column that can be used
-        to indicate if the given subcatchment has or has not been
-        populated with water quality data.
-    null_value : str, optional
-        The string representing unpopulated values in the array of
-        subcatchment and water quality data.
     id_col : str, optional
         The name of the column that specifies the current subcatchment.
     ds_col : str, optional
         The name of the column that identifies the downstream
         subcatchment.
+    value_column : str
+        Name of a representative water quality column that can be used
+        to indicate if the given subcatchment has or has not been
+        populated with water quality data.
+    ignored_value : float, optional
+        The values representing unpopulated records in the array of
+        subcatchment and water quality data.
     bottom_ID : str, optional
         The subcatchment ID of the pseudo-catchments in the Ocean.
 
@@ -175,22 +181,31 @@ def propagate_scores(subcatchment_array, wq_column, null_value='None',
     for n, row in enumerate(propagated):
 
         # check to see if we're at the bottom of the watershed
-        is_bottom = row[ds_col] == bottom_ID
+        is_bottom = row[ds_col].lower() == bottom_ID.lower()
 
         # look for a downstream value if there is not value
         # and we're not already at the bottom
-        if row[wq_column] == null_value and not is_bottom:
+        if row[value_column] == ignored_value and not is_bottom:
             # find the downstream value
-            ds_values = find_downstream_scores(propagated, row[ds_col], wq_column)
+            ds_values = _find_downstream_scores(
+                subcatchment_array=propagated,
+                subcatchment_ID=row[ds_col],
+                value_column=value_column,
+                ignored_value=ignored_value,
+                id_col=id_col,
+                ds_col=ds_col,
+            )
 
             # assign the downstream value to the current (empty) value
-            propagated[wq_column][n] = ds_values[wq_column]
+            propagated[value_column][n] = ds_values[value_column]
 
     return propagated
 
 
-def find_downstream_scores(subcatchment_array, subcatchment_ID, wq_column,
-                           null_value='None', id_col='ID', ds_col='DS_ID'):
+@utils.update_status()
+def _find_downstream_scores(subcatchment_array, subcatchment_ID, value_column,
+                            ignored_value='None', id_col='ID', ds_col='DS_ID',
+                            bottom_ID='Ocean'):
     """
     Recursively look for populated water quality score in downstream
     subcatchments.
@@ -204,12 +219,12 @@ def find_downstream_scores(subcatchment_array, subcatchment_ID, wq_column,
     subcatchment_ID : str
         ID of the subcatchment whose water quality scores need to be
         populated.
-    wq_column : str
+    value_column : str
         Name of a representative water quality column that can be used
         to indicate if the given subcatchment has or has not been
         populated with water quality data.
-    null_value : str, optional
-        The string representing unpopulated values in the array of
+    ignored_value : float, optional
+        The values representing unpopulated records in the array of
         subcatchment and water quality data.
     id_col : str, optional
         The name of the column that specifies the current subcatchment.
@@ -219,22 +234,33 @@ def find_downstream_scores(subcatchment_array, subcatchment_ID, wq_column,
 
     Returns
     -------
-    vals : numpy.recarray
+    scores : numpy record
         Row of water quality score to be used for the subcatchment.
 
     """
 
-    vals = utils.find_row_in_array(subcatchment_array, id_col, subcatchment_ID)
-    if vals[wq_column] == null_value:
-        return find_downstream_scores(subcatchment_array, vals[ds_col], wq_column,
-                                      null_value=null_value, id_col=id_col,
-                                      ds_col=ds_col)
+    row = utils.find_row_in_array(subcatchment_array, id_col, subcatchment_ID)
+
+    # check to see if we're at the bottom of the watershed
+    is_bottom = row[ds_col].lower() == bottom_ID.lower()
+    if row[value_column] == ignored_value and not is_bottom:
+        scores = _find_downstream_scores(
+            subcatchment_array=subcatchment_array,
+            subcatchment_ID=row[ds_col],
+            value_column=value_column,
+            ignored_value=ignored_value,
+            id_col=id_col,
+            ds_col=ds_col
+        )
     else:
-        return vals.copy()
+        scores = row.copy()
+
+    return scores
 
 
+@utils.update_status()
 def preprocess_wq(monitoring_locations, subcatchments, id_col, ds_col,
-                  output_path, wq_columns=None, aggfxn=numpy.mean,
+                  output_path, value_columns=None, aggfxn=numpy.mean,
                   ignored_value=0, cleanup=True):
     """
     Preprocess the water quality data to have to averaged score for
@@ -254,7 +280,7 @@ def preprocess_wq(monitoring_locations, subcatchments, id_col, ds_col,
     output_path : str
         Path of the new feature class where the preprocessed data
         should be saved.
-    wq_columns : list of str
+    value_columns : list of str
         A list of the names of the fields containing water quality
         scores that need to be analyzed.
     aggfxn : callable, optional
@@ -275,8 +301,8 @@ def preprocess_wq(monitoring_locations, subcatchments, id_col, ds_col,
 
     """
 
-    # validate wq_columns
-    wq_columns = validate.non_empty_list(wq_columns, msg="you must provide `wq_columns` to aggregate")
+    # validate value_columns
+    value_columns = validate.non_empty_list(value_columns, msg="you must provide `value_columns` to aggregate")
 
     # create the output feature class as a copy of the `subcatchments`
     output_path = utils.copy_layer(subcatchments, output_path)
@@ -294,7 +320,12 @@ def preprocess_wq(monitoring_locations, subcatchments, id_col, ds_col,
         statfxn=aggfxn,
         ignored_value=ignored_value
     )
-    statistics = [utils.Statistic(col, statfxn, 'avg{}'.format(col)) for col in wq_columns]
+
+    res_columns = ['avg{}'.format(col) for col in value_columns]
+    statistics = [
+        utils.Statistic(srccol, statfxn, rescol)
+        for srccol, rescol in zip(value_columns, res_columns)
+    ]
 
     # compile the original fields to read in from the joined table
     orig_fields = [id_col, ds_col]
@@ -309,10 +340,10 @@ def preprocess_wq(monitoring_locations, subcatchments, id_col, ds_col,
     aggregated = utils.rec_groupby(array, orig_fields[:2], *statistics)
 
     # add the new columns for the aggregated data to the output
-    for stat in statistics:
+    for rescol in res_columns:
         utils.add_field_with_value(
             table=output_path,
-            field_name=stat.rescol,
+            field_name=rescol,
             field_value=float(ignored_value),
             overwrite=True
         )
@@ -327,9 +358,10 @@ def preprocess_wq(monitoring_locations, subcatchments, id_col, ds_col,
     if cleanup:
         utils.cleanup_temp_results(joined)
 
-    return utils.load_attribute_table(output_path)
+    return utils.load_attribute_table(output_path), res_columns
 
 
+@utils.update_status()
 def split_streams(stream_layer, subcatchment_layer):
     raise NotImplementedError
 
@@ -448,6 +480,7 @@ def prepare_data(mon_locations, subcatchments, subcatch_id_col,
 
     return subcatchment_wq
 
+
 def _reduce(_ml, _out_ml, wq_fields, subcatch_id_col, sort_id):
     """
     Aggregates water quality ranksing from all monitoring locations
@@ -497,6 +530,7 @@ def _reduce(_ml, _out_ml, wq_fields, subcatch_id_col, sort_id):
         # Overwrite field [wq_par] of _out_ml with the computed value.
         utils.populate_field(_out_ml, lambda row: wq_value.values()[0], wq_par)
     return _out_ml
+
 
 def _non_zero_means(_arr):
     """

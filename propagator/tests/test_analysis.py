@@ -117,7 +117,8 @@ def test_propagate_scores_complex_1_columns():
             (u'K1', u'J2', u'J2Cu'), (u'L1', u'K1', u'J2Cu')
         ], dtype=subcatchments.dtype
     )
-    result = analysis.propagate_scores(subcatchments, 'Cu')
+    result = analysis.propagate_scores(subcatchments, 'ID', 'DS_ID', 'Cu',
+                                       ignored_value='None')
     nptest.assert_array_equal(result, expected)
 
 
@@ -137,14 +138,18 @@ def test_propagate_scores_simple_2_columns():
         ], dtype=[('ID', '<U5'), ('DS_ID', '<U5'), ('Cu', '<U5'), ('Pb', '<U5'),]
     )
 
-    result = analysis.propagate_scores(subcatchments, 'Pb')
-    result = analysis.propagate_scores(result, 'Cu')
+    result = analysis.propagate_scores(subcatchments, 'ID', 'DS_ID', 'Pb',
+                                       ignored_value='None')
+    result = analysis.propagate_scores(result, 'ID', 'DS_ID', 'Cu',
+                                       ignored_value='None')
+
+    nptest.assert_array_equal(result, expected)
 
 
-def test_find_downstream_scores():
+def test__find_downstream_scores():
     subcatchments = SIMPLE_SUBCATCHMENTS.copy()
     expected = ('E1', 'D1', 'None', 'E1_y')
-    value = analysis.find_downstream_scores(subcatchments, 'G1', 'Pb')
+    value = analysis._find_downstream_scores(subcatchments, 'G1', 'Pb')
     nt.assert_tuple_equal(tuple(value), expected)
 
 
@@ -155,17 +160,25 @@ class Test_preprocess_wq(object):
         self.sc = 'subcatchments.shp'
         self.expected = 'expected.shp'
         self.results = 'test.shp'
-        self.wq = [u'Dry_B', u'Dry_M', u'Dry_N', u'Wet_B', u'Wet_M', u'Wet_N',]
+        self.wq_cols = ['Dry_B', 'Dry_M', 'Dry_N', 'Wet_B', 'Wet_M', 'Wet_N',]
 
     def test_baseline(self):
+        expected_cols =[
+            'avgDry_B',
+            'avgDry_M',
+            'avgDry_N',
+            'avgWet_B',
+            'avgWet_M',
+            'avgWet_N',
+        ]
         with utils.OverwriteState(True), utils.WorkSpace(self.ws):
-            wq = analysis.preprocess_wq(
+            wq, cols = analysis.preprocess_wq(
                 monitoring_locations=self.ml,
                 subcatchments=self.sc,
                 id_col='CID',
                 ds_col='DS_CID',
                 output_path=self.results,
-                wq_columns=self.wq
+                value_columns=self.wq_cols
             )
 
         pptest.assert_shapefiles_are_close(
@@ -173,18 +186,22 @@ class Test_preprocess_wq(object):
             os.path.join(self.ws, self.results),
         )
         nt.assert_true(isinstance(wq, numpy.ndarray))
-        utils.cleanup_temp_results(os.path.join(self.ws, self.results))
+        nt.assert_list_equal(cols, expected_cols)
 
     @nt.raises(ValueError)
     def test_no_wq_col_error(self):
         with utils.OverwriteState(True), utils.WorkSpace(self.ws):
-            wq = analysis.preprocess_wq(
+            wq, cols = analysis.preprocess_wq(
                 monitoring_locations=self.ml,
                 subcatchments=self.sc,
                 id_col='CID',
                 ds_col='DS_CID',
                 output_path=self.results,
             )
+
+    def teardown(self):
+        utils.cleanup_temp_results(os.path.join(self.ws, self.results))
+
 
 def test_prepare_data():
     ws = resource_filename("propagator.testing", "prepare_data")
@@ -214,7 +231,7 @@ def test_prepare_data():
         ]
         cat_wq = analysis.prepare_data(ml, cat, "Catch_ID_a", 'FID_ml', header_fields, wq_fields, 'testout.shp')
         pptest.assert_shapefiles_are_close(cat_wq, expected_cat_wq)
-        #utils.cleanup_temp_results(cat_wq)
+        utils.cleanup_temp_results(cat_wq)
 
 
 def test_reduce():
