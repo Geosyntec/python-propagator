@@ -405,9 +405,7 @@ class BaseToolbox_Mixin(object):
 
     @property
     def output_layer(self):
-        """ Where the propagated/accumulated data will be saved.
-
-        """
+        """ Where the propagated/accumulated data will be saved. """
 
         if self._output_layer is None:
             self._output_layer = arcpy.Parameter(
@@ -419,6 +417,19 @@ class BaseToolbox_Mixin(object):
             )
         return self._output_layer
 
+    @property
+    def add_output_to_map(self):
+        """ If True, the output layer is added to the current map """
+
+        if self._add_output_to_map is None:
+            self._add_output_to_map = arcpy.Parameter(
+                displayName="Add results to map?",
+                name="add_output_to_map",
+                datatype="GPBoolean",
+                parameterType="Required",
+                direction="Input"
+            )
+        return self._add_output_to_map
 
 class Propagator(BaseToolbox_Mixin):
     """
@@ -455,6 +466,7 @@ class Propagator(BaseToolbox_Mixin):
         self._monitoring_locations = None
         self._value_columns = None
         self._output_layer = None
+        self._add_output_to_map = None
 
     @property
     def monitoring_locations(self):
@@ -499,6 +511,7 @@ class Propagator(BaseToolbox_Mixin):
             self.monitoring_locations,
             self.value_columns,
             self.output_layer,
+            self.add_output_to_map,
         ]
         return params
 
@@ -511,7 +524,7 @@ class Propagator(BaseToolbox_Mixin):
         # analysis options
         ws = params.pop('workspace', '.')
         overwrite = params.pop('overwrite', True)
-        add_to_map = params.pop('add_to_map', True)
+        add_output_to_map = params.pop('add_output_to_map', True)
 
         # input parameters
         sc = params.pop('subcatchments', None)
@@ -532,10 +545,11 @@ class Propagator(BaseToolbox_Mixin):
                 output_path=output_layer,
             )
 
-            if add_to_map:
+            if add_output_to_map:
                 self._add_to_map(output_layer)
 
         return output_layer
+
 
 class Accumulator(BaseToolbox_Mixin):
     """
@@ -569,6 +583,7 @@ class Accumulator(BaseToolbox_Mixin):
         self._value_columns = None
         self._streams = None
         self._output_layer = None
+        self._add_output_to_map = None
 
     def _params_as_list(self):
         params = [
@@ -579,6 +594,7 @@ class Accumulator(BaseToolbox_Mixin):
             self.value_columns,
             self.streams,
             self.output_layer,
+            self.add_output_to_map,
         ]
         return params
 
