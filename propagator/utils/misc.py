@@ -26,6 +26,7 @@ Statistic = namedtuple("Statistic", ("srccol", "aggfxn", "rescol"))
 
 
 def _status(msg, verbose=False, asMessage=False, addTab=False): # pragma: no cover
+    import arcpy
     if verbose:
         if addTab:
             msg = '\t' + msg
