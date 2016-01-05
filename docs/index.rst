@@ -11,19 +11,14 @@ Contents:
 .. toctree::
    :maxdepth: 3
 
+
    install.rst
 
    arcgis.rst
 
    python.rst
 
-   toolbox.rst
-
-   analysis.rst
-
-   utils_misc.rst
-
-   utils_gis.rst
+   api.rst
 
 
 Indices and tables
@@ -32,5 +27,3 @@ Indices and tables
 * :ref:`genindex`
 * :ref:`modindex`
 * :ref:`search`
-
-

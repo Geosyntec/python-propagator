@@ -339,83 +339,6 @@ def test_result_to_Layer():
         mockResult.getOutput.assert_called_once_with(0)
 
 
-class Test_rasters_to_arrays(object):
-    def setup(self):
-        from numpy import nan
-        self.known_array1 = numpy.array([
-            [ 0.0,  1.0,  2.0,  3.0,  4.0],
-            [ 5.0,  6.0,  7.0,  8.0,  9.0],
-            [10.0, 11.0, 12.0, 13.0, 14.0],
-            [15.0, 16.0, 17.0, 18.0, 19.0]
-        ])
-
-        self.known_array2 = numpy.array([
-            [nan,  10.0,  20.0,  30.0,  40.0],
-            [nan,  60.0,  70.0,  80.0,  90.0],
-            [nan, 110.0, 120.0, 130.0, 140.0],
-            [nan, 160.0, 170.0, 180.0, 190.0]
-        ])
-
-        self.known_array3 = numpy.array([
-            [  00,  100,  200,  300,  400],
-            [ 500,  600,  700,  800,  900],
-            [1000, 1100, 1200, 1300, 1400],
-            [1500, 1600, 1700, 1800, 1900]
-        ])
-
-        self.rasterfile1 = resource_filename("propagator.testing.rasters_to_arrays", 'test_raster1')
-        self.rasterfile2 = resource_filename("propagator.testing.rasters_to_arrays", 'test_raster2')
-        self.rasterfile3 = resource_filename("propagator.testing.rasters_to_arrays", 'test_raster3')
-
-    def test_one_raster(self):
-        array = gis.rasters_to_arrays(self.rasterfile1)
-        nt.assert_true(isinstance(array, list))
-        nt.assert_equal(len(array), 1)
-        nptest.assert_array_almost_equal(array[0], self.known_array1)
-
-    def test_one_raster_squeezed(self):
-        array = gis.rasters_to_arrays(self.rasterfile1, squeeze=True)
-        nt.assert_true(isinstance(array, numpy.ndarray))
-        nptest.assert_array_almost_equal(array, self.known_array1)
-
-    def test_with_missing_values_squeeze(self):
-        array = gis.rasters_to_arrays(self.rasterfile2, squeeze=True)
-        nt.assert_true(isinstance(array, numpy.ndarray))
-        nptest.assert_array_almost_equal(array, self.known_array2)
-
-    def test_int_array(self):
-        array = gis.rasters_to_arrays(self.rasterfile3, squeeze=True)
-        nt.assert_true(isinstance(array, numpy.ndarray))
-        nptest.assert_array_almost_equal(array, self.known_array3)
-
-    def test_multiple_args(self):
-        arrays = gis.rasters_to_arrays(
-            self.rasterfile1,
-            self.rasterfile2,
-            self.rasterfile3,
-            squeeze=True
-        )
-
-        nt.assert_true(isinstance(arrays, list))
-        nt.assert_equal(len(arrays), 3)
-
-        for a, kn in zip(arrays, [self.known_array1, self.known_array2, self.known_array3]):
-            nt.assert_true(isinstance(a, numpy.ndarray))
-            nptest.assert_array_almost_equal(a, kn)
-
-
-def test_array_to_raster():
-    template_file = resource_filename("propagator.testing.array_to_raster", 'test_raster2')
-    template = arcpy.Raster(template_file)
-    array = numpy.arange(5, 25).reshape(4, 5).astype(float)
-
-    raster = gis.array_to_raster(array, template)
-    nt.assert_true(isinstance(raster, arcpy.Raster))
-    nt.assert_true(raster.extent.equals(template.extent))
-    nt.assert_equal(raster.meanCellWidth, template.meanCellWidth)
-    nt.assert_equal(raster.meanCellHeight, template.meanCellHeight)
-
-
 class Test_load_data(object):
     rasterpath = resource_filename("propagator.testing.load_data", 'test_dem.tif')
     vectorpath = resource_filename("propagator.testing.load_data", 'test_wetlands.shp')
@@ -473,129 +396,6 @@ class Test_load_data(object):
         raster = arcpy.Raster(self.rasterpath)
         x = gis.load_data(raster, 'raster')
         nt.assert_true(isinstance(x, arcpy.Raster))
-
-        nptest.assert_array_almost_equal(*gis.rasters_to_arrays(x, raster))
-
-
-class _polygons_to_raster_mixin(object):
-    testfile = resource_filename("propagator.testing.polygons_to_raster", "test_zones.shp")
-    known_values = numpy.array([-999, 16, 150])
-
-    @nptest.dec.skipif(not pptest.has_spatial)
-    def test_process(self):
-        raster = gis.polygons_to_raster(self.testfile, "GeoID", **self.kwargs)
-        nt.assert_true(isinstance(raster, arcpy.Raster))
-
-        array = gis.rasters_to_arrays(raster, squeeze=True)
-        arcpy.management.Delete(raster)
-
-        flat_arr = array.flatten()
-        bins = numpy.bincount(flat_arr[flat_arr > 0])
-        nptest.assert_array_almost_equal(numpy.unique(array), self.known_values)
-        nptest.assert_array_almost_equal(bins[bins > 0], self.known_counts)
-        nt.assert_tuple_equal(array.shape, self.known_shape)
-
-
-class Test_polygons_to_raster_default(_polygons_to_raster_mixin):
-    def setup(self):
-        self.kwargs = {}
-        self.known_shape = (854, 661)
-        self.known_counts = numpy.array([95274, 36674])
-
-
-class Test_polygons_to_raster_x02(_polygons_to_raster_mixin):
-    def setup(self):
-        self.kwargs = {'cellsize': 2}
-        self.known_shape = (1709, 1322)
-        self.known_counts = numpy.array([381211, 146710])
-
-
-class Test_polygons_to_raster_x08(_polygons_to_raster_mixin):
-    def setup(self):
-        self.kwargs = {'cellsize': 8}
-        self.known_shape = (427, 330)
-        self.known_counts = numpy.array([23828,  9172])
-
-    @nptest.dec.skipif(not pptest.has_spatial)
-    def test_actual_arrays(self):
-        known_raster_file = resource_filename("propagator.testing.polygons_to_raster", "test_zones_raster.tif")
-        known_raster = gis.load_data(known_raster_file, 'raster')
-        raster = gis.polygons_to_raster(self.testfile, "GeoID", **self.kwargs)
-        arrays = gis.rasters_to_arrays(raster, known_raster)
-        arcpy.management.Delete(raster)
-
-        nptest.assert_array_almost_equal(*arrays)
-
-
-class Test_polygons_to_raster_x16(_polygons_to_raster_mixin):
-    def setup(self):
-        self.kwargs = {'cellsize': 16}
-        self.known_shape = (214, 165)
-        self.known_counts = numpy.array([5953, 2288])
-
-
-def test_clip_dem_to_zones():
-    demfile = resource_filename("propagator.testing.clip_dem_to_zones", 'test_dem.tif')
-    zonefile = resource_filename("propagator.testing.clip_dem_to_zones", "test_zones_raster_small.tif")
-    raster = gis.clip_dem_to_zones(demfile, zonefile)
-
-    zone_r = gis.load_data(zonefile, 'raster')
-
-    arrays = gis.rasters_to_arrays(raster, zone_r)
-
-    dem_a, zone_a = arrays[0], arrays[1]
-    arcpy.management.Delete(raster)
-
-    nt.assert_true(isinstance(raster, arcpy.Raster))
-
-    known_shape = (146, 172)
-    nt.assert_tuple_equal(dem_a.shape, zone_a.shape)
-
-
-@nptest.dec.skipif(not pptest.has_fiona)
-def test_raster_to_polygons():
-    zonefile = resource_filename("propagator.testing.raster_to_polygons", "input_raster_to_polygon.tif")
-    knownfile = resource_filename("propagator.testing.raster_to_polygons", "known_polygons_from_raster_1.shp")
-    testfile = resource_filename("propagator.testing.raster_to_polygons", "test_polygons_from_raster_1.shp")
-
-    with gis.OverwriteState(True):
-        zones = gis.load_data(zonefile, 'raster')
-        known = gis.load_data(knownfile, 'layer')
-        test = gis.raster_to_polygons(zones, testfile)
-
-    pptest.assert_shapefiles_are_close(test.dataSource, known.dataSource)
-    gis.cleanup_temp_results(testfile)
-
-
-@nptest.dec.skipif(not pptest.has_fiona)
-def test_raster_to_polygons_with_new_field():
-    zonefile = resource_filename("propagator.testing.raster_to_polygons", "input_raster_to_polygon.tif")
-    knownfile = resource_filename("propagator.testing.raster_to_polygons", "known_polygons_from_raster_2.shp")
-    testfile = resource_filename("propagator.testing.raster_to_polygons", "test_polygons_from_raster_2.shp")
-
-    with gis.OverwriteState(True):
-        zones = gis.load_data(zonefile, 'raster')
-        known = gis.load_data(knownfile, 'layer')
-        test = gis.raster_to_polygons(zones, testfile, newfield="GeoID")
-
-    pptest.assert_shapefiles_are_close(test.dataSource, known.dataSource)
-    gis.cleanup_temp_results(testfile)
-
-
-@nptest.dec.skipif(not pptest.has_fiona)
-def test_aggregate_polygons():
-    inputfile = resource_filename("propagator.testing.aggregate_polygons", "input_polygons_from_raster.shp")
-    knownfile = resource_filename("propagator.testing.aggregate_polygons", "known_dissolved_polygons.shp")
-    testfile = resource_filename("propagator.testing.aggregate_polygons", "test_dissolved_polygons.shp")
-
-    with gis.OverwriteState(True):
-        raw = gis.load_data(inputfile, 'layer')
-        known = gis.load_data(knownfile, 'layer')
-        test = gis.aggregate_polygons(raw, "gridcode", testfile)
-
-    pptest.assert_shapefiles_are_close(test.dataSource, known.dataSource)
-
-    gis.cleanup_temp_results(testfile)
 
 
 class Test_add_field_with_value(object):
@@ -687,69 +487,30 @@ class Test_add_field_with_value(object):
                                    field_type="LONG")
 
 
-class Test_cleanup_temp_results(object):
-    def setup(self):
-        self.workspace = os.path.abspath(resource_filename('propagator.testing', 'cleanup_temp_results'))
-        self.template_file = resource_filename('propagator.testing.cleanup_temp_results', 'test_dem.tif')
-        self.template = gis.load_data(self.template_file, 'raster')
+def test_cleanup_temp_results():
 
-        raster1 = gis.array_to_raster(numpy.random.normal(size=(30, 30)), self.template)
-        raster2 = gis.array_to_raster(numpy.random.normal(size=(60, 60)), self.template)
+    workspace = os.path.abspath(resource_filename('propagator.testing', 'cleanup_temp_results'))
+    template_file = 'test_dem.tif'
 
-        self.name1 = 'temp_1.tif'
-        self.name2 = 'temp_2.tif'
+    name1 = 'temp_1.tif'
+    name2 = 'temp_2.tif'
 
-        self.path1 = os.path.join(self.workspace, self.name1)
-        self.path2 = os.path.join(self.workspace, self.name2)
+    with gis.WorkSpace(workspace):
+        raster1 = gis.copy_layer(template_file, name1)
+        raster2 = gis.copy_layer(template_file, name2)
 
-        with gis.OverwriteState(True), gis.WorkSpace(self.workspace):
-            raster1.save(self.path1)
-            raster2.save(self.path2)
+    nt.assert_true(os.path.exists(os.path.join(workspace, 'temp_1.tif')))
+    nt.assert_true(os.path.exists(os.path.join(workspace, 'temp_2.tif')))
 
-    @nt.nottest
-    def check_outcome(self):
-        nt.assert_false(os.path.exists(os.path.join(self.workspace, 'temp_1.tif')))
-        nt.assert_false(os.path.exists(os.path.join(self.workspace, 'temp_2.tif')))
+    with gis.WorkSpace(workspace):
+        gis.cleanup_temp_results(name1, name2)
 
-    def test_with_names_in_a_workspace(self):
-        with gis.WorkSpace(self.workspace):
-            gis.cleanup_temp_results(self.name1, self.name2)
-            self.check_outcome()
+    nt.assert_false(os.path.exists(os.path.join(workspace, 'temp_1.tif')))
+    nt.assert_false(os.path.exists(os.path.join(workspace, 'temp_2.tif')))
 
-    def test_with_paths_absolute(self):
-        gis.cleanup_temp_results(self.path1, self.path2)
-        self.check_outcome()
-
-    def test_with_rasters(self):
-        with gis.WorkSpace(self.workspace):
-            raster1 = gis.load_data(self.path1, 'raster')
-            raster2 = gis.load_data(self.path2, 'raster')
-            gis.cleanup_temp_results(raster1, raster2)
-            self.check_outcome()
-
-    def test_with_results(self):
-        with gis.WorkSpace(self.workspace):
-            res1 = arcpy.Result(toolname='Clip_management')
-            res2 = arcpy.Result(toolname='Clip_management')
-            with mock.patch.object(res1, 'getOutput', return_value='temp_1.tif'), \
-                 mock.patch.object(res2, 'getOutput', return_value='temp_2.tif'):
-                gis.cleanup_temp_results(res1, res2)
-                self.check_outcome()
-
-    def test_with_layers(self):
-        with gis.WorkSpace(self.workspace):
-            lyr1 = gis.load_data('temp_1.tif', 'layer', greedyRasters=False)
-            lyr2 = gis.load_data('temp_2.tif', 'layer', greedyRasters=False)
-            gis.cleanup_temp_results(lyr1, lyr2)
-            self.check_outcome()
-
-    @nt.raises(ValueError)
-    def test_with_bad_input(self):
-        gis.cleanup_temp_results(1, 2, ['a', 'b', 'c'])
-
-    def teardown(self):
-        with gis.WorkSpace(self.workspace):
-            gis.cleanup_temp_results('temp_1.tif', 'temp_2.tif')
+@nt.raises(ValueError)
+def test_cleanup_with_bad_input():
+    gis.cleanup_temp_results(1, 2, ['a', 'b', 'c'])
 
 
 @nptest.dec.skipif(not pptest.has_fiona)
