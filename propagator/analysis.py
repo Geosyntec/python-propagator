@@ -261,6 +261,83 @@ def _find_downstream_scores(subcatchment_array, subcatchment_ID, value_column,
 
 
 @utils.update_status()
+def mark_edges(subcatchment_array, id_col='ID', ds_col='DS_ID',
+               edge_ID='EDGE'):
+    """
+    Mark of all of the subcatchments on the edges of the study area
+    (i.e., flow out of the study area). In this case "mark" means that
+    the downstream subcatchment ID is set to a constant value.
+
+    Parameters
+    ----------
+    subcatchment_array : numpy.recarray
+        Record array of subcatchments with at least ``id_col`` and
+        ``ds_col`` columns.
+    id_col, ds_col : str, optional
+        Label of the subcatchment ID and downstream subcatchment ID
+        columns, respectively
+    edge_ID : str, optional
+        The downstream subcatchment ID that will given to the
+        subcatchments that flow out of the study area.
+
+    Returns
+    -------
+    array : numpy.recarray
+        An array with the same schema as ``subcatchment_array``, but
+        without the orphans.
+
+    """
+
+    subc = subcatchment_array.copy()
+    for n, row in enumerate(subcatchment_array):
+        if row[ds_col] not in subc[id_col]:
+            subc[n][ds_col] = edge_ID
+
+    return subc
+
+
+@numpy.deprecate
+@utils.update_status()
+def remove_orphan_subcatchments(subcatchment_array, id_col='ID', ds_col='DS_ID',
+                                bottom_ID='Ocean'):
+    """
+    Recursively removes subcatchments that flow laterally out of the
+    project area. Basically, an orpan subcatchment has a downstream
+    subcatchment that does not exist in the project area.
+
+    Parameters
+    ----------
+    subcatchment_array : numpy.recarray
+        Record array of subcatchments with at least ``id_col`` and
+        ``ds_col`` columns.
+    id_col, ds_col : str, optional
+        Label of the subcatchment ID and downstream subcatchment ID
+        columns, respectively
+    bottom_ID : str, optional
+        The downstream subcatchment ID given to the bottom-most
+        subcatchments.
+
+    Returns
+    -------
+    array : numpy.recarray
+        An array with the same schema as ``subcatchment_array``, but
+        without the orphans.
+
+    """
+
+    def keep_it(x):
+        ds_exists = x[ds_col] in subcatchment_array[id_col]
+        is_bottom = x[ds_col].lower() == bottom_ID.lower()
+        return ds_exists or is_bottom
+
+    _subc = [x for x in subcatchment_array if keep_it(x)]
+    subc = numpy.rec.fromrecords(_subc, dtype=subcatchment_array.dtype)
+    if subc.shape[0] != subcatchment_array.shape[0]:
+        subc = remove_orphan_subcatchments(subc, id_col=id_col, ds_col=ds_col, bottom_ID=bottom_ID)
+    return subc
+
+
+@utils.update_status()
 def preprocess_wq(monitoring_locations, subcatchments, id_col, ds_col,
                   output_path, value_columns=None, aggfxn=numpy.mean,
                   ignored_value=0, cleanup=True):

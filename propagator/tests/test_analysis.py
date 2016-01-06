@@ -203,6 +203,50 @@ class Test_preprocess_wq(object):
         utils.cleanup_temp_results(os.path.join(self.ws, self.results))
 
 
+@nt.nottest
+def doctor_subcatchments(array, to_remove):
+    sub_array = numpy.rec.fromrecords(
+        filter(lambda x: x['ID'] not in to_remove, array.copy()),
+        dtype=array.dtype
+    )
+
+    return sub_array
+
+
+def test_remove_orphan_subcatchments():
+    to_remove = ['E1', 'C3']
+    input_array = doctor_subcatchments(SIMPLE_SUBCATCHMENTS, to_remove)
+    expected = numpy.array(
+        [
+            ('A1', 'Ocean', 'A1_x', 'A1_y'), ('A2', 'Ocean', 'A2_x', 'A2_y'),
+            ('B1', 'A1', 'None', 'B1_y'), ('B2', 'A1', 'B2_x', 'None'),
+            ('B3', 'A2', 'B3_x', 'B3_y'), ('C1', 'B2', 'C1_x', 'None'),
+            ('C2', 'B3', 'None', 'None'), ('D1', 'C1', 'None', 'None'),
+        ], dtype=[('ID', '<U5'), ('DS_ID', '<U5'), ('Cu', '<U5'), ('Pb', '<U5'),]
+    )
+    result = analysis.remove_orphan_subcatchments(input_array, id_col='ID', ds_col='DS_ID',
+                                                  bottom_ID='Ocean')
+    nptest.assert_array_equal(result, expected)
+
+
+def test_mark_edges():
+    to_remove = ['E1', 'C3']
+    input_array = doctor_subcatchments(SIMPLE_SUBCATCHMENTS, to_remove)
+    expected = numpy.array(
+        [
+            ('A1', 'EDGE', 'A1_x', 'A1_y'), ('A2', 'EDGE', 'A2_x', 'A2_y'),
+            ('B1', 'A1', 'None', 'B1_y'), ('B2', 'A1', 'B2_x', 'None'),
+            ('B3', 'A2', 'B3_x', 'B3_y'), ('C1', 'B2', 'C1_x', 'None'),
+            ('C2', 'B3', 'None', 'None'), ('D1', 'C1', 'None', 'None'),
+            ('D2', 'EDGE', 'None', 'D2_y'), ('E2', 'D2', 'None', 'None'),
+            ('F1', 'EDGE', 'F1_x', 'None'), ('F2', 'EDGE', 'None', 'None'),
+            ('F3', 'EDGE', 'F3_x', 'None'), ('G1', 'F1', 'None', 'None'),
+            ('G2', 'F3', 'None', 'None'), ('H1', 'G2', 'None', 'None'),
+        ], dtype=[('ID', '<U5'), ('DS_ID', '<U5'), ('Cu', '<U5'), ('Pb', '<U5'),]
+    )
+    results = analysis.mark_edges(input_array, id_col='ID', ds_col='DS_ID', edge_ID='EDGE')
+    nptest.assert_array_equal(results, expected)
+
 def test_prepare_data():
     ws = resource_filename("propagator.testing", "prepare_data")
     with utils.OverwriteState(True), utils.WorkSpace(ws):
