@@ -17,11 +17,8 @@ from textwrap import dedent
 from collections import OrderedDict
 
 import arcpy
+
 import numpy
-try:
-    from tqdm import tqdm
-except ImportError: # pragma: no cover
-    tqdm = lambda x: x
 
 import propagator
 from propagator import utils
@@ -29,7 +26,7 @@ from propagator import utils
 
 def propagate(subcatchments=None, id_col=None, ds_col=None,
               monitoring_locations=None, value_columns=None,
-              output_path=None):
+              output_path=None, verbose=False, asMessage=False):
     """
     Propgate water quality scores upstream from the subcatchments of
     a watershed.
@@ -81,17 +78,36 @@ def propagate(subcatchments=None, id_col=None, ds_col=None,
         ds_col=ds_col,
         output_path=output_path,
         value_columns=value_columns,
+        verbose=verbose,
+        asMessage=asMessage,
+        msg="Aggregating water quality data in subcatchments"
     )
 
-    for res_col in result_columns:
+    wq = propagator.mark_edges(
+        wq,
+        id_col=id_col,
+        ds_col=ds_col,
+        edge_ID='EDGE',
+        verbose=verbose,
+        asMessage=asMessage,
+        msg="Marking all subcatchments that flow out of the watershed"
+    )
+
+    for n, res_col in enumerate(result_columns, 1):
         wq = propagator.propagate_scores(
             subcatchment_array=wq,
             id_col=id_col,
             ds_col=ds_col,
             value_column=res_col,
+            edge_ID='EDGE',
+            verbose=verbose,
+            asMessage=asMessage,
+            msg="{} of {}: Propagating {} scores".format(n, len(result_columns), res_col)
         )
 
-    utils.update_attribute_table(output_path, wq, id_col, *result_columns)
+    utils.update_attribute_table(output_path, wq, id_col, *result_columns,
+                                 verbose=verbose, asMessage=asMessage,
+                                 msg="Updating attribute table with propagated scores")
 
     return output_path
 
@@ -533,6 +549,8 @@ class Propagator(BaseToolbox_Mixin):
                 monitoring_locations=ml,
                 value_columns=value_cols,
                 output_path=output_layer,
+                verbose=True,
+                asMessage=True,
             )
 
             if add_output_to_map:
