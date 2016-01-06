@@ -153,7 +153,7 @@ class EasyMapDoc(object):
     >>> arcpy.mapping.AddLayer(df, myLayer, 'TOP')
 
     >>> # And now with an ``EasyMapDoc``:
-    >>> from tidegates import utils
+    >>> from propagator import utils
     >>> ezmd = utils.EasyMapDoc('CURRENT')
     >>> ezmd.add_layer(myLayer)
 
@@ -199,7 +199,7 @@ class EasyMapDoc(object):
 
         Examples
         --------
-        >>> from tidegates import utils
+        >>> from propagator import utils
         >>> ezmd = utils.EasyMapDoc('CURRENT')
         >>> wetlands = ezmd.findLayerByName("wetlands")
         >>> if wetlands is not None:
@@ -235,7 +235,7 @@ class EasyMapDoc(object):
 
         Examples
         --------
-        >>> from tidegates import utils
+        >>> from propagator import utils
         >>> ezmd = utils.EasyMapDoc('CURRENT')
         >>> ezmd.add_layer(myLayer)
 
@@ -270,8 +270,8 @@ def Extension(name):
 
     Examples
     --------
-    >>> import tidegates, arcpy
-    >>> with tidegates.utils.Extension("spatial"):
+    >>> import propagator, arcpy
+    >>> with propagator.utils.Extension("spatial"):
     ...     arcpy.sa.Hillshade("C:/data/dem.tif")
 
     """
@@ -302,8 +302,8 @@ def OverwriteState(state):
 
     Examples
     --------
-    >>> import tidegates
-    >>> with tidegates.utils.OverwriteState(False):
+    >>> import propagator
+    >>> with propagator.utils.OverwriteState(False):
     ...     # some operation that should fail if output already exists
 
     """
@@ -333,8 +333,8 @@ def WorkSpace(path):
 
     Examples
     --------
-    >>> import tidegates
-    >>> with tidegates.utils.OverwriteState(False):
+    >>> import propagator
+    >>> with propagator.utils.OverwriteState(False):
     ...     # some operation that should fail if output already exists
 
     """
