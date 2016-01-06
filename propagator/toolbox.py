@@ -116,6 +116,7 @@ def accumulate(**params):
 
 
 class BaseToolbox_Mixin(object):
+    canRunInBackground = False
 
     def isLicensed(self):
         """ PART OF THE ESRI BLACK BOX.
@@ -417,7 +418,7 @@ class BaseToolbox_Mixin(object):
                 displayName="Add results to map?",
                 name="add_output_to_map",
                 datatype="GPBoolean",
-                parameterType="Required",
+                parameterType="Optional",
                 direction="Input"
             )
         return self._add_output_to_map
@@ -444,7 +445,6 @@ class Propagator(BaseToolbox_Mixin):
         """
 
         # std attributes
-        self.canRunInBackground = True
         self.label = "1 - Propagate WQ scores to upstream subcatchments"
         self.description = dedent("""
         TDB
@@ -514,7 +514,7 @@ class Propagator(BaseToolbox_Mixin):
         # analysis options
         ws = params.pop('workspace', '.')
         overwrite = params.pop('overwrite', True)
-        add_output_to_map = params.pop('add_output_to_map', True)
+        add_output_to_map = params.pop('add_output_to_map', False)
 
         # input parameters
         sc = params.pop('subcatchments', None)
