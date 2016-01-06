@@ -8,6 +8,4 @@ API Reference for **python-tidegates**
 
    api/analysis.rst
 
-   api/utils_misc.rst
-
-   api/utils_gis.rst
+   api/utils.rst
