@@ -885,23 +885,53 @@ class Test_stats_with_ignored_values(object):
     def setup(self):
         self.x1 = [1., 2., 3., 4., 5.]
         self.x2 = [5.] * 5 # just a list of 5's
+        self.x3 = [1., 1., 1., 1., 5.]
 
-    def test_normal(self):
-        expected = 2.5
-        result = utils.stats_with_ignored_values(self.x1, numpy.mean, ignored_value=5)
-        nt.assert_equal(result, expected)
-
-    def test_nothing_ignored(self):
-        expected = 3.
-        result = utils.stats_with_ignored_values(self.x1, numpy.mean, ignored_value=6)
-        nt.assert_equal(result, expected)
-
-    def test_nothing_to_ignore(self):
+    def test_defaults(self):
         expected = 3.
         result = utils.stats_with_ignored_values(self.x1, numpy.mean, ignored_value=None)
         nt.assert_equal(result, expected)
 
-    def test_ignore_everthing(self):
-        expected = 5
+    def test_with_ignore(self):
+        expected = 2.5
+        result = utils.stats_with_ignored_values(self.x1, numpy.mean, ignored_value=5)
+        nt.assert_equal(result, expected)
+
+    def test_with_terminator(self):
+        expected = 3.5
+        result = utils.stats_with_ignored_values(self.x1, numpy.mean, terminator_value=1)
+        nt.assert_equal(result, expected)
+
+    def test_nothing_to_ignore(self):
+        expected = 3.
+        result = utils.stats_with_ignored_values(self.x1, numpy.mean, ignored_value=6)
+        nt.assert_equal(result, expected)
+
+    def test_nothing_to_terminate(self):
+        expected = 3.
+        result = utils.stats_with_ignored_values(self.x1, numpy.mean, terminator_value=6)
+        nt.assert_equal(result, expected)
+
+    def test_only_ignore_everthing(self):
+        expected = 5.
         result = utils.stats_with_ignored_values(self.x2, numpy.mean, ignored_value=5)
+        nt.assert_equal(result, expected)
+
+    def test_only_terminate_everthing(self):
+        expected = 5.
+        result = utils.stats_with_ignored_values(self.x2, numpy.mean, terminator_value=5)
+        nt.assert_equal(result, expected)
+
+    def test_ignored_and_terminated_returns_stat_value(self):
+        expected = 2.
+        result = utils.stats_with_ignored_values(self.x1, numpy.mean,
+                                                 ignored_value=4.,
+                                                 terminator_value=5.,)
+        nt.assert_equal(result, expected)
+
+    def test_everything_ignored_or_terminated_returns_terminator(self):
+        expected = 5.
+        result = utils.stats_with_ignored_values(self.x2, numpy.mean,
+                                                 ignored_value=1.,
+                                                 terminator_value=5.,)
         nt.assert_equal(result, expected)

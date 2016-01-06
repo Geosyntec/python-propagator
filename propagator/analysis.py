@@ -340,7 +340,7 @@ def remove_orphan_subcatchments(subcatchment_array, id_col='ID', ds_col='DS_ID',
 @utils.update_status()
 def preprocess_wq(monitoring_locations, subcatchments, id_col, ds_col,
                   output_path, value_columns=None, aggfxn=numpy.mean,
-                  ignored_value=0, cleanup=True):
+                  ignored_value=0, terminator_value=-99, cleanup=True):
     """
     Preprocess the water quality data to have to averaged score for
     each subcatchment.

@@ -1210,7 +1210,8 @@ def rec_groupby(array, group_cols, *stats):
     return record_array
 
 
-def stats_with_ignored_values(array, statfxn, ignored_value=None):
+def stats_with_ignored_values(array, statfxn, ignored_value=None,
+                              terminator_value=None):
     """
     Compute statistics on arrays while ignoring certain values
 
@@ -1223,6 +1224,9 @@ def stats_with_ignored_values(array, statfxn, ignored_value=None):
         ``array`` as the only input and returns a scalar value.
     ignored_value : float, optional
         The values in ``array`` that should be ignored.
+    terminator_value : float, optional
+        A value that is not propagated unless it is the only
+        non-``ignored_value`` in the array.
 
     Returns
     -------
@@ -1238,7 +1242,20 @@ def stats_with_ignored_values(array, statfxn, ignored_value=None):
     >>> utils.stats_with_ignored_values(x, numpy.mean, ignored_value=5)
     2.5
 
+    >>> y = [-99., 0., 1., 2., 3.]
+    >>> utils.stats_with_ignored_values(y, numpy.mean, ignored_value=0
+    ...                                 terminator_value=-99)
+    2.0
+
+    >>> z = [-99., 0., 0., 0., 0.]
+    >>> utils.stats_with_ignored_values(y, numpy.mean, ignored_value=0
+    ...                                 terminator_value=-99)
+    -99.
+
     """
+
+    if ignored_value is not None and ignored_value == terminator_value:
+        raise ValueError("terminator and ignored values must be different.")
 
     # ensure that we're working with an array
     array = numpy.asarray(array)
@@ -1247,9 +1264,16 @@ def stats_with_ignored_values(array, statfxn, ignored_value=None):
     if ignored_value is not None:
         array = array[numpy.nonzero(array != ignored_value)]
 
-    # if empty, return the ignored value
-    if len(array) == 0:
+    # terminator values if necessary
+    if terminator_value is not None:
+        res =  stats_with_ignored_values(array, statfxn, ignored_value=terminator_value,
+                                               terminator_value=None)
+    # if empty, return the ignored value.
+    # in a recursed, call, this is actually the terminator value.
+    elif len(array) == 0:
         res = ignored_value
+
+    # otherwise compute the stat.
     else:
         res = statfxn(array)
     return res
