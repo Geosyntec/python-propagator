@@ -33,7 +33,6 @@
 
   
     <link rel="top" title="python-propagator v0.1.0 documentation" href="index.html"/>
-        <link rel="next" title="toolbox API Reference" href="toolbox.html"/>
         <link rel="prev" title="Using python-tidegates as a python-toolbox in ArcGIS" href="arcgis.html"/> 
 
   
@@ -87,10 +86,6 @@
 <li class="toctree-l2"><a class="reference internal" href="#the-toolbox-api">The <code class="docutils literal"><span class="pre">toolbox</span></code> API</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="toolbox.html"><code class="docutils literal"><span class="pre">toolbox</span></code> API Reference</a></li>
-<li class="toctree-l1"><a class="reference internal" href="analysis.html"><code class="docutils literal"><span class="pre">analysis</span></code> API Reference</a></li>
-<li class="toctree-l1"><a class="reference internal" href="utils_misc.html"><code class="docutils literal"><span class="pre">utils.misc</span></code> API Reference</a></li>
-<li class="toctree-l1"><a class="reference internal" href="utils_gis.html"><code class="docutils literal"><span class="pre">utils.gis</span></code> API Reference</a></li>
 </ul>
 
           
@@ -151,11 +146,11 @@ This allows users to directly use the analytical capabilities from a python scri
 <div class="section" id="the-toolbox-api">
 <span id="toolbox-guide"></span><h2>The <code class="docutils literal"><span class="pre">toolbox</span></code> API<a class="headerlink" href="#the-toolbox-api" title="Permalink to this headline">¶</a></h2>
 <p>(see <a class="reference internal" href="install.html#install"><span>install instructions</span></a>)</p>
-<p>For a full description of the API, see the <a class="reference internal" href="toolbox.html#toolbox-auto"><span>reference guide</span></a></p>
-<p>The <a class="reference internal" href="toolbox.html#module-propagator.toolbox" title="propagator.toolbox"><code class="xref py py-mod docutils literal"><span class="pre">propagator.toolbox</span></code></a> interface provides a very high-level interface to <strong>python-propagator</strong> that very closely mimics the tooboxes.
-Just like how there are two forms in the ArcGIS toolbox, there are two analagous classes available in the <a class="reference internal" href="toolbox.html#module-propagator.toolbox" title="propagator.toolbox"><code class="xref py py-mod docutils literal"><span class="pre">propagator.toolbox</span></code></a> API.</p>
-<p>The <a class="reference internal" href="toolbox.html#propagator.toolbox.propagate" title="propagator.toolbox.propagate"><code class="xref py py-func docutils literal"><span class="pre">propagator.toolbox.propagate()</span></code></a> function allows the user to progagate water quality scores from monitoring locations to upstream subcatchments.</p>
-<p>The <a class="reference internal" href="toolbox.html#propagator.toolbox.accumulate" title="propagator.toolbox.accumulate"><code class="xref py py-func docutils literal"><span class="pre">propagator.toolbox.accumulate()</span></code></a> function automatically accumulate upstream subcatchment attributes into stream features.</p>
+<p>For a full description of the API, see the <a class="reference internal" href="api/toolbox.html#toolbox-auto"><span>reference guide</span></a></p>
+<p>The <a class="reference internal" href="api/toolbox.html#module-propagator.toolbox" title="propagator.toolbox"><code class="xref py py-mod docutils literal"><span class="pre">propagator.toolbox</span></code></a> interface provides a very high-level interface to <strong>python-propagator</strong> that very closely mimics the tooboxes.
+Just like how there are two forms in the ArcGIS toolbox, there are two analagous classes available in the <a class="reference internal" href="api/toolbox.html#module-propagator.toolbox" title="propagator.toolbox"><code class="xref py py-mod docutils literal"><span class="pre">propagator.toolbox</span></code></a> API.</p>
+<p>The <a class="reference internal" href="api/toolbox.html#propagator.toolbox.propagate" title="propagator.toolbox.propagate"><code class="xref py py-func docutils literal"><span class="pre">propagator.toolbox.propagate()</span></code></a> function allows the user to progagate water quality scores from monitoring locations to upstream subcatchments.</p>
+<p>The <a class="reference internal" href="api/toolbox.html#propagator.toolbox.accumulate" title="propagator.toolbox.accumulate"><code class="xref py py-func docutils literal"><span class="pre">propagator.toolbox.accumulate()</span></code></a> function automatically accumulate upstream subcatchment attributes into stream features.</p>
 <div class="section" id="common-input-parameters">
 <h3>Common input parameters<a class="headerlink" href="#common-input-parameters" title="Permalink to this headline">¶</a></h3>
 <p>The following are the parameters shared by both toolboxes.
@@ -173,7 +168,7 @@ All parameters are required except where noted.</p>
 </div>
 <div class="section" id="code-examples">
 <h3>Code examples<a class="headerlink" href="#code-examples" title="Permalink to this headline">¶</a></h3>
-<p>Below is an example of using the <a class="reference internal" href="toolbox.html#propagator.toolbox.propagate" title="propagator.toolbox.propagate"><code class="xref py py-func docutils literal"><span class="pre">propagator.toolbox.propagate()</span></code></a> class to evaluate custom flood elevations.</p>
+<p>Below is an example of using the <a class="reference internal" href="api/toolbox.html#propagator.toolbox.propagate" title="propagator.toolbox.propagate"><code class="xref py py-func docutils literal"><span class="pre">propagator.toolbox.propagate()</span></code></a> class to evaluate custom flood elevations.</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="c"># define the workspace as a geodatabase</span>
 <span class="n">workspace</span> <span class="o">=</span> <span class="s">r&#39;F:\phobson\propagator\MB_Small.gdb&#39;</span>
 
@@ -188,7 +183,7 @@ All parameters are required except where noted.</p>
     <span class="p">)</span>
 </pre></div>
 </div>
-<p>Below is an example of using the <a class="reference internal" href="toolbox.html#propagator.toolbox.accumulate" title="propagator.toolbox.accumulate"><code class="xref py py-func docutils literal"><span class="pre">propagator.toolbox.accumulate()</span></code></a> class to evaluate custom flood elevations.</p>
+<p>Below is an example of using the <a class="reference internal" href="api/toolbox.html#propagator.toolbox.accumulate" title="propagator.toolbox.accumulate"><code class="xref py py-func docutils literal"><span class="pre">propagator.toolbox.accumulate()</span></code></a> class to evaluate custom flood elevations.</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="c"># define the workspace as a geodatabase</span>
 <span class="n">workspace</span> <span class="o">=</span> <span class="s">r&#39;F:\phobson\propagator\MB_Small.gdb&#39;</span>
 
@@ -204,8 +199,6 @@ All parameters are required except where noted.</p>
           <footer>
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
-      
-        <a href="toolbox.html" class="btn btn-neutral float-right" title="toolbox API Reference">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
         <a href="arcgis.html" class="btn btn-neutral" title="Using python-tidegates as a python-toolbox in ArcGIS"><span class="fa fa-arrow-circle-left"></span> Previous</a>
