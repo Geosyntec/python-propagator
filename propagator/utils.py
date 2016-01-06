@@ -950,6 +950,7 @@ def concat_results(destination, *input_files):
     return result_to_layer(result)
 
 
+@update_status()
 def update_attribute_table(layerpath, attribute_array, id_column, *update_columns):
     """
     Update the attribute table of a feature class from a record array.
