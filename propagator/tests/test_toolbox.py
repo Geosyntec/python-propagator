@@ -196,7 +196,7 @@ class BaseToolboxChecker_Mixin(object):
     def test_add_output_to_map(self):
         nt.assert_true(hasattr(self.tbx, 'add_output_to_map'))
         nt.assert_true(isinstance(self.tbx.add_output_to_map, arcpy.Parameter))
-        nt.assert_equal(self.tbx.add_output_to_map.parameterType, 'Required')
+        nt.assert_equal(self.tbx.add_output_to_map.parameterType, 'Optional')
         nt.assert_equal(self.tbx.add_output_to_map.direction, 'Input')
         nt.assert_equal(self.tbx.add_output_to_map.datatype, 'Boolean')
         nt.assert_equal(self.tbx.add_output_to_map.name, 'add_output_to_map')
