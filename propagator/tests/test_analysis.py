@@ -72,13 +72,13 @@ class Test_trace_upstream(object):
         nptest.assert_array_equal(upstream, self.expected_right)
 
 
-def test_find_bottoms():
+def test_find_edges():
     subcatchments = SIMPLE_SUBCATCHMENTS.copy()
     expected = numpy.array(
         [(u'A1', u'Ocean', u'A1_x', u'A1_y'), (u'A2', u'Ocean', u'A2_x', u'A2_y')],
         dtype=subcatchments.dtype
     )
-    result = analysis.find_bottoms(subcatchments, 'Ocean')
+    result = analysis.find_edges(subcatchments, 'Ocean')
     nptest.assert_array_equal(result, expected)
 
 

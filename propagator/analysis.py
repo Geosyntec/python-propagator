@@ -78,7 +78,7 @@ def trace_upstream(subcatchment_array, subcatchment_ID, id_col='ID',
 
 
 @utils.update_status()
-def find_bottoms(subcatchment_array, bottom_ID='ocean', ds_col='DS_ID'):
+def find_edges(subcatchment_array, edge_ID='bottom', ds_col='DS_ID'):
     """
     Finds the lowest, non-ocean subcatchments in a watershed.
 
@@ -88,7 +88,7 @@ def find_bottoms(subcatchment_array, bottom_ID='ocean', ds_col='DS_ID'):
         A record array of all of the subcatchments in the watershed.
         This array must have a "downstrea ID" column in which each
         subcatchment identifies as single, downstream neighbor.
-    bottom_ID : str, optional
+    edge_ID : str, optional
         The subcatchment ID of the pseudo-catchments in the Ocean.
     ds_col : str, optional
         The name of the column that identifies the downstream
@@ -102,7 +102,7 @@ def find_bottoms(subcatchment_array, bottom_ID='ocean', ds_col='DS_ID'):
 
     """
 
-    bottoms = filter(lambda row: row[ds_col] == bottom_ID, subcatchment_array)
+    bottoms = filter(lambda row: row[ds_col] == edge_ID, subcatchment_array)
     return numpy.array(list(bottoms), dtype=subcatchment_array.dtype)
 
 
@@ -140,7 +140,7 @@ def find_tops(subcatchment_array, id_col='ID', ds_col='DS_ID'):
 
 @utils.update_status()
 def propagate_scores(subcatchment_array, id_col, ds_col, value_column,
-                     ignored_value=0, bottom_ID='Ocean'):
+                     ignored_value=0, edge_ID='bottom'):
     """
     Propagate values into upstream subcatchments through a watershed.
 
@@ -162,7 +162,7 @@ def propagate_scores(subcatchment_array, id_col, ds_col, value_column,
     ignored_value : float, optional
         The values representing unpopulated records in the array of
         subcatchment and water quality data.
-    bottom_ID : str, optional
+    edge_ID : str, optional
         The subcatchment ID of the pseudo-catchments in the Ocean.
 
     Returns
@@ -181,7 +181,7 @@ def propagate_scores(subcatchment_array, id_col, ds_col, value_column,
     for n, row in enumerate(propagated):
 
         # check to see if we're at the bottom of the watershed
-        is_bottom = row[ds_col].lower() == bottom_ID.lower()
+        is_bottom = row[ds_col].lower() == edge_ID.lower()
 
         # look for a downstream value if there is not value
         # and we're not already at the bottom
@@ -194,6 +194,7 @@ def propagate_scores(subcatchment_array, id_col, ds_col, value_column,
                 ignored_value=ignored_value,
                 id_col=id_col,
                 ds_col=ds_col,
+                edge_ID=edge_ID,
             )
 
             # assign the downstream value to the current (empty) value
@@ -205,7 +206,7 @@ def propagate_scores(subcatchment_array, id_col, ds_col, value_column,
 @utils.update_status()
 def _find_downstream_scores(subcatchment_array, subcatchment_ID, value_column,
                             ignored_value='None', id_col='ID', ds_col='DS_ID',
-                            bottom_ID='Ocean'):
+                            edge_ID='bottom'):
     """
     Recursively look for populated water quality score in downstream
     subcatchments.
@@ -242,7 +243,7 @@ def _find_downstream_scores(subcatchment_array, subcatchment_ID, value_column,
     row = utils.find_row_in_array(subcatchment_array, id_col, subcatchment_ID)
 
     # check to see if we're at the bottom of the watershed
-    is_bottom = row[ds_col].lower() == bottom_ID.lower()
+    is_bottom = row[ds_col].lower() == edge_ID.lower()
     if row[value_column] == ignored_value and not is_bottom:
         scores = _find_downstream_scores(
             subcatchment_array=subcatchment_array,
@@ -250,7 +251,8 @@ def _find_downstream_scores(subcatchment_array, subcatchment_ID, value_column,
             value_column=value_column,
             ignored_value=ignored_value,
             id_col=id_col,
-            ds_col=ds_col
+            ds_col=ds_col,
+            edge_ID=edge_ID,
         )
     else:
         scores = row.copy()
@@ -359,11 +361,6 @@ def preprocess_wq(monitoring_locations, subcatchments, id_col, ds_col,
         utils.cleanup_temp_results(joined)
 
     return utils.load_attribute_table(output_path), res_columns
-
-
-@utils.update_status()
-def split_streams(stream_layer, subcatchment_layer):
-    raise NotImplementedError
 
 
 @utils.update_status()
@@ -565,3 +562,8 @@ def _non_zero_means(_arr):
         return 0
     else:
         return numpy.mean(_numlst)
+
+
+@utils.update_status()
+def split_streams(stream_layer, subcatchment_layer):
+    raise NotImplementedError
