@@ -644,7 +644,8 @@ def _non_zero_means(_arr):
 @utils.update_status()
 def aggregate_streams_by_subcatchment(stream_layer, subcatchment_layer,
                                       id_col, ds_col, other_cols,
-                                      agg_method="first", output_layer=None):
+                                      agg_method="first", output_layer=None,
+                                      cleanup=True):
     """
     Splits up stream into segments based on subcatchment borders, and
     then aggregates all of the individual segements within each
@@ -670,8 +671,10 @@ def aggregate_streams_by_subcatchment(stream_layer, subcatchment_layer,
            `arcpy.management.Dissolve`. Those are: "FIRST", "LAST",
            "SUM", "MEAN", "MIN", "MAX", "RANGE", "STD", and "COUNT".
 
-    output_layer : str
+    output_layer : str, optional
         Names of the new layer where the results should be saved.
+    cleanup : bool, optional
+        Toggles the deletion of intermediate files.
 
     Returns
     -------
@@ -719,6 +722,9 @@ def aggregate_streams_by_subcatchment(stream_layer, subcatchment_layer,
         multi_part="MULTI_PART",
         unsplit_lines="DISSOLVE_LINES",
     )
+
+    if cleanup:
+        utils.cleanup_temp_results(intersected)
 
     return final
 
