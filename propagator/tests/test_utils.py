@@ -405,89 +405,87 @@ class Test_load_data(object):
 
 class Test_add_field_with_value(object):
     def setup(self):
-        self.shapefile = resource_filename("propagator.testing.add_field_with_value", 'field_adder.shp')
+        source = resource_filename("propagator.testing.add_field_with_value", 'field_adder.shp')
+        self.testfile = utils.copy_layer(source, source.replace('field_adder', 'test'))
         self.fields_added = ["_text", "_unicode", "_int", "_float", '_no_valstr', '_no_valnum']
 
     def teardown(self):
-        field_names = [f.name for f in arcpy.ListFields(self.shapefile)]
-        for field in self.fields_added:
-            if field in field_names:
-                arcpy.management.DeleteField(self.shapefile, field)
+        utils.cleanup_temp_results(self.testfile)
 
     def test_float(self):
         name = "_float"
-        utils.add_field_with_value(self.shapefile, name,
+        utils.add_field_with_value(self.testfile, name,
                                    field_value=5.0)
-        nt.assert_true(name in [f.name for f in arcpy.ListFields(self.shapefile)])
+        nt.assert_true(name in [f.name for f in arcpy.ListFields(self.testfile)])
 
-        newfield = arcpy.ListFields(self.shapefile, name)[0]
+        newfield = arcpy.ListFields(self.testfile, name)[0]
         nt.assert_equal(newfield.type, u'Double')
 
     def test_int(self):
         name = "_int"
-        utils.add_field_with_value(self.shapefile, name,
+        utils.add_field_with_value(self.testfile, name,
                                    field_value=5)
-        nt.assert_true(name in [f.name for f in arcpy.ListFields(self.shapefile)])
+        nt.assert_true(name in [f.name for f in arcpy.ListFields(self.testfile)])
 
-        newfield = arcpy.ListFields(self.shapefile, name)[0]
+        newfield = arcpy.ListFields(self.testfile, name)[0]
         nt.assert_equal(newfield.type, u'Integer')
 
     def test_string(self):
         name = "_text"
-        utils.add_field_with_value(self.shapefile, name,
+        utils.add_field_with_value(self.testfile, name,
                                    field_value="example_value",
                                    field_length=15)
 
-        nt.assert_true(name in [f.name for f in arcpy.ListFields(self.shapefile)])
+        nt.assert_true(name in [f.name for f in arcpy.ListFields(self.testfile)])
 
-        newfield = arcpy.ListFields(self.shapefile, name)[0]
+        newfield = arcpy.ListFields(self.testfile, name)[0]
         nt.assert_equal(newfield.type, u'String')
         nt.assert_true(newfield.length, 15)
 
     def test_unicode(self):
         name = "_unicode"
-        utils.add_field_with_value(self.shapefile, name,
+        utils.add_field_with_value(self.testfile, name,
                                    field_value=u"example_value",
                                    field_length=15)
 
-        nt.assert_true(name in [f.name for f in arcpy.ListFields(self.shapefile)])
+        nt.assert_true(name in [f.name for f in arcpy.ListFields(self.testfile)])
 
-        newfield = arcpy.ListFields(self.shapefile, name)[0]
+        newfield = arcpy.ListFields(self.testfile, name)[0]
         nt.assert_equal(newfield.type, u'String')
         nt.assert_true(newfield.length, 15)
 
     def test_no_value_string(self):
         name = "_no_valstr"
-        utils.add_field_with_value(self.shapefile, name,
+        utils.add_field_with_value(self.testfile, name,
                                    field_type='TEXT',
                                    field_length=15)
 
-        nt.assert_true(name in [f.name for f in arcpy.ListFields(self.shapefile)])
+        nt.assert_true(name in [f.name for f in arcpy.ListFields(self.testfile)])
 
-        newfield = arcpy.ListFields(self.shapefile, name)[0]
+        newfield = arcpy.ListFields(self.testfile, name)[0]
         nt.assert_equal(newfield.type, u'String')
         nt.assert_true(newfield.length, 15)
 
     def test_no_value_number(self):
         name = "_no_valnum"
-        utils.add_field_with_value(self.shapefile, name,
+        utils.add_field_with_value(self.testfile, name,
                                    field_type='DOUBLE')
 
-        nt.assert_true(name in [f.name for f in arcpy.ListFields(self.shapefile)])
+        nt.assert_true(name in [f.name for f in arcpy.ListFields(self.testfile)])
 
-        newfield = arcpy.ListFields(self.shapefile, name)[0]
+        newfield = arcpy.ListFields(self.testfile, name)[0]
         nt.assert_equal(newfield.type, u'Double')
 
     @nt.raises(ValueError)
     def test_no_value_no_field_type(self):
-        utils.add_field_with_value(self.shapefile, "_willfail")
+        utils.add_field_with_value(self.testfile, "_willfail")
 
     @nt.raises(ValueError)
     def test_overwrite_existing_no(self):
-        utils.add_field_with_value(self.shapefile, "existing")
+        utils.add_field_with_value(self.testfile, "existing")
 
     def test_overwrite_existing_yes(self):
-        utils.add_field_with_value(self.shapefile, "existing",
+        utils.add_field_with_value(self.testfile, "existing",
                                    overwrite=True,
                                    field_type="LONG")
 
@@ -645,38 +643,39 @@ def test_rename_column():
 
 class Test_populate_field(object):
     def setup(self):
-        self.shapefile = resource_filename("propagator.testing.populate_field", 'populate_field.shp')
+        source = resource_filename("propagator.testing.populate_field", 'source.shp')
+        self.testfile = utils.copy_layer(source, source.replace('source', 'test'))
         self.field_added = "newfield"
 
     def teardown(self):
-        arcpy.management.DeleteField(self.shapefile, self.field_added)
+        utils.cleanup_temp_results(self.testfile)
 
     def test_with_dictionary(self):
         value_dict = {n: n for n in range(7)}
         value_fxn = lambda row: value_dict.get(row[0], -1)
-        utils.add_field_with_value(self.shapefile, self.field_added, field_type="LONG")
+        utils.add_field_with_value(self.testfile, self.field_added, field_type="LONG")
 
         utils.populate_field(
-            self.shapefile,
+            self.testfile,
             lambda row: value_dict.get(row[0], -1),
             self.field_added,
             "FID"
         )
 
-        with arcpy.da.SearchCursor(self.shapefile, [self.field_added, "FID"]) as cur:
+        with arcpy.da.SearchCursor(self.testfile, [self.field_added, "FID"]) as cur:
             for row in cur:
                 nt.assert_equal(row[0], row[1])
 
     def test_with_general_function(self):
-        utils.add_field_with_value(self.shapefile, self.field_added, field_type="LONG")
+        utils.add_field_with_value(self.testfile, self.field_added, field_type="LONG")
         utils.populate_field(
-            self.shapefile,
+            self.testfile,
             lambda row: row[0]**2,
             self.field_added,
             "FID"
         )
 
-        with arcpy.da.SearchCursor(self.shapefile, [self.field_added, "FID"]) as cur:
+        with arcpy.da.SearchCursor(self.testfile, [self.field_added, "FID"]) as cur:
             for row in cur:
                 nt.assert_equal(row[0], row[1] ** 2)
 
