@@ -324,3 +324,5 @@ def test_aggregate_streams_by_subcatchment():
         os.path.join(ws, 'expected.shp'),
         ngeom=4
     )
+
+    utils.cleanup_temp_results(os.path.join(ws, results),)
