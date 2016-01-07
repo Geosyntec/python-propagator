@@ -300,3 +300,23 @@ def test_non_zero_means():
     lst2_mean = analysis._non_zero_means(num_lst2)
     nt.assert_equal(lst_mean, expected_lst_mean)
     nt.assert_equal(lst2_mean, expected_lst2_mean)
+
+
+def test_aggregate_streams_by_subcatchment():
+    ws = resource_filename('propagator.testing', 'agg_stream_in_subc')
+    with utils.WorkSpace(ws), utils.OverwriteState(True):
+        results = analysis.aggregate_streams_by_subcatchment(
+            stream_layer='streams.shp',
+            subcatchment_layer='subc.shp',
+            id_col='CID',
+            ds_col='DS_CID',
+            other_cols=['WQ_1', 'WQ_2'],
+            output_layer='test.shp'
+        )
+
+    nt.assert_equal(results, 'test.shp')
+    pptest.assert_shapefiles_are_close(
+        os.path.join(ws, results),
+        os.path.join(ws, 'expected.shp'),
+        ngeom=4
+    )
