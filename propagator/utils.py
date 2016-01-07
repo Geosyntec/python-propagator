@@ -1095,10 +1095,17 @@ def aggregate_geom(layerpath, by_fields, field_stat_tuples, outputpath=None, **k
         List of two-tuples where the first element element is a field
         in the atrribute and the second element is how that column
         should be aggreated.
+
+        .. note ::
+
+           Statistics that are available are limited to those supported
+           by `arcpy.management.Dissolve`. Those are: "FIRST", "LAST",
+           "SUM", "MEAN", "MIN", "MAX", "RANGE", "STD", and "COUNT".
+
     outputpath : str, optional
         Name of the new feature class where the output should be saved.
     **kwargs
-        Additional parameters passed to `arcpy.managment.Dissolve.
+        Additional parameters passed to `arcpy.management.Dissolve.
 
     Returns
     -------
