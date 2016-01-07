@@ -52,8 +52,8 @@ def trace_upstream(subcatchment_array, subcatchment_ID, id_col='ID',
         A list of already known downstream catchments in the trace.
 
         .. warning ::
-           This is *only* used in the recursive calls to this function.
-           You should never provide this value.
+           This is *only* to be used in the recursive calls to this
+           function. You should never provide this value.
 
     Returns
     -------
@@ -71,8 +71,8 @@ def trace_upstream(subcatchment_array, subcatchment_ID, id_col='ID',
     for n in _neighbors:
         downstream.append(n)
         trace_upstream(subcatchment_array, n[id_col],
-                      id_col=id_col, ds_col=ds_col,
-                      downstream=downstream)
+                       id_col=id_col, ds_col=ds_col,
+                       downstream=downstream)
 
     return numpy.array(downstream, dtype=subcatchment_array.dtype)
 
