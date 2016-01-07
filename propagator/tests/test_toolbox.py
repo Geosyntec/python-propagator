@@ -34,25 +34,39 @@ def mock_status(*args, **kwargs):
     pass
 
 
+@nptest.dec.skipif(not pptest.has_fiona)
 def test_propagate():
     ws = resource_filename('propagator.testing', 'tbx_propagate')
     columns = ['Dry_B', 'Dry_M', 'Dry_N', 'Wet_B', 'Wet_M', 'Wet_N']
     with utils.WorkSpace(ws), utils.OverwriteState(True):
-        output_layer = propagator.toolbox.propagate(
+        subc_layer, stream_layer = propagator.toolbox.propagate(
             subcatchments='subcatchments.shp',
             monitoring_locations='monitoring_locations.shp',
             id_col='CID',
             ds_col='DS_CID',
             value_columns=columns,
+            streams='streams.shp',
             output_path='test.shp'
         )
 
+
+    nt.assert_equal(subc_layer, 'test_subcatchments.shp')
+    nt.assert_equal(stream_layer, 'test_streams.shp')
     pptest.assert_shapefiles_are_close(
-        os.path.join(ws, 'expected.shp'),
-        os.path.join(ws, output_layer),
+        os.path.join(ws, 'expected_subc.shp'),
+        os.path.join(ws, subc_layer),
     )
 
-    utils.cleanup_temp_results(os.path.join(ws, output_layer))
+    pptest.assert_shapefiles_are_close(
+        os.path.join(ws, 'expected_streams.shp'),
+        os.path.join(ws, stream_layer),
+    )
+
+    utils.cleanup_temp_results(
+        os.path.join(ws, subc_layer),
+        os.path.join(ws, stream_layer)
+    )
+
 
 class BaseToolboxChecker_Mixin(object):
     mockMap = mock.Mock(spec=utils.EasyMapDoc)
@@ -183,6 +197,16 @@ class BaseToolboxChecker_Mixin(object):
         nt.assert_list_equal(self.tbx.value_columns.parameterDependencies, [self.value_col_dependency])
         nt.assert_true(self.tbx.value_columns.multiValue)
 
+    def test_streams(self):
+        nt.assert_true(hasattr(self.tbx, 'streams'))
+        nt.assert_true(isinstance(self.tbx.streams, arcpy.Parameter))
+        nt.assert_equal(self.tbx.streams.parameterType, 'Required')
+        nt.assert_equal(self.tbx.streams.direction, 'Input')
+        nt.assert_equal(self.tbx.streams.datatype, 'Feature Class')
+        nt.assert_equal(self.tbx.streams.name, 'streams')
+        nt.assert_list_equal(self.tbx.streams.parameterDependencies, ['workspace'])
+        nt.assert_false(self.tbx.streams.multiValue)
+
     def test_output_layer(self):
         nt.assert_true(hasattr(self.tbx, 'output_layer'))
         nt.assert_true(isinstance(self.tbx.output_layer, arcpy.Parameter))
@@ -232,6 +256,7 @@ class Test_Propagator(BaseToolboxChecker_Mixin):
             'downstream_ID_column',
             'monitoring_locations',
             'value_columns',
+            'streams',
             'output_layer',
             'add_output_to_map',
         ]
@@ -243,7 +268,7 @@ class Test_Propagator(BaseToolboxChecker_Mixin):
         ws = resource_filename('propagator.testing', 'tbx_propagate')
         columns = ['Dry_B', 'Dry_M', 'Dry_N', 'Wet_B', 'Wet_M', 'Wet_N']
         with mock.patch.object(toolbox.Propagator, '_add_to_map') as atm:
-            output_layer = tbx.analyze(
+            subc_layer, stream_layer = tbx.analyze(
                 workspace=ws,
                 overwrite=True,
                 subcatchments='subcatchments.shp',
@@ -252,16 +277,28 @@ class Test_Propagator(BaseToolboxChecker_Mixin):
                 monitoring_locations='monitoring_locations.shp',
                 value_columns=columns,
                 output_layer='test.shp',
+                streams='streams.shp',
                 add_output_to_map=True
             )
 
+            nt.assert_equal(subc_layer, 'test_subcatchments.shp')
+            nt.assert_equal(stream_layer, 'test_streams.shp')
+
             pptest.assert_shapefiles_are_close(
-                os.path.join(ws, 'expected.shp'),
-                os.path.join(ws, output_layer),
+                os.path.join(ws, 'expected_subc.shp'),
+                os.path.join(ws, subc_layer),
             )
 
-            utils.cleanup_temp_results(os.path.join(ws, output_layer))
-            atm.assert_called_once_with(output_layer)
+            pptest.assert_shapefiles_are_close(
+                os.path.join(ws, 'expected_streams.shp'),
+                os.path.join(ws, stream_layer),
+            )
+
+            utils.cleanup_temp_results(
+                os.path.join(ws, subc_layer),
+                os.path.join(ws, stream_layer)
+            )
+            atm.assert_has_calls([mock.call(subc_layer), mock.call(stream_layer)])
 
 
 @mock.patch('propagator.utils._status', mock_status)
@@ -271,16 +308,6 @@ class Test_Accumulator(BaseToolboxChecker_Mixin):
         self.main_execute_dir = 'propagator.testing.Accumulator'
         self.main_execute_ws = resource_filename('propagator.testing', 'Accumulator')
         self.value_col_dependency = 'subcatchments'
-
-    def test_streams(self):
-        nt.assert_true(hasattr(self.tbx, 'streams'))
-        nt.assert_true(isinstance(self.tbx.streams, arcpy.Parameter))
-        nt.assert_equal(self.tbx.streams.parameterType, 'Required')
-        nt.assert_equal(self.tbx.streams.direction, 'Input')
-        nt.assert_equal(self.tbx.streams.datatype, 'Feature Class')
-        nt.assert_equal(self.tbx.streams.name, 'streams')
-        nt.assert_list_equal(self.tbx.streams.parameterDependencies, ['workspace'])
-        nt.assert_false(self.tbx.streams.multiValue)
 
     def test_params_as_list(self):
         params = self.tbx._params_as_list()

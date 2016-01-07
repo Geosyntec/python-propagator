@@ -23,6 +23,11 @@ class MockResult(object):
         return self.path
 
 
+def test_add_suffix_to_filename():
+    nt.assert_equal(utils.add_suffix_to_filename('example.shp', 'test'), 'example_test.shp')
+    nt.assert_equal(utils.add_suffix_to_filename('example', 'test'), 'example_test')
+
+
 def test_RasterTemplate():
     size, x, y = 8, 1, 2
     template = utils.RasterTemplate(size, x, y)
@@ -400,89 +405,87 @@ class Test_load_data(object):
 
 class Test_add_field_with_value(object):
     def setup(self):
-        self.shapefile = resource_filename("propagator.testing.add_field_with_value", 'field_adder.shp')
+        source = resource_filename("propagator.testing.add_field_with_value", 'field_adder.shp')
+        self.testfile = utils.copy_layer(source, source.replace('field_adder', 'test'))
         self.fields_added = ["_text", "_unicode", "_int", "_float", '_no_valstr', '_no_valnum']
 
     def teardown(self):
-        field_names = [f.name for f in arcpy.ListFields(self.shapefile)]
-        for field in self.fields_added:
-            if field in field_names:
-                arcpy.management.DeleteField(self.shapefile, field)
+        utils.cleanup_temp_results(self.testfile)
 
     def test_float(self):
         name = "_float"
-        utils.add_field_with_value(self.shapefile, name,
+        utils.add_field_with_value(self.testfile, name,
                                    field_value=5.0)
-        nt.assert_true(name in [f.name for f in arcpy.ListFields(self.shapefile)])
+        nt.assert_true(name in [f.name for f in arcpy.ListFields(self.testfile)])
 
-        newfield = arcpy.ListFields(self.shapefile, name)[0]
+        newfield = arcpy.ListFields(self.testfile, name)[0]
         nt.assert_equal(newfield.type, u'Double')
 
     def test_int(self):
         name = "_int"
-        utils.add_field_with_value(self.shapefile, name,
+        utils.add_field_with_value(self.testfile, name,
                                    field_value=5)
-        nt.assert_true(name in [f.name for f in arcpy.ListFields(self.shapefile)])
+        nt.assert_true(name in [f.name for f in arcpy.ListFields(self.testfile)])
 
-        newfield = arcpy.ListFields(self.shapefile, name)[0]
+        newfield = arcpy.ListFields(self.testfile, name)[0]
         nt.assert_equal(newfield.type, u'Integer')
 
     def test_string(self):
         name = "_text"
-        utils.add_field_with_value(self.shapefile, name,
+        utils.add_field_with_value(self.testfile, name,
                                    field_value="example_value",
                                    field_length=15)
 
-        nt.assert_true(name in [f.name for f in arcpy.ListFields(self.shapefile)])
+        nt.assert_true(name in [f.name for f in arcpy.ListFields(self.testfile)])
 
-        newfield = arcpy.ListFields(self.shapefile, name)[0]
+        newfield = arcpy.ListFields(self.testfile, name)[0]
         nt.assert_equal(newfield.type, u'String')
         nt.assert_true(newfield.length, 15)
 
     def test_unicode(self):
         name = "_unicode"
-        utils.add_field_with_value(self.shapefile, name,
+        utils.add_field_with_value(self.testfile, name,
                                    field_value=u"example_value",
                                    field_length=15)
 
-        nt.assert_true(name in [f.name for f in arcpy.ListFields(self.shapefile)])
+        nt.assert_true(name in [f.name for f in arcpy.ListFields(self.testfile)])
 
-        newfield = arcpy.ListFields(self.shapefile, name)[0]
+        newfield = arcpy.ListFields(self.testfile, name)[0]
         nt.assert_equal(newfield.type, u'String')
         nt.assert_true(newfield.length, 15)
 
     def test_no_value_string(self):
         name = "_no_valstr"
-        utils.add_field_with_value(self.shapefile, name,
+        utils.add_field_with_value(self.testfile, name,
                                    field_type='TEXT',
                                    field_length=15)
 
-        nt.assert_true(name in [f.name for f in arcpy.ListFields(self.shapefile)])
+        nt.assert_true(name in [f.name for f in arcpy.ListFields(self.testfile)])
 
-        newfield = arcpy.ListFields(self.shapefile, name)[0]
+        newfield = arcpy.ListFields(self.testfile, name)[0]
         nt.assert_equal(newfield.type, u'String')
         nt.assert_true(newfield.length, 15)
 
     def test_no_value_number(self):
         name = "_no_valnum"
-        utils.add_field_with_value(self.shapefile, name,
+        utils.add_field_with_value(self.testfile, name,
                                    field_type='DOUBLE')
 
-        nt.assert_true(name in [f.name for f in arcpy.ListFields(self.shapefile)])
+        nt.assert_true(name in [f.name for f in arcpy.ListFields(self.testfile)])
 
-        newfield = arcpy.ListFields(self.shapefile, name)[0]
+        newfield = arcpy.ListFields(self.testfile, name)[0]
         nt.assert_equal(newfield.type, u'Double')
 
     @nt.raises(ValueError)
     def test_no_value_no_field_type(self):
-        utils.add_field_with_value(self.shapefile, "_willfail")
+        utils.add_field_with_value(self.testfile, "_willfail")
 
     @nt.raises(ValueError)
     def test_overwrite_existing_no(self):
-        utils.add_field_with_value(self.shapefile, "existing")
+        utils.add_field_with_value(self.testfile, "existing")
 
     def test_overwrite_existing_yes(self):
-        utils.add_field_with_value(self.shapefile, "existing",
+        utils.add_field_with_value(self.testfile, "existing",
                                    overwrite=True,
                                    field_type="LONG")
 
@@ -640,38 +643,39 @@ def test_rename_column():
 
 class Test_populate_field(object):
     def setup(self):
-        self.shapefile = resource_filename("propagator.testing.populate_field", 'populate_field.shp')
+        source = resource_filename("propagator.testing.populate_field", 'source.shp')
+        self.testfile = utils.copy_layer(source, source.replace('source', 'test'))
         self.field_added = "newfield"
 
     def teardown(self):
-        arcpy.management.DeleteField(self.shapefile, self.field_added)
+        utils.cleanup_temp_results(self.testfile)
 
     def test_with_dictionary(self):
         value_dict = {n: n for n in range(7)}
         value_fxn = lambda row: value_dict.get(row[0], -1)
-        utils.add_field_with_value(self.shapefile, self.field_added, field_type="LONG")
+        utils.add_field_with_value(self.testfile, self.field_added, field_type="LONG")
 
         utils.populate_field(
-            self.shapefile,
+            self.testfile,
             lambda row: value_dict.get(row[0], -1),
             self.field_added,
             "FID"
         )
 
-        with arcpy.da.SearchCursor(self.shapefile, [self.field_added, "FID"]) as cur:
+        with arcpy.da.SearchCursor(self.testfile, [self.field_added, "FID"]) as cur:
             for row in cur:
                 nt.assert_equal(row[0], row[1])
 
     def test_with_general_function(self):
-        utils.add_field_with_value(self.shapefile, self.field_added, field_type="LONG")
+        utils.add_field_with_value(self.testfile, self.field_added, field_type="LONG")
         utils.populate_field(
-            self.shapefile,
+            self.testfile,
             lambda row: row[0]**2,
             self.field_added,
             "FID"
         )
 
-        with arcpy.da.SearchCursor(self.shapefile, [self.field_added, "FID"]) as cur:
+        with arcpy.da.SearchCursor(self.testfile, [self.field_added, "FID"]) as cur:
             for row in cur:
                 nt.assert_equal(row[0], row[1] ** 2)
 
@@ -758,6 +762,49 @@ def test_get_field_names():
     layer = resource_filename('propagator.testing.get_field_names', 'input.shp')
     result = utils.get_field_names(layer)
     nt.assert_list_equal(result, expected)
+
+
+class Test_aggregate_geom(object):
+    def setup(self):
+        self.workspace = resource_filename('propagator.testing', 'aggregate_geom')
+        self.expected_single = 'known_one_group_field.shp'
+        self.expected_dual = 'known_two_group_fields.shp'
+        self.input_file = 'agg_geom.shp'
+        self.output = 'test.shp'
+        self.stats = [('WQ_1', 'mean'), ('WQ_2', 'max')]
+
+    def teardown(self):
+        with utils.WorkSpace(self.workspace):
+            utils.cleanup_temp_results(self.output)
+
+    @nt.nottest
+    def check(self, results, expected):
+        nt.assert_equal(results, self.output)
+        pptest.assert_shapefiles_are_close(
+            os.path.join(self.workspace, expected),
+            os.path.join(self.workspace, results),
+        )
+
+    def test_single_group_col(self):
+        with utils.WorkSpace(self.workspace):
+            results = utils.aggregate_geom(
+                layerpath=self.input_file,
+                by_fields='CID',
+                field_stat_tuples=self.stats,
+                outputpath=self.output,
+            )
+        self.check(results, self.expected_single)
+
+    def test_dual_group_col(self):
+        with utils.WorkSpace(self.workspace):
+            results = utils.aggregate_geom(
+                layerpath=self.input_file,
+                by_fields=['CID', 'DS_CID'],
+                field_stat_tuples=self.stats,
+                outputpath=self.output,
+            )
+
+        self.check(results, self.expected_dual)
 
 
 def test_count_features():
@@ -880,28 +927,57 @@ class Test_rec_groupby(object):
         nptest.assert_array_equal(result, expected)
 
 
-
 class Test_stats_with_ignored_values(object):
     def setup(self):
         self.x1 = [1., 2., 3., 4., 5.]
         self.x2 = [5.] * 5 # just a list of 5's
+        self.x3 = [1., 1., 1., 1., 5.]
 
-    def test_normal(self):
-        expected = 2.5
-        result = utils.stats_with_ignored_values(self.x1, numpy.mean, ignored_value=5)
-        nt.assert_equal(result, expected)
-
-    def test_nothing_ignored(self):
-        expected = 3.
-        result = utils.stats_with_ignored_values(self.x1, numpy.mean, ignored_value=6)
-        nt.assert_equal(result, expected)
-
-    def test_nothing_to_ignore(self):
+    def test_defaults(self):
         expected = 3.
         result = utils.stats_with_ignored_values(self.x1, numpy.mean, ignored_value=None)
         nt.assert_equal(result, expected)
 
-    def test_ignore_everthing(self):
-        expected = 5
+    def test_with_ignore(self):
+        expected = 2.5
+        result = utils.stats_with_ignored_values(self.x1, numpy.mean, ignored_value=5)
+        nt.assert_equal(result, expected)
+
+    def test_with_terminator(self):
+        expected = 3.5
+        result = utils.stats_with_ignored_values(self.x1, numpy.mean, terminator_value=1)
+        nt.assert_equal(result, expected)
+
+    def test_nothing_to_ignore(self):
+        expected = 3.
+        result = utils.stats_with_ignored_values(self.x1, numpy.mean, ignored_value=6)
+        nt.assert_equal(result, expected)
+
+    def test_nothing_to_terminate(self):
+        expected = 3.
+        result = utils.stats_with_ignored_values(self.x1, numpy.mean, terminator_value=6)
+        nt.assert_equal(result, expected)
+
+    def test_only_ignore_everthing(self):
+        expected = 5.
         result = utils.stats_with_ignored_values(self.x2, numpy.mean, ignored_value=5)
+        nt.assert_equal(result, expected)
+
+    def test_only_terminate_everthing(self):
+        expected = 5.
+        result = utils.stats_with_ignored_values(self.x2, numpy.mean, terminator_value=5)
+        nt.assert_equal(result, expected)
+
+    def test_ignored_and_terminated_returns_stat_value(self):
+        expected = 2.
+        result = utils.stats_with_ignored_values(self.x1, numpy.mean,
+                                                 ignored_value=4.,
+                                                 terminator_value=5.,)
+        nt.assert_equal(result, expected)
+
+    def test_everything_ignored_or_terminated_returns_terminator(self):
+        expected = 5.
+        result = utils.stats_with_ignored_values(self.x2, numpy.mean,
+                                                 ignored_value=1.,
+                                                 terminator_value=5.,)
         nt.assert_equal(result, expected)

@@ -20,22 +20,22 @@ if arcpy.CheckExtension("Spatial") == u'Available':
 else:
     has_spatial = False
 
-def assert_shapefiles_are_close(baselinefile, outputfile, atol=0.001, ngeom=5):
-    with fiona.open(outputfile, 'r') as result:
+def assert_shapefiles_are_close(resultfile, expected, atol=0.001, ngeom=5):
+    with fiona.open(resultfile, 'r') as result:
         result_records = list(result)
 
-    with fiona.open(baselinefile, 'r') as baseline:
-        known_records = list(baseline)
+    with fiona.open(expected, 'r') as expect:
+        expected_records = list(expect)
 
-    for rr, kr in zip(result_records, known_records):
+    for rr, kr in zip(result_records, expected_records):
         nt.assert_dict_equal(rr['properties'], kr['properties'])
         nt.assert_equal(rr['geometry']['type'], kr['geometry']['type'])
         nt.assert_equal(len(rr['geometry']['coordinates']), len(kr['geometry']['coordinates']))
 
         _ngeom = min(len(rr['geometry']['coordinates']), ngeom)
         nptest.assert_allclose(
-            hstack([array(r) for r in rr['geometry']['coordinates'][:_ngeom]]),
-            hstack([array(k) for k in kr['geometry']['coordinates'][:_ngeom]]),
+            hstack([array(r).flatten() for r in rr['geometry']['coordinates'][:_ngeom]]),
+            hstack([array(k).flatten() for k in kr['geometry']['coordinates'][:_ngeom]]),
             atol=atol
         )
 

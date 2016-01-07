@@ -52,8 +52,8 @@ def trace_upstream(subcatchment_array, subcatchment_ID, id_col='ID',
         A list of already known downstream catchments in the trace.
 
         .. warning ::
-           This is *only* used in the recursive calls to this function.
-           You should never provide this value.
+           This is *only* to be used in the recursive calls to this
+           function. You should never provide this value.
 
     Returns
     -------
@@ -71,8 +71,8 @@ def trace_upstream(subcatchment_array, subcatchment_ID, id_col='ID',
     for n in _neighbors:
         downstream.append(n)
         trace_upstream(subcatchment_array, n[id_col],
-                      id_col=id_col, ds_col=ds_col,
-                      downstream=downstream)
+                       id_col=id_col, ds_col=ds_col,
+                       downstream=downstream)
 
     return numpy.array(downstream, dtype=subcatchment_array.dtype)
 
@@ -340,7 +340,7 @@ def remove_orphan_subcatchments(subcatchment_array, id_col='ID', ds_col='DS_ID',
 @utils.update_status()
 def preprocess_wq(monitoring_locations, subcatchments, id_col, ds_col,
                   output_path, value_columns=None, aggfxn=numpy.mean,
-                  ignored_value=0, cleanup=True):
+                  ignored_value=0, terminator_value=-99, cleanup=True):
     """
     Preprocess the water quality data to have to averaged score for
     each subcatchment.
@@ -642,5 +642,89 @@ def _non_zero_means(_arr):
 
 
 @utils.update_status()
-def split_streams(stream_layer, subcatchment_layer):
-    raise NotImplementedError
+def aggregate_streams_by_subcatchment(stream_layer, subcatchment_layer,
+                                      id_col, ds_col, other_cols,
+                                      agg_method="first", output_layer=None,
+                                      cleanup=True):
+    """
+    Splits up stream into segments based on subcatchment borders, and
+    then aggregates all of the individual segements within each
+    subcatchments into a single multipart geometry
+
+    Parameters
+    ----------
+    stream_layer, subcatchment_layer : str
+        Name of the feature class containing streams and subcatments,
+        respectively.
+    id_col, ds_col : str
+        Names of the fields in ``subcatchment_layer`` that contain the
+        subcatchment ID and downstream subcatchment ID, respectively.
+    other_cols : list of str
+        Other, non-grouping columns to keep in ``output_layer``.
+    agg_method : str, optional
+        Method by which `other_cols` will be aggreated. The default
+        value is 'FIRST'.
+
+        .. note ::
+
+           The methods available are limited to those supported by
+           `arcpy.management.Dissolve`. Those are: "FIRST", "LAST",
+           "SUM", "MEAN", "MIN", "MAX", "RANGE", "STD", and "COUNT".
+
+    output_layer : str, optional
+        Names of the new layer where the results should be saved.
+    cleanup : bool, optional
+        Toggles the deletion of intermediate files.
+
+    Returns
+    -------
+    output_layer : str
+        Names of the new layer where the results were successfully
+        saved.
+
+    Examples
+    --------
+    >>> import propagator
+    >>> from propagator import utils
+    >>> with utils.WorkSpace('C:/SOC/data.gdb'):
+    ...     propagator.aggregate_streams_by_subcatchment(
+    ...         stream_layer='streams_with_WQ_scores',
+    ...         subcatchment_layer='SOC_subbasins',
+    ...         id_col='Catch_ID',
+    ...         ds_col='DS_Catch_ID',
+    ...         other_cols=['Dry_Metals', 'Wet_Metals'],
+    ...         agg_method='MAX',
+    ...         output_layer='agg_streams'
+    ...     )
+
+    See also
+    --------
+    propagator.utils.intersect_layers
+    propagator.utils.aggregate_geoms
+
+    """
+
+    utils.check_fields(subcatchment_layer, id_col, ds_col, *other_cols, should_exist=True)
+
+    intersected = utils.intersect_layers(
+        input_paths=[stream_layer, subcatchment_layer],
+        output_path=utils.create_temp_filename(output_layer, filetype='shape'),
+        how="NO_FID",
+    )
+
+    stats_tuples = [(col, agg_method) for col in other_cols]
+
+    final = utils.aggregate_geom(
+        layerpath=intersected,
+        by_fields=[id_col, ds_col],
+        field_stat_tuples=stats_tuples,
+        outputpath=output_layer,
+        multi_part="MULTI_PART",
+        unsplit_lines="DISSOLVE_LINES",
+    )
+
+    if cleanup:
+        utils.cleanup_temp_results(intersected)
+
+    return final
+

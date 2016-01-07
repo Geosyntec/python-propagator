@@ -65,6 +65,11 @@ def update_status(): # pragma: no cover
     return decorate
 
 
+def add_suffix_to_filename(filename, suffix):
+    name, extension = os.path.splitext(filename)
+    return '{}_{}{}'.format(name, suffix, extension)
+
+
 class RasterTemplate(object):
     """ Georeferencing template for Rasters.
 
@@ -1076,6 +1081,68 @@ def get_field_names(layerpath):
     return [f.name for f in arcpy.ListFields(layerpath)]
 
 
+def aggregate_geom(layerpath, by_fields, field_stat_tuples, outputpath=None, **kwargs):
+    """
+    Aggregates features class geometries into multipart geometries
+    based on columns in attributes table. Basically this is a groupby
+    operation on the attribute table, and the geometries are simply
+    combined for aggregation. Other fields can but statistically
+    aggregated as well.
+
+    Parameters
+    ----------
+    layerpath : str
+        Name of the input feature class.
+    by_fields : list of str
+        The fields in the attribute table on which the records will be
+        aggregated.
+    field_stat_tuples : list of tuples of str
+        List of two-tuples where the first element element is a field
+        in the atrribute and the second element is how that column
+        should be aggreated.
+
+        .. note ::
+
+           Statistics that are available are limited to those supported
+           by `arcpy.management.Dissolve`. Those are: "FIRST", "LAST",
+           "SUM", "MEAN", "MIN", "MAX", "RANGE", "STD", and "COUNT".
+
+    outputpath : str, optional
+        Name of the new feature class where the output should be saved.
+    **kwargs
+        Additional parameters passed to `arcpy.management.Dissolve.
+
+    Returns
+    -------
+    outputpath : str, optional
+        Name of the new feature class where the output was sucessfully
+        saved.
+
+    Examples
+    --------
+    >>> from propagator import utils
+    >>> with utils.WorkSpace('C:/SOC/data.gdb'):
+    ...     utils.aggregate_geom(
+    ...         layerpath='streams_with_WQ_scores',
+    ...         by_fields=['Catch_ID', 'DS_Catch_ID'],
+    ...         field_stat_tuples=[('Dry_Metals', 'max'), ('Wet_Metals', 'min')],
+    ...         outputpath='agg_streams'
+    ...     )
+
+    """
+
+    by_fields = validate.non_empty_list(by_fields)
+    arcpy.management.Dissolve(
+        in_features=layerpath,
+        out_feature_class=outputpath,
+        dissolve_field=by_fields,
+        statistics_fields=field_stat_tuples,
+        **kwargs
+    )
+
+    return outputpath
+
+
 def find_row_in_array(array, column, value):
     """
     Find a single row in a record array.
@@ -1210,7 +1277,8 @@ def rec_groupby(array, group_cols, *stats):
     return record_array
 
 
-def stats_with_ignored_values(array, statfxn, ignored_value=None):
+def stats_with_ignored_values(array, statfxn, ignored_value=None,
+                              terminator_value=None):
     """
     Compute statistics on arrays while ignoring certain values
 
@@ -1223,6 +1291,9 @@ def stats_with_ignored_values(array, statfxn, ignored_value=None):
         ``array`` as the only input and returns a scalar value.
     ignored_value : float, optional
         The values in ``array`` that should be ignored.
+    terminator_value : float, optional
+        A value that is not propagated unless it is the only
+        non-``ignored_value`` in the array.
 
     Returns
     -------
@@ -1238,7 +1309,20 @@ def stats_with_ignored_values(array, statfxn, ignored_value=None):
     >>> utils.stats_with_ignored_values(x, numpy.mean, ignored_value=5)
     2.5
 
+    >>> y = [-99., 0., 1., 2., 3.]
+    >>> utils.stats_with_ignored_values(y, numpy.mean, ignored_value=0
+    ...                                 terminator_value=-99)
+    2.0
+
+    >>> z = [-99., 0., 0., 0., 0.]
+    >>> utils.stats_with_ignored_values(y, numpy.mean, ignored_value=0
+    ...                                 terminator_value=-99)
+    -99.
+
     """
+
+    if ignored_value is not None and ignored_value == terminator_value:
+        raise ValueError("terminator and ignored values must be different.")
 
     # ensure that we're working with an array
     array = numpy.asarray(array)
@@ -1247,9 +1331,16 @@ def stats_with_ignored_values(array, statfxn, ignored_value=None):
     if ignored_value is not None:
         array = array[numpy.nonzero(array != ignored_value)]
 
-    # if empty, return the ignored value
-    if len(array) == 0:
+    # terminator values if necessary
+    if terminator_value is not None:
+        res =  stats_with_ignored_values(array, statfxn, ignored_value=terminator_value,
+                                               terminator_value=None)
+    # if empty, return the ignored value.
+    # in a recursed, call, this is actually the terminator value.
+    elif len(array) == 0:
         res = ignored_value
+
+    # otherwise compute the stat.
     else:
         res = statfxn(array)
     return res
