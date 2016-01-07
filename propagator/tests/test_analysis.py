@@ -1,5 +1,6 @@
-from pkg_resources import resource_filename
 import os
+import warnings
+from pkg_resources import resource_filename
 
 import arcpy
 import numpy
@@ -247,9 +248,11 @@ def test_mark_edges():
     results = analysis.mark_edges(input_array, id_col='ID', ds_col='DS_ID', edge_ID='EDGE')
     nptest.assert_array_equal(results, expected)
 
+
 def test_prepare_data():
     ws = resource_filename("propagator.testing", "prepare_data")
-    with utils.OverwriteState(True), utils.WorkSpace(ws):
+    with utils.OverwriteState(True), utils.WorkSpace(ws), warnings.catch_warnings():
+        warnings.simplefilter('ignore')
         cat = resource_filename("propagator.testing.prepare_data", "cat.shp")
         ml = resource_filename("propagator.testing.prepare_data", "ml.shp")
         expected_cat_wq = resource_filename("propagator.testing.prepare_data", "cat_wq.shp")
@@ -273,7 +276,8 @@ def test_prepare_data():
             "Storm_WQ_2",
             "Storm_WQ_3",
         ]
-        cat_wq = analysis.prepare_data(ml, cat, "Catch_ID_a", 'FID_ml', header_fields, wq_fields, 'testout.shp')
+        cat_wq = analysis.prepare_data(ml, cat, "Catch_ID_a", 'FID_ml',
+                                       header_fields, wq_fields, 'testout.shp')
         pptest.assert_shapefiles_are_close(cat_wq, expected_cat_wq)
         utils.cleanup_temp_results(cat_wq)
 
