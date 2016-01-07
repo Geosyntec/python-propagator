@@ -26,7 +26,8 @@ from propagator import utils
 
 def propagate(subcatchments=None, id_col=None, ds_col=None,
               monitoring_locations=None, value_columns=None,
-              output_path=None, verbose=False, asMessage=False):
+              streams=None, output_path=None,
+              verbose=False, asMessage=False):
     """
     Propgate water quality scores upstream from the subcatchments of
     a watershed.
@@ -47,6 +48,8 @@ def propagate(subcatchments=None, id_col=None, ds_col=None,
     value_columns : list of str
         List of the fields in ``monitoring_locations`` that contains
         water quality score that should be propagated.
+    streams : str
+        Path to the feature class containing the streams.
     output_path : str
         Path to where the the new subcatchments feature class with the
         propagated water quality scores should be saved.
@@ -66,17 +69,29 @@ def propagate(subcatchments=None, id_col=None, ds_col=None,
     ...         ds_col='DS_ID',
     ...         monitoring_locations='wq_data',
     ...         value_columns=['Dry_Metals', 'Wet_Metals', 'Wet_TSS'],
+    ...         streams='SOC_streams',
     ...         output_path='propagated_metals'
     ...     )
 
+    See also
+    --------
+    propagator.analysis.preprocess_wq
+    propagator.analysis.mark_edges
+    propagator.analysis.propagate_scores
+    propagator.analysis.aggregate_streams_by_subcatchment
+    propagator.utils.update_attribute_table
+
     """
+
+    subcatchment_output = utils.add_suffix_to_filename(output_path, 'subcatchments')
+    stream_output = utils.add_suffix_to_filename(output_path, 'streams')
 
     wq, result_columns = propagator.preprocess_wq(
         monitoring_locations=monitoring_locations,
         subcatchments=subcatchments,
         id_col=id_col,
         ds_col=ds_col,
-        output_path=output_path,
+        output_path=subcatchment_output,
         value_columns=value_columns,
         verbose=verbose,
         asMessage=asMessage,
@@ -105,28 +120,65 @@ def propagate(subcatchments=None, id_col=None, ds_col=None,
             msg="{} of {}: Propagating {} scores".format(n, len(result_columns), res_col)
         )
 
-    utils.update_attribute_table(output_path, wq, id_col, *result_columns,
+    utils.update_attribute_table(subcatchment_output, wq, id_col, *result_columns,
                                  verbose=verbose, asMessage=asMessage,
                                  msg="Updating attribute table with propagated scores")
 
-    return output_path
+    stream_output = propagator.aggregate_streams_by_subcatchment(
+        stream_layer=streams,
+        subcatchment_layer=subcatchment_output,
+        id_col=id_col,
+        ds_col=ds_col,
+        other_cols=result_columns,
+        agg_method='first',
+        output_layer=stream_output,
+        verbose=verbose,
+        asMessage=asMessage,
+        msg='Aggregating and associating scores with streams.',
+    )
+
+    return subcatchment_output, stream_output
 
 
 def accumulate(**params):
-    """ Not yet implemented """
-    workspace = params.pop('workspace', '.')
-    subcatchments = params.pop('subcatchments', None)
-    id_col = params.pop('ID_column', None)
-    ds_col = params.pop('downstream_ID_column', None)
-    streams = params.pop('streams', None)
-    output_layer = params.pop('output_layer', None)
-    water_quality_columns = params.pop('water_quality_columns', None)
+    """
+    Summary
 
-    with utils.WorkSpace(workspace), utils.OverwriteState(True):
-        subcatchment_array = propagator.prep_subcatchments(subcatchments)
-        accumulated = propagator.accumulate_watershed_props(subcatchment_array, streams)
+    Parameters
+    ----------
+    subcatchments
+        Polygon layer of subcatchments with the quantities to be
+        accumulated.
+    streams
+        Polyline layer of flow paths that will accumulate properties
+        from ``subcatchments``.
 
-        propagator.update_attribute_table(output_layer, accumulated)
+    Returns
+    -------
+    name : TYPE
+        Description
+    """
+    split_stream = split_stream_by_catchments(subcatchments, streams)
+    for stream in split_stream:
+        upstream_subc = analysis.trace_upstream(stream[id_col])
+        accumulate_upstream_properties(stream, upstream_subc)
+
+    # """ Not yet implemented """
+    # workspace = params.pop('workspace', '.')
+    # subcatchments = params.pop('subcatchments', None)
+    # id_col = params.pop('ID_column', None)
+    # ds_col = params.pop('downstream_ID_column', None)
+    # streams = params.pop('streams', None)
+    # output_layer = params.pop('output_layer', None)
+    # water_quality_columns = params.pop('water_quality_columns', None)
+
+    # with utils.WorkSpace(workspace), utils.OverwriteState(True):
+    #     subcatchment_array = propagator.prep_subcatchments(subcatchments)
+    #     accumulated = propagator.accumulate_watershed_props(subcatchment_array, streams)
+
+    #     propagator.update_attribute_table(output_layer, accumulated)
+
+
 
     return output_layer
 
@@ -412,12 +464,29 @@ class BaseToolbox_Mixin(object):
         return self._downstream_ID_column
 
     @property
+    def streams(self):
+        """ The streams who will acquire (or accumulate) attributes
+        from subcatchments. """
+
+        if self._streams is None:
+            self._streams = arcpy.Parameter(
+                displayName="Streams",
+                name="streams",
+                datatype="DEFeatureClass",
+                parameterType="Required",
+                direction="Input",
+                multiValue=False
+            )
+            self._set_parameter_dependency(self._streams, self.workspace)
+        return self._streams
+
+    @property
     def output_layer(self):
         """ Where the propagated/accumulated data will be saved. """
 
         if self._output_layer is None:
             self._output_layer = arcpy.Parameter(
-                displayName="Output subcatchments layer/filename",
+                displayName="Basename of the output subcatchments and streams",
                 name="output_layer",
                 datatype="GPString",
                 parameterType="Required",
@@ -474,6 +543,7 @@ class Propagator(BaseToolbox_Mixin):
         self._monitoring_locations = None
         self._value_columns = None
         self._output_layer = None
+        self._streams = None
         self._add_output_to_map = None
 
     @property
@@ -517,6 +587,7 @@ class Propagator(BaseToolbox_Mixin):
             self.downstream_ID_column,
             self.monitoring_locations,
             self.value_columns,
+            self.streams,
             self.output_layer,
             self.add_output_to_map,
         ]
@@ -537,26 +608,29 @@ class Propagator(BaseToolbox_Mixin):
         ID_col = params.pop('ID_column', None)
         downstream_ID_col = params.pop('downstream_ID_column', None)
         ml = params.pop('monitoring_locations', None)
+        streams = params.pop('streams', None)
         value_cols = params.pop('value_columns', None)
         output_layer = params.pop('output_layer', None)
 
         # performe the analysis
         with utils.WorkSpace(ws), utils.OverwriteState(overwrite):
-            output_layer = propagate(
+            output_layers = propagate(
                 subcatchments=sc,
                 id_col=ID_col,
                 ds_col=downstream_ID_col,
                 monitoring_locations=ml,
                 value_columns=value_cols,
                 output_path=output_layer,
+                streams=streams,
                 verbose=True,
                 asMessage=True,
             )
 
             if add_output_to_map:
-                self._add_to_map(output_layer)
+                for lyr in output_layers:
+                    self._add_to_map(lyr)
 
-        return output_layer
+        return output_layers
 
 
 class Accumulator(BaseToolbox_Mixin):
@@ -604,25 +678,6 @@ class Accumulator(BaseToolbox_Mixin):
             self.add_output_to_map,
         ]
         return params
-
-    @property
-    def streams(self):
-        """ The streams who will accumulate attributes from
-        subcatchments.
-
-        """
-
-        if self._streams is None:
-            self._streams = arcpy.Parameter(
-                displayName="Streams",
-                name="streams",
-                datatype="DEFeatureClass",
-                parameterType="Required",
-                direction="Input",
-                multiValue=False
-            )
-            self._set_parameter_dependency(self._streams, self.workspace)
-        return self._streams
 
     @property
     def value_columns(self):
