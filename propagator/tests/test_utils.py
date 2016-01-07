@@ -760,6 +760,49 @@ def test_get_field_names():
     nt.assert_list_equal(result, expected)
 
 
+class Test_aggregate_geom(object):
+    def setup(self):
+        self.workspace = resource_filename('propagator.testing', 'aggregate_geom')
+        self.expected_single = 'known_one_group_field.shp'
+        self.expected_dual = 'known_two_group_fields.shp'
+        self.input_file = 'agg_geom.shp'
+        self.output = 'test.shp'
+        self.stats = [('WQ_1', 'mean'), ('WQ_2', 'max')]
+
+    def teardown(self):
+        with utils.WorkSpace(self.workspace):
+            utils.cleanup_temp_results(self.output)
+
+    @nt.nottest
+    def check(self, results, expected):
+        nt.assert_equal(results, self.output)
+        pptest.assert_shapefiles_are_close(
+            os.path.join(self.workspace, expected),
+            os.path.join(self.workspace, results),
+        )
+
+    def test_single_group_col(self):
+        with utils.WorkSpace(self.workspace):
+            results = utils.aggregate_geom(
+                layerpath=self.input_file,
+                by_fields='CID',
+                field_stat_tuples=self.stats,
+                outputpath=self.output,
+            )
+        self.check(results, self.expected_single)
+
+    def test_dual_group_col(self):
+        with utils.WorkSpace(self.workspace):
+            results = utils.aggregate_geom(
+                layerpath=self.input_file,
+                by_fields=['CID', 'DS_CID'],
+                field_stat_tuples=self.stats,
+                outputpath=self.output,
+            )
+
+        self.check(results, self.expected_dual)
+
+
 def test_count_features():
     layer = resource_filename('propagator.testing.count_features', 'monitoring_locations.shp')
     nt.assert_equal(utils.count_features(layer), 14)
@@ -878,7 +921,6 @@ class Test_rec_groupby(object):
         expected.sort()
 
         nptest.assert_array_equal(result, expected)
-
 
 
 class Test_stats_with_ignored_values(object):

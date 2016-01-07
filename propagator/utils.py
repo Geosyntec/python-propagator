@@ -1076,6 +1076,61 @@ def get_field_names(layerpath):
     return [f.name for f in arcpy.ListFields(layerpath)]
 
 
+def aggregate_geom(layerpath, by_fields, field_stat_tuples, outputpath=None, **kwargs):
+    """
+    Aggregates features class geometries into multipart geometries
+    based on columns in attributes table. Basically this is a groupby
+    operation on the attribute table, and the geometries are simply
+    combined for aggregation. Other fields can but statistically
+    aggregated as well.
+
+    Parameters
+    ----------
+    layerpath : str
+        Name of the input feature class.
+    by_fields : list of str
+        The fields in the attribute table on which the records will be
+        aggregated.
+    field_stat_tuples : list of tuples of str
+        List of two-tuples where the first element element is a field
+        in the atrribute and the second element is how that column
+        should be aggreated.
+    outputpath : str, optional
+        Name of the new feature class where the output should be saved.
+    **kwargs
+        Additional parameters passed to `arcpy.managment.Dissolve.
+
+    Returns
+    -------
+    outputpath : str, optional
+        Name of the new feature class where the output was sucessfully
+        saved.
+
+    Examples
+    --------
+    >>> from propagator import utils
+    >>> with utils.WorkSpace('C:/SOC/data.gdb'):
+    ...     utils.aggregate_geom(
+    ...         layerpath='streams_with_WQ_scores',
+    ...         by_fields=['Catch_ID', 'DS_Catch_ID'],
+    ...         field_stat_tuples=[('Dry_Metals', 'max'), ('Wet_Metals', 'min')],
+    ...         outputpath='agg_streams'
+    ...     )
+
+    """
+
+    by_fields = validate.non_empty_list(by_fields)
+    arcpy.management.Dissolve(
+        in_features=layerpath,
+        out_feature_class=outputpath,
+        dissolve_field=by_fields,
+        statistics_fields=field_stat_tuples,
+        **kwargs
+    )
+
+    return outputpath
+
+
 def find_row_in_array(array, column, value):
     """
     Find a single row in a record array.
