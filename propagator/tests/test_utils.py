@@ -23,6 +23,11 @@ class MockResult(object):
         return self.path
 
 
+def test_add_suffix_to_filename():
+    nt.assert_equal(utils.add_suffix_to_filename('example.shp', 'test'), 'example_test.shp')
+    nt.assert_equal(utils.add_suffix_to_filename('example', 'test'), 'example_test')
+
+
 def test_RasterTemplate():
     size, x, y = 8, 1, 2
     template = utils.RasterTemplate(size, x, y)

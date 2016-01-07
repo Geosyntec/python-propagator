@@ -65,6 +65,11 @@ def update_status(): # pragma: no cover
     return decorate
 
 
+def add_suffix_to_filename(filename, suffix):
+    name, extension = os.path.splitext(filename)
+    return '{}_{}{}'.format(name, suffix, extension)
+
+
 class RasterTemplate(object):
     """ Georeferencing template for Rasters.
 
