@@ -22,6 +22,7 @@ import itertools
 from functools import wraps
 from contextlib import contextmanager
 from collections import namedtuple
+from copy import copy
 
 import numpy
 
@@ -956,7 +957,7 @@ def concat_results(destination, *input_files):
 
 
 @update_status()
-def update_attribute_table(layerpath, attribute_array, id_column, *update_columns):
+def update_attribute_table(layerpath, attribute_array, id_column, orig_columns, new_columns=None):
     """
     Update the attribute table of a feature class from a record array.
 
@@ -980,10 +981,13 @@ def update_attribute_table(layerpath, attribute_array, id_column, *update_column
 
     """
 
+    if new_columns is None:
+        new_columns = copy(orig_columns)
+
     # place the ID_column and columnes to be updated
     # in a single list
     all_columns = [id_column]
-    all_columns.extend(update_columns)
+    all_columns.extend(orig_columns)
 
     # load the existing attributed table, loop through all rows
     with arcpy.da.UpdateCursor(layerpath, all_columns) as cur:
@@ -992,7 +996,7 @@ def update_attribute_table(layerpath, attribute_array, id_column, *update_column
             newrow = find_row_in_array(attribute_array, id_column, oldrow[0])
             # loop through the value colums, setting them to the new values
             if newrow is not None:
-                for n, col in enumerate(update_columns, 1):
+                for n, col in enumerate(new_columns, 1):
                     oldrow[n] = newrow[col]
 
             # update the row
