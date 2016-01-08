@@ -20,6 +20,7 @@ import itertools
 from functools import partial
 
 import numpy
+from numpy.lib import recfunctions
 
 import arcpy
 
@@ -430,7 +431,7 @@ def preprocess_wq(monitoring_locations, subcatchments, id_col, ds_col,
     # update the output's attribute table with the aggegated data
     output_path = utils.update_attribute_table(
         output_path, aggregated, id_col,
-        *[s.rescol for s in statistics]
+        [s.rescol for s in statistics]
     )
 
     # remove the temporary data
@@ -647,7 +648,7 @@ def aggregate_streams_by_subcatchment(stream_layer, subcatchment_layer,
                                       agg_method="first", output_layer=None,
                                       cleanup=True):
     """
-    Splits up stream into segments based on subcatchment borders, and
+    Split up stream into segments based on subcatchment borders, and
     then aggregates all of the individual segements within each
     subcatchments into a single multipart geometry
 
@@ -728,3 +729,118 @@ def aggregate_streams_by_subcatchment(stream_layer, subcatchment_layer,
 
     return final
 
+
+@utils.update_status()
+def score_accumulator(streams_layer, subcatchments_layer, id_col, ds_col, stats, output_layer=None):
+
+    """
+    Accumulate user-specified scores from upstream drainage area
+    to each stream segment.
+
+    Parameters
+    ----------
+    streams_layer, subcatchments_layer : str
+        Name of the feature class containing streams and subcatments,
+        respectively.
+    id_col, ds_col : str
+        Names of the fields in ``subcatchment_layer`` that contain the
+        subcatchment ID and downstream subcatchment ID, respectively.
+    stats : class?
+        Contains the field name that needs to be accumulated, and
+        the corresponding accumulation method.
+    output_layer : str, optional
+        Names of the new layer where the results should be saved.
+
+    Returns
+    -------
+    output_layer : str
+        Names of the new layer where the results were successfully
+        saved.
+
+    See also
+    --------
+    propagator.analysis.aggregate_streams_by_subcatchment
+    propagator.analysis.append_upstream_field
+    propagator.utils.rec_groupby
+
+    """
+
+    # Split streams by subcatchment border
+    target_fields = [s.srccol for s in stats]
+    split_streams_layer = aggregate_streams_by_subcatchment(
+            stream_layer=streams_layer,
+            subcatchment_layer=subcatchments_layer,
+            id_col=id_col,
+            ds_col=ds_col,
+            other_cols=target_fields,
+            output_layer='split_streams_layer.shp',
+            agg_method="first",
+    )
+
+    # Add target_field columns back to spilt_stream_layer.
+    for i in target_fields:
+        arcpy.management.AddField(split_streams_layer, i, "DOUBLE")
+        #arcpy.management.CalculateField(split_streams_layer, i, '"!{}!"'.format(new_i))
+
+    # Trace upstream and aggregate target field values.
+    split_streams_table = utils.load_attribute_table(split_streams_layer,id_col, ds_col, *target_fields)
+    subcatchments_table = utils.load_attribute_table(subcatchments_layer,id_col, ds_col, *target_fields)
+
+    src_array = append_upstream_field(subcatchments_table, split_streams_table, id_col, ds_col, target_fields)
+    aggregated_properties = utils.rec_groupby(src_array.data, id_col, *stats)
+
+    # Update output layer with aggregated values.
+    final_fields = [stat.rescol for stat in stats]
+    utils.update_attribute_table(
+        split_streams_layer,
+        aggregated_properties,
+        id_col,
+        target_fields,
+        final_fields,
+        )
+
+    return split_streams_layer
+
+
+def append_upstream_field(subcatchments_table, target_subcatchments,
+                          id_col, ds_col, preserved_fields,):
+
+    """
+    Identifies all upstream subcatchment IDs of each target
+    subcatchment.
+    PENDING TODO: Give users the option of whether to include
+    target subcatchment itself on the upstream list or not.
+
+    Parameters
+    ----------
+    subcatchments_table : ndarray
+        List of all subcatchments
+    target_subcatchments : ndarray
+        List of subcatchments that user is interested in identifying upstream
+        subcatchemnts for.
+    id_col, ds_col : str
+        Names of the columns in ``subcatchment_table`` that contain the
+        subcatchment ID and downstream subcatchment ID, respectively.
+    preserved_fields : list
+        List of column IDs that will be kept in output table
+
+    Returns
+    -------
+    output : ndarray
+        an array listing all upstream subcatchments for each target subcatchment
+    """
+    n = -1
+    for row in target_subcatchments:
+        n = n+1
+        upstream_subcatchments = trace_upstream(subcatchments_table, row[id_col], id_col=id_col, ds_col=ds_col)
+        if upstream_subcatchments.shape[0] > 0:
+            id_array = numpy.array([row[id_col]] * upstream_subcatchments.shape[0])
+            upstream_subcatchments = upstream_subcatchments[preserved_fields]
+            _src_array = recfunctions.append_fields(upstream_subcatchments, [id_col], [id_array])
+            if n == 0:
+                src_array = _src_array.copy()
+            else:
+                src_array = numpy.hstack([src_array, _src_array])
+        else:
+            n = n-1
+    return src_array
