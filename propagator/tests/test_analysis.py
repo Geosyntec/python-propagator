@@ -8,6 +8,7 @@ import numpy
 import nose.tools as nt
 import numpy.testing as nptest
 import propagator.testing as pptest
+from numpy.lib import recfunctions
 
 from propagator import analysis
 from propagator import utils
@@ -326,3 +327,103 @@ def test_aggregate_streams_by_subcatchment():
     )
 
     utils.cleanup_temp_results(os.path.join(ws, results),)
+
+def test_append_upstream_field():
+    subcatchments_table = numpy.array(
+        [
+            ('A1', 'Ocean', 20, 45.23), ('A2', 'Ocean', 0.32, 41),
+            ('B1', 'A1', 43.3, 45.23), ('B2', 'A1', 0.32, 41),
+            ('B3', 'A2', 91, 15.23), ('C1', 'B2', 0.32, 4),
+            ('C2', 'B3', 50.3, 45.23), ('C3', 'B3', 0.32, 41),
+            ('D1', 'C1', 32, 45.23), ('D2', 'C3', 0.32, 41),
+            ('E1', 'D1', 1, 45.23), ('E2', 'D2', 0.32, 100),
+            ('F1', 'E1', 42, 35.3), ('F2', 'E1', 0.32, 315),
+            ('F3', 'E1', 5, 45.23), ('G1', 'F1', 0.32, 123),
+            ('G2', 'F3', 8, 45.23), ('H1', 'G2', 0.32, 41),
+        ], dtype=[('ID', '<U5'), ('DS_ID', '<U5'), ('Imp', '<f8'), ('Area', '<f8'),]
+    )
+    split_streams_table1 = numpy.array(
+        [
+        ('C2',), ('A1',),
+        ('E2',), ('A2',),
+    ], dtype=[('ID', '<U2')]
+    )
+    results1 = analysis.append_upstream_field(
+        subcatchments_table=subcatchments_table,
+        target_subcatchments=split_streams_table1,
+        id_col='ID',
+        ds_col='DS_ID',
+        preserved_fields=['Imp', 'Area']
+    )
+
+    split_streams_table2 = numpy.array(
+        [
+        ('A1',), ('C2',),
+        ('E2',), ('A2',),
+    ], dtype=[('ID', '<U2')]
+    )
+    results2 = analysis.append_upstream_field(
+        subcatchments_table=subcatchments_table,
+        target_subcatchments=split_streams_table2,
+        id_col='ID',
+        ds_col='DS_ID',
+        preserved_fields=['Imp', 'Area']
+    )
+
+    split_streams_table3 = numpy.array(
+        [
+        ('A1',), ('A2',),
+        ('E2',), ('C2',),
+    ], dtype=[('ID', '<U2')]
+    )
+    results3 = analysis.append_upstream_field(
+        subcatchments_table=subcatchments_table,
+        target_subcatchments=split_streams_table3,
+        id_col='ID',
+        ds_col='DS_ID',
+        preserved_fields=['Imp', 'Area']
+    )
+
+    expected_results = numpy.array(
+        [
+            (43.3, 45.23, 'A1'),
+            (0.32, 41, 'A1'),
+            (0.32, 4, 'A1'),
+            (32, 45.23, 'A1'),
+            (1, 45.23, 'A1'),
+            (42, 35.3, 'A1'),
+            (0.32, 315, 'A1'),
+            (5, 45.23, 'A1'),
+            (0.32, 123, 'A1'),
+            (8, 45.23, 'A1'),
+            (0.32, 41, 'A1'),
+            (91, 15.23, 'A2'),
+            (50.3, 45.23, 'A2'),
+            (0.32, 41, 'A2'),
+            (0.32, 41, 'A2'),
+            (0.32, 100, 'A2'),
+        ], dtype=[('Imp', '<f8'), ('Area', '<f8'), ('ID','<U2'),]
+    )
+    nptest.assert_array_equal(numpy.sort(results1.data), numpy.sort(expected_results))
+    nptest.assert_array_equal(numpy.sort(results2.data), numpy.sort(expected_results))
+    nptest.assert_array_equal(numpy.sort(results3.data), numpy.sort(expected_results))
+
+
+def test_score_acumulator():
+    ws = resource_filename('propagator.testing', 'score_accumulator')
+    with utils.WorkSpace(ws), utils.OverwriteState(True):
+        stats = [
+            utils.Statistic('Imp', numpy.average, 'Average_Imp'),
+            utils.Statistic('Area', numpy.sum, 'Sum_Area'),
+        ]
+
+        results = analysis.score_accumulator(
+            streams_layer='streams.shp',
+            subcatchments_layer='subcatchment_wq.shp',
+            id_col='Catch_ID_a',
+            ds_col='Dwn_Catch_',
+            stats=stats,
+            output_layer='streams_accu_wq.shp'
+        )
+        pptest.assert_shapefiles_are_close("expected_results.shp", results)
+        # utils.cleanup_temp_results(os.path.join(ws, results),)
