@@ -30,7 +30,7 @@ from . import validate
 
 @utils.update_status()
 def trace_upstream(subcatchment_array, subcatchment_ID, id_col='ID',
-                   ds_col='DS_ID', downstream=None):
+                   ds_col='DS_ID', include_base=False, downstream=None):
     """
     Recursively traces an upstream path of subcatchments through a
     watetershed.
@@ -49,6 +49,9 @@ def trace_upstream(subcatchment_array, subcatchment_ID, id_col='ID',
     ds_col : str, optional
         The name of the column that identifies the downstream
         subcatchment.
+    include_base : bool, optional
+        Toggles the inclusion of target subcatchment itself in upstream
+        subcatchment list.
     downstream : list, optional
         A list of already known downstream catchments in the trace.
 
@@ -63,9 +66,12 @@ def trace_upstream(subcatchment_array, subcatchment_ID, id_col='ID',
         have the same schema as ``subcatchment_array``
 
     """
-
     if downstream is None:
         downstream = []
+
+    if include_base:
+        base_row = utils.find_row_in_array(subcatchment_array, id_col, subcatchment_ID)
+        downstream.append(base_row)
 
     _neighbors = filter(lambda row: row[ds_col] == subcatchment_ID, subcatchment_array)
 
@@ -73,7 +79,11 @@ def trace_upstream(subcatchment_array, subcatchment_ID, id_col='ID',
         downstream.append(n)
         trace_upstream(subcatchment_array, n[id_col],
                        id_col=id_col, ds_col=ds_col,
+                       include_base=False,
                        downstream=downstream)
+
+    # Add subcatchment_ID to downstream list if user wants to include
+    # the subcatchment itself in upstream list
 
     return numpy.array(downstream, dtype=subcatchment_array.dtype)
 
@@ -645,8 +655,8 @@ def _non_zero_means(_arr):
 @utils.update_status()
 def aggregate_streams_by_subcatchment(stream_layer, subcatchment_layer,
                                       id_col, ds_col, other_cols,
-                                      agg_method="first", output_layer=None,
-                                      cleanup=True):
+                                      agg_method="first",
+                                      output_layer=None, cleanup=True):
     """
     Split up stream into segments based on subcatchment borders, and
     then aggregates all of the individual segements within each
@@ -766,7 +776,13 @@ def score_accumulator(streams_layer, subcatchments_layer, id_col, ds_col, stats,
     """
 
     # Split streams by subcatchment border
-    target_fields = [s.srccol for s in stats]
+    target_fields = []
+    for s in stats:
+        if numpy.isscalar(s.srccol):
+            target_fields.append(s.srccol)
+        else:
+            target_fields.extend(s.srccol)
+    target_fields = numpy.unique(target_fields)
     split_streams_layer = aggregate_streams_by_subcatchment(
             stream_layer=streams_layer,
             subcatchment_layer=subcatchments_layer,
@@ -780,12 +796,10 @@ def score_accumulator(streams_layer, subcatchments_layer, id_col, ds_col, stats,
     # Add target_field columns back to spilt_stream_layer.
     for i in target_fields:
         arcpy.management.AddField(split_streams_layer, i, "DOUBLE")
-        #arcpy.management.CalculateField(split_streams_layer, i, '"!{}!"'.format(new_i))
 
     # Trace upstream and aggregate target field values.
     split_streams_table = utils.load_attribute_table(split_streams_layer,id_col, ds_col, *target_fields)
     subcatchments_table = utils.load_attribute_table(subcatchments_layer,id_col, ds_col, *target_fields)
-
     src_array = append_upstream_field(subcatchments_table, split_streams_table, id_col, ds_col, target_fields)
     aggregated_properties = utils.rec_groupby(src_array.data, id_col, *stats)
 
@@ -799,7 +813,14 @@ def score_accumulator(streams_layer, subcatchments_layer, id_col, ds_col, stats,
         final_fields,
         )
 
-    return split_streams_layer
+    # Remove extraneous columns
+    fields_to_remove = filter(
+        lambda name: name not in [id_col, ds_col, 'FID', 'Shape'] and name not in target_fields,
+        [f.name for f in arcpy.ListFields(split_streams_layer)]
+    )
+    utils.delete_columns(split_streams_layer, *fields_to_remove)
+
+   return split_streams_layer
 
 
 def append_upstream_field(subcatchments_table, target_subcatchments,
@@ -808,8 +829,6 @@ def append_upstream_field(subcatchments_table, target_subcatchments,
     """
     Identifies all upstream subcatchment IDs of each target
     subcatchment.
-    PENDING TODO: Give users the option of whether to include
-    target subcatchment itself on the upstream list or not.
 
     Parameters
     ----------
@@ -827,12 +846,17 @@ def append_upstream_field(subcatchments_table, target_subcatchments,
     Returns
     -------
     output : ndarray
-        an array listing all upstream subcatchments for each target subcatchment
+        An array listing all upstream subcatchments for each target subcatchment
     """
+
     n = -1
     for row in target_subcatchments:
         n = n+1
-        upstream_subcatchments = trace_upstream(subcatchments_table, row[id_col], id_col=id_col, ds_col=ds_col)
+        upstream_subcatchments = trace_upstream(
+            subcatchments_table, row[id_col],
+            id_col=id_col, ds_col=ds_col, include_base=True
+            )
+
         if upstream_subcatchments.shape[0] > 0:
             id_array = numpy.array([row[id_col]] * upstream_subcatchments.shape[0])
             upstream_subcatchments = upstream_subcatchments[preserved_fields]
@@ -843,4 +867,27 @@ def append_upstream_field(subcatchments_table, target_subcatchments,
                 src_array = numpy.hstack([src_array, _src_array])
         else:
             n = n-1
+
     return src_array
+
+
+def weighted_average(arr, value_col, weight_col):
+        """
+        Computed weighted average
+
+        Parameters
+        ----------
+        arr : list
+            Contains source values and weighting factors
+        value_col : str
+            ID of the values column
+        weight_col : TYPE
+            ID of the weighting factor column
+
+        Returns
+        -------
+        output : double
+            Weighted average
+        """
+
+        return numpy.average(arr[value_col], weights=arr[weight_col])
