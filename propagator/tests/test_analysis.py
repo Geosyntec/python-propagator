@@ -279,39 +279,6 @@ def test_mark_edges():
     nptest.assert_array_equal(results, expected)
 
 
-def test_prepare_data():
-    ws = resource_filename("propagator.testing", "prepare_data")
-    with utils.OverwriteState(True), utils.WorkSpace(ws), warnings.catch_warnings():
-        warnings.simplefilter('ignore')
-        cat = resource_filename("propagator.testing.prepare_data", "cat.shp")
-        ml = resource_filename("propagator.testing.prepare_data", "ml.shp")
-        expected_cat_wq = resource_filename("propagator.testing.prepare_data", "cat_wq.shp")
-        header_fields = [
-            "FID",
-            "Shape",
-            "Catch_ID_a",
-            "Dwn_Catch_",
-            "Watershed",
-        ]
-        wq_fields = [
-            "Dry_WQI_Ba",
-            "Dry_WQI_Me",
-            "Dry_WQI_Nu",
-            "Dry_WQI_Pe",
-            "Dry_WQI_TD",
-            "Dry_WQI_To",
-            "Storm_WQI_",
-            "Storm_WQI1",
-            "Storm_WQ_1",
-            "Storm_WQ_2",
-            "Storm_WQ_3",
-        ]
-        cat_wq = analysis.prepare_data(ml, cat, "Catch_ID_a", 'FID_ml',
-                                       header_fields, wq_fields, 'testout.shp')
-        pptest.assert_shapefiles_are_close(cat_wq, expected_cat_wq)
-        utils.cleanup_temp_results(cat_wq)
-
-
 def test_reduce():
     ws = resource_filename("propagator.testing", "_reduce")
     with utils.OverwriteState(True), utils.WorkSpace(ws):
