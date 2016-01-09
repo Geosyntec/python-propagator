@@ -18,6 +18,7 @@ import glob
 import datetime
 import itertools
 from functools import partial
+import warnings
 
 import numpy
 from numpy.lib import recfunctions
@@ -888,13 +889,16 @@ def collect_upstream_attributes(subcatchments_table, target_subcatchments,
         )
 
         if upstream_subcatchments.shape[0] > 0:
-            # factor out
-
+            # factor out the next 5 SLOC
             # add the ID of the "bottom" subcatchment as a column to
             # the array of upstream attributes
+
             id_array = numpy.array([row[id_col]] * upstream_subcatchments.shape[0])
             upstream_subcatchments = upstream_subcatchments[preserved_fields]
-            _src_array = recfunctions.append_fields(upstream_subcatchments, [id_col], [id_array])
+            # recfunctions.append_fields has a nasty warnings that we don't need to see
+            with warnings.catch_warnings(record=True) as w:
+                warnings.simplefilter("ignore")
+                _src_array = recfunctions.append_fields(upstream_subcatchments, [id_col], [id_array])
 
             if n == 0:
                 src_array = _src_array.copy()
