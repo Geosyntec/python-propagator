@@ -375,7 +375,7 @@ def test_collect_upstream_attributes():
             (0.32, 100, 'A2',),
             (50.3, 45.23, 'C2',),
             (0.32, 100, 'E2',),
-        ], dtype=[('Imp', '<f8'), ('Area', '<f8'), ('ID','<U2'),]
+        ], dtype=[('Imp', '<f8'), ('Area', '<f8'), ('ID','<U5'),]
     )
 
     result.sort()

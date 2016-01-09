@@ -19,6 +19,7 @@ import datetime
 import itertools
 from functools import partial
 import warnings
+from copy import copy
 
 import numpy
 from numpy.lib import recfunctions
@@ -660,6 +661,10 @@ def collect_upstream_attributes(subcatchments_table, target_subcatchments,
 
     """
 
+    final_cols = list(preserved_fields)
+    final_cols.append(id_col)
+    template = subcatchments_table[final_cols].dtype
+
     n = -1
     for row in target_subcatchments:
         n = n+1
@@ -681,10 +686,11 @@ def collect_upstream_attributes(subcatchments_table, target_subcatchments,
                 _src_array = recfunctions.append_fields(upstream_subcatchments, [id_col], [id_array])
 
             if n == 0:
-                src_array = _src_array.copy()
+                src_array = _src_array.copy().tolist()
             else:
-                src_array = numpy.hstack([src_array, _src_array])
+                src_array.extend(_src_array.copy().tolist())
+                #src_array = numpy.hstack([src_array, _src_array])
         else:
             n = n-1
 
-    return src_array
+    return numpy.array(src_array, dtype=template)
