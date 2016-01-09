@@ -1422,3 +1422,26 @@ def stats_with_ignored_values(array, statfxn, ignored_value=None,
     else:
         res = statfxn(array)
     return res
+
+
+def weighted_average(arr, value_col, weight_col):
+    """
+    Computed weighted average from two columns in an array.
+
+    Parameters
+    ----------
+    arr : array-like
+        Contains source values and weighting factors.
+    value_col : str or int
+        ID of the values column.
+    weight_col : str or int
+        ID of the weighting factor column.
+
+    Returns
+    -------
+    output : float
+        Weighted average.
+
+    """
+
+    return numpy.average(arr[value_col], weights=arr[weight_col])

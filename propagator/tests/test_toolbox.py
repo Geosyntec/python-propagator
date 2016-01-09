@@ -68,6 +68,29 @@ def test_propagate():
     )
 
 
+def test_score_acumulator():
+    ws = resource_filename('propagator.testing', 'score_accumulator')
+    with utils.WorkSpace(ws), utils.OverwriteState(True):
+        stats = [
+            utils.Statistic('Area', numpy.sum, 'Sum_Area'),
+            utils.Statistic(['Imp', 'Area'], lambda x: utils.weighted_average(x, 'Imp', 'Area'), 'Weighted_Average_Imp'),
+        ]
+
+        results = toolbox.score_accumulator(
+            streams_layer='streams.shp',
+            subcatchments_layer='subcatchment_wq.shp',
+            id_col='Catch_ID_a',
+            ds_col='Dwn_Catch_',
+            stats=stats,
+            output_layer='output.shp'
+        )
+
+        pptest.assert_shapefiles_are_close(os.path.join(ws, 'expected_results.shp'),
+                                           os.path.join(ws, results))
+
+        utils.cleanup_temp_results(os.path.join(ws, results))
+
+
 class BaseToolboxChecker_Mixin(object):
     mockMap = mock.Mock(spec=utils.EasyMapDoc)
     mockLayer = mock.Mock(spec=arcpy.mapping.Layer)

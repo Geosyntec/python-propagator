@@ -140,47 +140,110 @@ def propagate(subcatchments=None, id_col=None, ds_col=None,
     return subcatchment_output, stream_output
 
 
-def accumulate(**params):
+@utils.update_status()
+def score_accumulator(streams_layer=None, subcatchments_layer=None,
+                      id_col=None, ds_col=None, stats=None,
+                      output_layer=None):
+
     """
-    Summary
+    Accumulate upstream subcatchment properties in each stream segment.
 
     Parameters
     ----------
-    subcatchments
-        Polygon layer of subcatchments with the quantities to be
-        accumulated.
-    streams
-        Polyline layer of flow paths that will accumulate properties
-        from ``subcatchments``.
+    streams_layer, subcatchments_layer : str
+        Name of the feature class containing streams and subcatchments,
+        respectively.
+    id_col, ds_col : str
+        Names of the fields in ``subcatchment_layer`` that contain the
+        subcatchment ID and downstream subcatchment ID, respectively.
+    stats : list of `utils.Statistic`
+        List of object or namedtuples that contain the field names that
+        needs to be accumulated (`srccol`), and the corresponding
+        aggregation methods (`aggfxn`), and the name of the new
+        columns that will contain the aggregated values (`rescol`).
+    output_layer : str, optional
+        Names of the new layer where the results should be saved.
 
     Returns
     -------
-    name : TYPE
-        Description
+    output_layer : str
+        Names of the new layer where the results were successfully
+        saved.
+
+    See also
+    --------
+    propagator.analysis.aggregate_streams_by_subcatchment
+    propagator.analysis.collect_upstream_attributes
+    propagator.utils.rec_groupby
+
     """
-    split_stream = split_stream_by_catchments(subcatchments, streams)
-    for stream in split_stream:
-        upstream_subc = analysis.trace_upstream(stream[id_col])
-        accumulate_upstream_properties(stream, upstream_subc)
 
-    # """ Not yet implemented """
-    # workspace = params.pop('workspace', '.')
-    # subcatchments = params.pop('subcatchments', None)
-    # id_col = params.pop('ID_column', None)
-    # ds_col = params.pop('downstream_ID_column', None)
-    # streams = params.pop('streams', None)
-    # output_layer = params.pop('output_layer', None)
-    # water_quality_columns = params.pop('water_quality_columns', None)
+    # create a unique list of columns we need
+    # from the subcatchment layer
+    target_fields = []
+    for s in stats:
+        if numpy.isscalar(s.srccol):
+            target_fields.append(s.srccol)
+        else:
+            target_fields.extend(s.srccol)
 
-    # with utils.WorkSpace(workspace), utils.OverwriteState(True):
-    #     subcatchment_array = propagator.prep_subcatchments(subcatchments)
-    #     accumulated = propagator.accumulate_watershed_props(subcatchment_array, streams)
+    target_fields = numpy.unique(target_fields)
 
-    #     propagator.update_attribute_table(output_layer, accumulated)
+    # split the stream at the subcatchment boundaries and then
+    # aggregate all of the stream w/i each subcatchment
+    # into single geometries/records.
+    split_streams_layer = propagator.aggregate_streams_by_subcatchment(
+            stream_layer=streams_layer,
+            subcatchment_layer=subcatchments_layer,
+            id_col=id_col,
+            ds_col=ds_col,
+            other_cols=target_fields,
+            output_layer='split_streams_layer.shp',
+            agg_method="first",  # first works b/c all values are equal
+    )
+
+    # Add target_field columns back to spilt_stream_layer.
+    for i in target_fields:
+        arcpy.management.AddField(split_streams_layer, i, "DOUBLE")
+
+    # load the split/aggregated streams' attribute table
+    split_streams_table = utils.load_attribute_table(
+        split_streams_layer, id_col, ds_col, *target_fields
+    )
+
+    # load the subcatchment attribute table
+    subcatchments_table = utils.load_attribute_table(
+        subcatchments_layer,id_col, ds_col, *target_fields
+    )
 
 
+    upstream_attributes = propagator.collect_upstream_attributes(
+        subcatchments_table,
+        split_streams_table,
+        id_col,
+        ds_col,
+        target_fields
+    )
+    aggregated_properties = utils.rec_groupby(upstream_attributes.data, id_col, *stats)
 
-    return output_layer
+    # Update output layer with aggregated values.
+    final_fields = [stat.rescol for stat in stats]
+    utils.update_attribute_table(
+        split_streams_layer,
+        aggregated_properties,
+        id_col,
+        target_fields,
+        final_fields,
+    )
+
+    # Remove extraneous columns
+    fields_to_remove = filter(
+        lambda name: name not in [id_col, ds_col, 'FID', 'Shape'] and name not in target_fields,
+        [f.name for f in arcpy.ListFields(split_streams_layer)]
+    )
+    utils.delete_columns(split_streams_layer, *fields_to_remove)
+
+    return split_streams_layer
 
 
 class BaseToolbox_Mixin(object):

@@ -983,3 +983,25 @@ class Test_stats_with_ignored_values(object):
                                                  ignored_value=1.,
                                                  terminator_value=5.,)
         nt.assert_equal(result, expected)
+
+
+def test_weighted_average():
+    raw_data = numpy.array(
+        [
+            (20, 45.23,),
+            (43.3, 45.23,),
+            (0.32, 41,),
+            (0.32, 4,),
+            (32, 45.23,),
+            (1, 45.23,),
+        ], dtype=[('value', '<f4'), ('w_factor', '<f4'),]
+    )
+
+    expected_result = numpy.array(
+        [
+            (19.343349,),
+        ], dtype=[('value', '<f4'),]
+    )
+
+    result = utils.weighted_average(raw_data, 'value', 'w_factor')
+    nt.assert_equal(result, expected_result['value'])
