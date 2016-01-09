@@ -406,7 +406,8 @@ class Test_load_data(object):
 class Test_add_field_with_value(object):
     def setup(self):
         source = resource_filename("propagator.testing.add_field_with_value", 'field_adder.shp')
-        self.testfile = utils.copy_layer(source, source.replace('field_adder', 'test'))
+        with utils.OverwriteState(True):
+            self.testfile = utils.copy_layer(source, source.replace('field_adder', 'test'))
         self.fields_added = ["_text", "_unicode", "_int", "_float", '_no_valstr', '_no_valnum']
 
     def teardown(self):
@@ -1046,17 +1047,17 @@ class Test_append_column_to_array():
         )
 
     def test_basic(self):
-        result = utils.append_column_to_array(raw_data, self.newcol, self.newval)
-        nptest.assert_array_equal(results, self.expected_all)
+        result = utils.append_column_to_array(self.raw_data, self.newcol, self.newval)
+        nptest.assert_array_equal(result, self.expected_all)
 
     def test_subset_scalar_colnames(self):
-        result = utils.append_column_to_array(raw_data, self.newcol, self.newval,
+        result = utils.append_column_to_array(self.raw_data, self.newcol, self.newval,
                                               othercols='value')
-        nptest.assert_array_equal(results, self.expected_subset)
+        nptest.assert_array_equal(result, self.expected_subset)
 
     def test_subset_scalar_colnames(self):
-        result = utils.append_column_to_array(raw_data, self.newcol, self.newval,
+        result = utils.append_column_to_array(self.raw_data, self.newcol, self.newval,
                                               othercols=['value'])
-        nptest.assert_array_equal(results, self.expected_subset)
+        nptest.assert_array_equal(result, self.expected_subset)
 
 

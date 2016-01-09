@@ -23,6 +23,7 @@ from functools import wraps
 from contextlib import contextmanager
 from collections import namedtuple
 from copy import copy
+import warnings
 
 import numpy
 
@@ -1451,20 +1452,21 @@ def append_column_to_array(array, newcolumn, newvalues, othercols=None):
     from numpy.lib.recfunctions import append_fields
 
     newcolumn = validate.non_empty_list(newcolumn)
+    if othercols is not None:
+        othercols = validate.non_empty_list(othercols)
+        if newcolumn in othercols:
+            msg = "`newcolumn` can not be the name of an existing column."
+            raise ValueError(msg)
+        else:
+            # this raises a nasty warning in numpy even though this is the
+            # way the warning says we should do this:
+            with warnings.catch_warnings(record=True) as w: # pragma: no cover
+                warnings.simplefilter("ignore")
+                array = array[othercols].copy()
 
     if numpy.isscalar(newvalues):
         newvalues = numpy.array([newvalues] * array.shape[0])
 
     new_array = append_fields(array, newcolumn, [newvalues])
-
-    if othercols is not None:
-        othercols = validate.non_empty_list(othercols)
-        othercols.extend(newcolumn)
-
-        # this raises a nasty warning in numpy even though this is the
-        # way the warning says we should do this:
-        with warnings.catch_warnings(record=True) as w: # pragma: no cover
-            warnings.simplefilter("ignore")
-            new_array = new_array[othercols].copy()
 
     return new_array.data
