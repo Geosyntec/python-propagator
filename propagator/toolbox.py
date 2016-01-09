@@ -142,27 +142,33 @@ def propagate(subcatchments=None, id_col=None, ds_col=None,
     return subcatchment_output, stream_output
 
 
-@utils.update_status()
-def score_accumulator(streams_layer=None, subcatchments_layer=None,
-                      id_col=None, ds_col=None, stats=None,
-                      output_layer=None):
-
+def accumulate(subcatchments_layer=None, id_col=None, ds_col=None,
+               area_col=None, imp_col=None, streams_layer=None,
+               output_layer=None, verbose=False, asMessage=False):
     """
     Accumulate upstream subcatchment properties in each stream segment.
 
     Parameters
     ----------
-    streams_layer, subcatchments_layer : str
-        Name of the feature class containing streams and subcatchments,
-        respectively.
+    subcatchments_layer, streams_layer : str
+        Names of the feature classes containing subcatchments and
+        streams, respectively.
     id_col, ds_col : str
         Names of the fields in ``subcatchment_layer`` that contain the
         subcatchment ID and downstream subcatchment ID, respectively.
-    stats : list of `utils.Statistic`
-        List of object or namedtuples that contain the field names that
-        needs to be accumulated (`srccol`), and the corresponding
-        aggregation methods (`aggfxn`), and the name of the new
-        columns that will contain the aggregated values (`rescol`).
+    sum_cols, avg_cols : list of str
+        Names of the fields that will be accumulated by summing (e.g.,
+        number of permit violations) and area-weighted averaging (e.g.,
+        percent impervious land cover).
+
+        .. note ::
+           Do not include a column for subcatchment area in
+           ``sum_cols``. Specify that in ``area_col`` instead.
+
+    area_col : str, optional
+        Name of a specific field of areas in the attribute table of
+        ``subcatchments_layer``. Falls back to computing areas
+        on-the-fly if not provided.
     output_layer : str, optional
         Names of the new layer where the results should be saved.
 
@@ -180,6 +186,20 @@ def score_accumulator(streams_layer=None, subcatchments_layer=None,
 
     """
 
+    area_col = area_col or 'SHAPE@AREA'
+    if imp_col is None:
+        raise ValueError("imperviousness is required")
+
+
+    stats = [
+        utils.Statistic(area_col, numpy.sum, 'Sum_Area'),
+        utils.Statistic(
+            [imp_col, area_col],
+            lambda x: utils.weighted_average(x, imp_col, area_col),
+            'Wt_Avg_Imp'
+        ),
+    ]
+
     # create a unique list of columns we need
     # from the subcatchment layer
     target_fields = []
@@ -188,19 +208,18 @@ def score_accumulator(streams_layer=None, subcatchments_layer=None,
             target_fields.append(s.srccol)
         else:
             target_fields.extend(s.srccol)
-
     target_fields = numpy.unique(target_fields)
 
     # split the stream at the subcatchment boundaries and then
     # aggregate all of the stream w/i each subcatchment
     # into single geometries/records.
-    split_streams_layer = propagator.aggregate_streams_by_subcatchment(
+    split_streams_layer = analysis.aggregate_streams_by_subcatchment(
             stream_layer=streams_layer,
             subcatchment_layer=subcatchments_layer,
             id_col=id_col,
             ds_col=ds_col,
             other_cols=target_fields,
-            output_layer='split_streams_layer.shp',
+            output_layer=output_layer,
             agg_method="first",  # first works b/c all values are equal
     )
 
@@ -218,8 +237,7 @@ def score_accumulator(streams_layer=None, subcatchments_layer=None,
         subcatchments_layer,id_col, ds_col, *target_fields
     )
 
-
-    upstream_attributes = propagator.collect_upstream_attributes(
+    upstream_attributes = analysis.collect_upstream_attributes(
         subcatchments_table,
         split_streams_table,
         id_col,
@@ -400,7 +418,8 @@ class Accumulator(base_tbx.BaseToolbox_Mixin):
         self._subcatchments = None
         self._ID_column = None
         self._downstream_ID_column = None
-        self._value_columns = None
+        self._area_col = None
+        self._imp_col = None
         self._streams = None
         self._output_layer = None
         self._add_output_to_map = None
@@ -411,7 +430,8 @@ class Accumulator(base_tbx.BaseToolbox_Mixin):
             self.subcatchments,
             self.ID_column,
             self.downstream_ID_column,
-            self.value_columns,
+            self.area_col,
+            self.imp_col,
             self.streams,
             self.output_layer,
             self.add_output_to_map,
@@ -419,20 +439,39 @@ class Accumulator(base_tbx.BaseToolbox_Mixin):
         return params
 
     @property
-    def value_columns(self):
-        """ The names of the fields to be accumulated into downstream
-        reaches. """
-        if self._value_columns is None:
-            self._value_columns = arcpy.Parameter(
-                displayName="Values to be Accumulated",
-                name="value_columns",
+    def area_col(self):
+        """ Name of the field in the `subcatchments` layer specifies
+        the catchment area. Optional as this can be computed on-the-fly.
+        """
+
+        if self._area_col is None:
+            self._area_col = arcpy.Parameter(
+                displayName="Column with Subcatchment Areas",
+                name="area_col",
+                datatype="Field",
+                parameterType="Optional",
+                direction="Input",
+                multiValue=False
+            )
+            self._set_parameter_dependency(self._area_col, self.subcatchments)
+        return self._area_col
+
+    @property
+    def imp_col(self):
+        """ Name of the field in the `subcatchments` layer specifies
+        the percent impervious cover. """
+
+        if self._imp_col is None:
+            self._imp_col = arcpy.Parameter(
+                displayName="Column with Subcatchment Percents impervious",
+                name="imp_col",
                 datatype="Field",
                 parameterType="Required",
                 direction="Input",
-                multiValue=True
+                multiValue=False
             )
-            self._set_parameter_dependency(self._value_columns, self.subcatchments)
-        return self._value_columns
+            self._set_parameter_dependency(self._imp_col, self.subcatchments)
+        return self._imp_col
 
     def analyze(self, **params):
         """ Accumulates subcatchments properties from upstream
@@ -440,4 +479,35 @@ class Accumulator(base_tbx.BaseToolbox_Mixin):
 
         """
 
-        return accumulate(**params)
+        # analysis options
+        ws = params.pop('workspace', '.')
+        overwrite = params.pop('overwrite', True)
+        add_output_to_map = params.pop('add_output_to_map', False)
+
+        # input parameters
+        sc = params.pop('subcatchments', None)
+        ID_col = params.pop('ID_column', None)
+        downstream_ID_col = params.pop('downstream_ID_column', None)
+        streams = params.pop('streams', None)
+        area_col = params.pop('area_col', 'SHAPE@AREA')
+        imp_col = params.pop('imp_col', None)
+        output_layer = params.pop('output_layer', None)
+
+        with utils.WorkSpace(ws), utils.OverwriteState(overwrite):
+            output_layers = accumulate(
+                subcatchments_layer=sc,
+                id_col=ID_col,
+                ds_col=downstream_ID_col,
+                area_col=area_col,
+                imp_col=imp_col,
+                streams_layer=streams,
+                output_layer=output_layer,
+                verbose=True,
+                asMessage=True,
+            )
+
+            if add_output_to_map:
+                self._add_to_map(output_layers)
+                #for lyr in output_layers:
+
+        return output_layers
