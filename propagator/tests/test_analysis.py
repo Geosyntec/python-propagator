@@ -358,7 +358,7 @@ def test_aggregate_streams_by_subcatchment():
     utils.cleanup_temp_results(os.path.join(ws, results),)
 
 
-def test_append_upstream_field():
+def test_collect_upstream_attributes():
     subcatchments_table = numpy.array(
         [
             ('A1', 'Ocean', 20, 45.23), ('A2', 'Ocean', 0.64, 42),
@@ -374,13 +374,11 @@ def test_append_upstream_field():
     )
 
     split_streams_table1 = numpy.array(
-        [
-        ('C2',), ('A1',),
-        ('E2',), ('A2',),
-    ], dtype=[('ID', '<U2')]
+        [('C2',), ('A1',), ('E2',), ('A2',)],
+        dtype=[('ID', '<U2')]
     )
 
-    results1 = analysis.append_upstream_field(
+    results1 = analysis.collect_upstream_attributes(
         subcatchments_table=subcatchments_table,
         target_subcatchments=split_streams_table1,
         id_col='ID',
