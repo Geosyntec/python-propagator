@@ -1,6 +1,6 @@
 """ Wrappers around Esri's ``arcpy`` library.
 
-This contains basic file I/O, coversion, and spatial analysis functions
+This contains basic file I/O, conversion, and spatial analysis functions
 to support the python-propagator library. These functions generally
 are simply wrappers around their ``arcpy`` counter parts. This was done
 so that in the future, these functions could be replaced with calls to
@@ -48,7 +48,6 @@ def update_status(): # pragma: no cover
     """ Decorator to allow a function to take a additional keyword
     arguments related to printing status messages to stdin or as arcpy
     messages.
-
     """
 
     def decorate(func):
@@ -66,6 +65,34 @@ def update_status(): # pragma: no cover
 
 
 def add_suffix_to_filename(filename, suffix):
+    """
+    Adds a suffix to a(n output) filename.
+
+    Parameters
+    ----------
+    filename : str or a list of str
+        The filename that needs a suffix.
+    suffix : str
+        The suffix to be added.
+
+    Returns
+    -------
+    new_filename : str
+        The original filename with followed by an underscore, the
+        suffix, and then any extension that the original filename had.
+
+    Examples
+    --------
+    >>> from propagator import utils
+    >>> utils.add_suffix_to_filename('test_shapefile.shp', 'try_2')
+    'test_shapefile_try_2.shp'
+
+    >>> utils.add_suffix_to_filename('test_layer', 'try_2')
+    'test_layer_try_2'
+
+    >>> utils.add_suffix_to_filename(['streams.shp', 'locations.shp'])
+
+    """
     name, extension = os.path.splitext(filename)
     return '{}_{}{}'.format(name, suffix, extension)
 
@@ -73,7 +100,7 @@ def add_suffix_to_filename(filename, suffix):
 class RasterTemplate(object):
     """ Georeferencing template for Rasters.
 
-    This mimics the attributes of teh ``arcpy.Raster`` class enough
+    This mimics the attributes of the ``arcpy.Raster`` class enough
     that it can be used as a template to georeference numpy arrays
     when converting to rasters.
 
@@ -236,13 +263,14 @@ class EasyMapDoc(object):
         Returns
         -------
         layer : arcpy.mapping.Layer
-            The sucessfully added layer.
+            The successfully added layer.
 
         Examples
         --------
         >>> from propagator import utils
         >>> ezmd = utils.EasyMapDoc('CURRENT')
-        >>> ezmd.add_layer(myLayer)
+        >>> watersheds = utils.load_data("C:/gis/hydro.gdb/watersheds")
+        >>> ezmd.add_layer(watersheds)
 
         """
 
@@ -270,7 +298,7 @@ def Extension(name):
     """ Context manager to facilitate the use of ArcGIS extensions
 
     Inside the context manager, the extension will be checked out. Once
-    the interpreter leaves the code block by any means (e.g., sucessful
+    the interpreter leaves the code block by any means (e.g., successful
     execution, raised exception) the extension will be checked back in.
 
     Examples
@@ -297,7 +325,7 @@ def OverwriteState(state):
 
     Inside the context manager, the ``arcpy.env.overwriteOutput`` will
     be set to the given value. Once the interpreter leaves the code
-    block by any means (e.g., sucessful execution, raised exception),
+    block by any means (e.g., successful execution, raised exception),
     ``arcpy.env.overwriteOutput`` will reset to its original value.
 
     Parameters
@@ -307,15 +335,15 @@ def OverwriteState(state):
 
     Examples
     --------
-    >>> import propagator
-    >>> with propagator.utils.OverwriteState(False):
+    >>> from propagator import utils
+    >>> with utils.OverwriteState(False):
     ...     # some operation that should fail if output already exists
 
     """
 
     orig_state = arcpy.env.overwriteOutput
     arcpy.env.overwriteOutput = bool(state)
-    yield
+    yield state
     arcpy.env.overwriteOutput = orig_state
 
 
@@ -326,7 +354,7 @@ def WorkSpace(path):
 
     Inside the context manager, the `arcpy.env.workspace`_ will
     be set to the given value. Once the interpreter leaves the code
-    block by any means (e.g., sucessful execution, raised exception),
+    block by any means (e.g., successful execution, raised exception),
     `arcpy.env.workspace`_ will reset to its original value.
 
     .. _arcpy.env.workspace: http://goo.gl/0NpeFN
@@ -346,7 +374,7 @@ def WorkSpace(path):
 
     orig_workspace = arcpy.env.workspace
     arcpy.env.workspace = path
-    yield
+    yield path
     arcpy.env.workspace = orig_workspace
 
 
@@ -369,12 +397,22 @@ def create_temp_filename(filepath, filetype=None, prefix='_temp_', num=None):
 
     Returns
     -------
-    str
+    str : temp_filename
 
     Examples
     --------
-    >>> create_temp_filename('path/to/flooded_wetlands', filetype='shape')
-    path/to/_temp_flooded_wetlands.shp
+    >>> from propagator import utils
+    >>> utils.create_temp_filename('path/to/wetlands.shp', filetype='shape')
+    path/to/_temp_wetlands.shp
+
+    >>> utils.create_temp_filename('path.gdb/wetlands', filetype='shape')
+    path.gbd/_temp_wetlands
+
+    >>> utils.create_temp_filename('path/to/DEM.tif', filetype='raster')
+    path/to/_temp_DEM.shp
+
+    >>> utils.create_temp_filename('path.gdb/DEM', filetype='raster')
+    path.gbd/_temp_DEM
 
     """
 
@@ -415,10 +453,10 @@ def check_fields(table, *fieldnames, **kwargs):
     table : arcpy.mapping.Layer or similar
         Any table-like that we can pass to `arcpy.ListFields`.
     *fieldnames : str arguments
-        optional string arguments that whose existance in `table` will
+        optional string arguments that whose existence in `table` will
         be checked.
     should_exist : bool, optional (False)
-        Whether we're testing for for absense (False) or existance
+        Whether we're testing for for absence (False) or existence
         (True) of the provided field names.
 
     Returns
@@ -574,7 +612,7 @@ def add_field_with_value(table, field_name, field_value=None,
         infer the ``field_type`` parameter required by
         `arcpy.management.AddField` if ``field_type`` is itself not
         explicitly provided.
-    overwrite : bool, optonal (False)
+    overwrite : bool, optional (False)
         If True, an existing field will be overwritten. The default
         behavior will raise a `ValueError` if the field already exists.
     **field_opts : keyword options
@@ -587,6 +625,7 @@ def add_field_with_value(table, field_name, field_value=None,
 
     Examples
     --------
+    >>> from propagator import utils
     >>> # add a text field to shapefile (text fields need a length spec)
     >>> utils.add_field_with_value("mypolygons.shp", "storm_event",
                                    "100-yr", field_length=10)
@@ -595,7 +634,7 @@ def add_field_with_value(table, field_name, field_value=None,
 
     """
 
-    # how Esri map python types to field types
+    # how Esri maps python types to field types
     typemap = {
         int: 'LONG',
         float: 'DOUBLE',
@@ -645,6 +684,7 @@ def cleanup_temp_results(*results):
     None
 
     """
+
     for r in results:
         if isinstance(r, basestring):
             path = r
@@ -690,7 +730,7 @@ def intersect_polygon_layers(destination, *layers, **intersect_options):
 
     Examples
     --------
-    >>> from tidedates import utils
+    >>> from propagator import utils
     >>> blobs = utils.intersect_polygon_layers(
     ...     "flood_damage_intersect.shp"
     ...     "floods.shp",
@@ -1050,6 +1090,39 @@ def query_layer(inputpath, outputpath, sql):
 
 
 def intersect_layers(input_paths, output_path, how='all'):
+    """
+    Intersect polygon layers with each other. Basically a thin wrapper
+    around `arcpy.analysis.Intersect`_.
+
+    .. _arcpy.analysis.Intersect: http://goo.gl/O9YMY6
+
+    Parameters
+    ----------
+    input_paths : list of str or list of arcpy.Mapping.Layer
+        The layers (or their paths) that will be intersected with each
+        other.
+    output_path : str
+        Filepath where the intersected output will be saved.
+    how : str
+        Method by which the attributes should be joined. Valid values
+        are: "all" (all attributes), or "only_fid" (just the feature
+        IDs), or  "no_fid" (everything but the feature IDs)
+
+    Returns
+    -------
+    output_path : arcpy.mapping.Layer
+        The path to the layer containing the successfully intersected
+        layers.
+
+    Examples
+    --------
+    >>> from propagator import utils
+    >>> blobs = utils.intersect_layers(
+    ...     ["floods.shp", wetlands.shp", "buildings.shp"],
+    ...     "flood_damage_intersect.shp"
+    ... )
+
+    """
     arcpy.analysis.Intersect(
         in_features=input_paths,
         out_feature_class=output_path,
