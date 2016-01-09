@@ -8,6 +8,7 @@ import numpy
 import nose.tools as nt
 import numpy.testing as nptest
 import propagator.testing as pptest
+from numpy.lib import recfunctions
 
 from propagator import analysis
 from propagator import utils
@@ -45,7 +46,7 @@ class Test_trace_upstream(object):
     def setup(self):
         self.subcatchments = SIMPLE_SUBCATCHMENTS.copy()
 
-        self.expected_left = numpy.array(
+        self.expected_left_no_base = numpy.array(
             [
                 (u'B1', u'A1', u'None', u'B1_y'), (u'B2', u'A1', u'B2_x', u'None'),
                 (u'C1', u'B2', u'C1_x', u'None'), (u'D1', u'C1', u'None', u'None'),
@@ -56,7 +57,7 @@ class Test_trace_upstream(object):
             ], dtype=self.subcatchments.dtype
         )
 
-        self.expected_right = numpy.array(
+        self.expected_right_no_base = numpy.array(
             [
                 (u'B3', u'A2', u'B3_x', u'B3_y'), (u'C2', u'B3', u'None', u'None'),
                 (u'C3', u'B3', u'None', u'None'), (u'D2', u'C3', u'None', u'D2_y'),
@@ -64,13 +65,42 @@ class Test_trace_upstream(object):
             ], dtype=self.subcatchments.dtype
         )
 
-    def test_left_fork(self):
-        upstream = analysis.trace_upstream(self.subcatchments, 'A1')
-        nptest.assert_array_equal(upstream, self.expected_left)
+        self.expected_left_with_base = numpy.array(
+            [
+                ('A1', 'Ocean', 'A1_x', 'A1_y'),
+                (u'B1', u'A1', u'None', u'B1_y'), (u'B2', u'A1', u'B2_x', u'None'),
+                (u'C1', u'B2', u'C1_x', u'None'), (u'D1', u'C1', u'None', u'None'),
+                (u'E1', u'D1', u'None', u'E1_y'), (u'F1', u'E1', u'F1_x', u'None'),
+                (u'G1', u'F1', u'None', u'None'), (u'F2', u'E1', u'None', u'None'),
+                (u'F3', u'E1', u'F3_x', u'None'), (u'G2', u'F3', u'None', u'None'),
+                (u'H1', u'G2', u'None', u'None')
+            ], dtype=self.subcatchments.dtype
+        )
 
-    def test_right_fork(self):
+        self.expected_right_with_base = numpy.array(
+            [
+                ('A2', 'Ocean', 'A2_x', 'A2_y'),
+                (u'B3', u'A2', u'B3_x', u'B3_y'), (u'C2', u'B3', u'None', u'None'),
+                (u'C3', u'B3', u'None', u'None'), (u'D2', u'C3', u'None', u'D2_y'),
+                (u'E2', u'D2', u'None', u'None')
+            ], dtype=self.subcatchments.dtype
+        )
+
+    def test_left_fork_no_base(self):
+        upstream = analysis.trace_upstream(self.subcatchments, 'A1')
+        nptest.assert_array_equal(upstream, self.expected_left_no_base)
+
+    def test_right_fork_no_base(self):
         upstream = analysis.trace_upstream(self.subcatchments, 'A2')
-        nptest.assert_array_equal(upstream, self.expected_right)
+        nptest.assert_array_equal(upstream, self.expected_right_no_base)
+
+    def test_left_fork_with_base(self):
+        upstream = analysis.trace_upstream(self.subcatchments, 'A1', include_base=True)
+        nptest.assert_array_equal(upstream, self.expected_left_with_base)
+
+    def test_right_fork_with_base(self):
+        upstream = analysis.trace_upstream(self.subcatchments, 'A2', include_base=True)
+        nptest.assert_array_equal(upstream, self.expected_right_with_base)
 
 
 def test_find_edges():
@@ -326,3 +356,104 @@ def test_aggregate_streams_by_subcatchment():
     )
 
     utils.cleanup_temp_results(os.path.join(ws, results),)
+
+
+def test_collect_upstream_attributes():
+    subcatchments_table = numpy.array(
+        [
+            ('A1', 'Ocean', 20, 45.23), ('A2', 'Ocean', 0.64, 42),
+            ('B1', 'A1', 43.3, 45.23), ('B2', 'A1', 0.32, 41),
+            ('B3', 'A2', 91, 15.23), ('C1', 'B2', 0.32, 4),
+            ('C2', 'B3', 50.3, 45.23), ('C3', 'B3', 0.32, 41),
+            ('D1', 'C1', 32, 45.23), ('D2', 'C3', 0.32, 41),
+            ('E1', 'D1', 1, 45.23), ('E2', 'D2', 0.32, 100),
+            ('F1', 'E1', 42, 35.3), ('F2', 'E1', 0.32, 315),
+            ('F3', 'E1', 5, 45.23), ('G1', 'F1', 0.32, 123),
+            ('G2', 'F3', 8, 45.23), ('H1', 'G2', 0.32, 41),
+        ], dtype=[('ID', '<U5'), ('DS_ID', '<U5'), ('Imp', '<f8'), ('Area', '<f8'),]
+    )
+
+    split_streams_table1 = numpy.array(
+        [('C2',), ('A1',), ('E2',), ('A2',)],
+        dtype=[('ID', '<U2')]
+    )
+
+    results1 = analysis.collect_upstream_attributes(
+        subcatchments_table=subcatchments_table,
+        target_subcatchments=split_streams_table1,
+        id_col='ID',
+        ds_col='DS_ID',
+        preserved_fields=['Imp', 'Area']
+    )
+
+    expected_results = numpy.array(
+        [
+            (20, 45.23, 'A1',),
+            (43.3, 45.23, 'A1',),
+            (0.32, 41, 'A1',),
+            (0.32, 4, 'A1',),
+            (32, 45.23, 'A1',),
+            (1, 45.23, 'A1',),
+            (42, 35.3, 'A1',),
+            (0.32, 315, 'A1',),
+            (5, 45.23, 'A1',),
+            (0.32, 123, 'A1',),
+            (8, 45.23, 'A1',),
+            (0.32, 41, 'A1',),
+            (91, 15.23, 'A2',),
+            (50.3, 45.23, 'A2',),
+            (0.64, 42, 'A2',),
+            (0.32, 41, 'A2',),
+            (0.32, 41, 'A2',),
+            (0.32, 100, 'A2',),
+            (50.3, 45.23, 'C2',),
+            (0.32, 100, 'E2',),
+        ], dtype=[('Imp', '<f8'), ('Area', '<f8'), ('ID','<U2'),]
+    )
+    print expected_results
+    nptest.assert_array_equal(numpy.sort(results1.data), numpy.sort(expected_results))
+
+
+def test_score_acumulator():
+    ws = resource_filename('propagator.testing', 'score_accumulator')
+    with utils.WorkSpace(ws), utils.OverwriteState(True):
+        stats = [
+            utils.Statistic('Area', numpy.sum, 'Sum_Area'),
+            utils.Statistic(['Imp', 'Area'], lambda x: analysis.weighted_average(x, 'Imp', 'Area'), 'Weighted_Average_Imp'),
+        ]
+
+        results = analysis.score_accumulator(
+            streams_layer='streams.shp',
+            subcatchments_layer='subcatchment_wq.shp',
+            id_col='Catch_ID_a',
+            ds_col='Dwn_Catch_',
+            stats=stats,
+            output_layer='output.shp'
+        )
+
+        pptest.assert_shapefiles_are_close(os.path.join(ws, 'expected_results.shp'),
+                                           os.path.join(ws, results))
+
+        utils.cleanup_temp_results(os.path.join(ws, results))
+
+
+def test_weighted_average():
+    raw_data = numpy.array(
+        [
+            (20, 45.23,),
+            (43.3, 45.23,),
+            (0.32, 41,),
+            (0.32, 4,),
+            (32, 45.23,),
+            (1, 45.23,),
+        ], dtype=[('value', '<f4'), ('w_factor', '<f4'),]
+    )
+
+    expected_result = numpy.array(
+        [
+            (19.343349,),
+        ], dtype=[('value', '<f4'),]
+    )
+
+    result = analysis.weighted_average(raw_data, 'value', 'w_factor')
+    nt.assert_equal(result, expected_result['value'])

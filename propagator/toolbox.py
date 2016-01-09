@@ -120,7 +120,7 @@ def propagate(subcatchments=None, id_col=None, ds_col=None,
             msg="{} of {}: Propagating {} scores".format(n, len(result_columns), res_col)
         )
 
-    utils.update_attribute_table(subcatchment_output, wq, id_col, *result_columns,
+    utils.update_attribute_table(subcatchment_output, wq, id_col, result_columns,
                                  verbose=verbose, asMessage=asMessage,
                                  msg="Updating attribute table with propagated scores")
 

@@ -739,22 +739,24 @@ def test_spatial_join():
 
 @nptest.dec.skipif(not pptest.has_fiona)
 def test_update_attribute_table():
-    inputpath = resource_filename("propagator.testing.update_attribute_table", "input.shp")
-    testpath = inputpath.replace('input', 'test')
-    expected = resource_filename("propagator.testing.update_attribute_table", "expected_output.shp")
+    ws = resource_filename('propagator.testing', 'update_attribute_table')
+    with utils.WorkSpace(ws), utils.OverwriteState(True):
+        inputpath = resource_filename("propagator.testing.update_attribute_table", "input.shp")
+        testpath = inputpath.replace('input', 'test')
+        expected = resource_filename("propagator.testing.update_attribute_table", "expected_output.shp")
 
-    new_attributes = numpy.array(
-        [
-            (1, 0, u'Cu_1', 'Pb_1'), (2, 0, u'Cu_2', 'Pb_2'),
-            (3, 0, u'Cu_3', 'Pb_3'), (4, 0, u'Cu_4', 'Pb_4'),
-        ], dtype=[('id', int), ('ds_id', int), ('Cu', '<U5'), ('Pb', '<U5'),]
-    )
+        new_attributes = numpy.array(
+            [
+                (1, 0, u'Cu_1', 'Pb_1'), (2, 0, u'Cu_2', 'Pb_2'),
+                (3, 0, u'Cu_3', 'Pb_3'), (4, 0, u'Cu_4', 'Pb_4'),
+            ], dtype=[('id', int), ('ds_id', int), ('Cu', '<U5'), ('Pb', '<U5'),]
+        )
 
-    arcpy.management.Copy(inputpath, testpath)
-    utils.update_attribute_table(testpath, new_attributes, 'id', 'Cu', 'Pb')
+        arcpy.management.Copy(inputpath, testpath)
+        utils.update_attribute_table(testpath, new_attributes, 'id', ['Cu', 'Pb'])
 
-    pptest.assert_shapefiles_are_close(testpath, expected)
-    utils.cleanup_temp_results(testpath)
+        pptest.assert_shapefiles_are_close(testpath, expected)
+        utils.cleanup_temp_results(testpath)
 
 
 def test_get_field_names():
