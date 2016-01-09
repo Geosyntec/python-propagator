@@ -957,7 +957,8 @@ def concat_results(destination, *input_files):
 
 
 @update_status()
-def update_attribute_table(layerpath, attribute_array, id_column, orig_columns, new_columns=None):
+def update_attribute_table(layerpath, attribute_array, id_column,
+                           orig_columns, new_columns=None):
     """
     Update the attribute table of a feature class from a record array.
 
