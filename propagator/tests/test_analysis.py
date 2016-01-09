@@ -345,7 +345,7 @@ def test_collect_upstream_attributes():
         dtype=[('ID', '<U2')]
     )
 
-    results1 = analysis.collect_upstream_attributes(
+    result = analysis.collect_upstream_attributes(
         subcatchments_table=subcatchments_table,
         target_subcatchments=split_streams_table1,
         id_col='ID',
@@ -353,7 +353,7 @@ def test_collect_upstream_attributes():
         preserved_fields=['Imp', 'Area']
     )
 
-    expected_results = numpy.array(
+    expected = numpy.array(
         [
             (20, 45.23, 'A1',),
             (43.3, 45.23, 'A1',),
@@ -377,5 +377,7 @@ def test_collect_upstream_attributes():
             (0.32, 100, 'E2',),
         ], dtype=[('Imp', '<f8'), ('Area', '<f8'), ('ID','<U2'),]
     )
-    print expected_results
-    nptest.assert_array_equal(numpy.sort(results1.data), numpy.sort(expected_results))
+
+    result.sort()
+    expected.sort()
+    nptest.assert_array_equal(result, expected)
