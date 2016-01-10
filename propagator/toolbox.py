@@ -257,8 +257,9 @@ def accumulate(subcatchments_layer=None, id_col=None, ds_col=None,
     )
 
     # Remove extraneous columns
+    required_columns = [id_col, ds_col, 'FID', 'Shape', 'Shape_Length', 'Shape_Area', 'OBJECTID']
     fields_to_remove = filter(
-        lambda name: name not in [id_col, ds_col, 'FID', 'Shape'] and name not in target_fields,
+        lambda name: name not in required_columns and name not in target_fields,
         [f.name for f in arcpy.ListFields(split_streams_layer)]
     )
     utils.delete_columns(split_streams_layer, *fields_to_remove)
