@@ -244,7 +244,7 @@ def accumulate(subcatchments_layer=None, id_col=None, ds_col=None,
         ds_col,
         target_fields
     )
-    aggregated_properties = utils.rec_groupby(upstream_attributes.data, id_col, *stats)
+    aggregated_properties = utils.rec_groupby(upstream_attributes, id_col, *stats)
 
     # Update output layer with aggregated values.
     final_fields = [stat.rescol for stat in stats]
