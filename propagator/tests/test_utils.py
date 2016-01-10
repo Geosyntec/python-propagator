@@ -406,7 +406,8 @@ class Test_load_data(object):
 class Test_add_field_with_value(object):
     def setup(self):
         source = resource_filename("propagator.testing.add_field_with_value", 'field_adder.shp')
-        self.testfile = utils.copy_layer(source, source.replace('field_adder', 'test'))
+        with utils.OverwriteState(True):
+            self.testfile = utils.copy_layer(source, source.replace('field_adder', 'test'))
         self.fields_added = ["_text", "_unicode", "_int", "_float", '_no_valstr', '_no_valnum']
 
     def teardown(self):
@@ -983,3 +984,80 @@ class Test_stats_with_ignored_values(object):
                                                  ignored_value=1.,
                                                  terminator_value=5.,)
         nt.assert_equal(result, expected)
+
+
+def test_weighted_average():
+    raw_data = numpy.array(
+        [
+            (20, 45.23,),
+            (43.3, 45.23,),
+            (0.32, 41,),
+            (0.32, 4,),
+            (32, 45.23,),
+            (1, 45.23,),
+        ], dtype=[('value', '<f4'), ('w_factor', '<f4'),]
+    )
+
+    expected_result = numpy.array(
+        [
+            (19.343349,),
+        ], dtype=[('value', '<f4'),]
+    )
+
+    result = utils.weighted_average(raw_data, 'value', 'w_factor')
+    nt.assert_equal(result, expected_result['value'])
+
+
+
+class Test_append_column_to_array():
+    def setup(self):
+        self.newval = 12.34
+        self.newcol = 'newcol'
+        self.raw_data = numpy.array(
+            [
+                (20.0 , 45.23,),
+                (43.3 , 45.23,),
+                ( 0.32, 41.0 ,),
+                ( 0.32,  4.0 ,),
+                (32.0 , 45.23,),
+                ( 1.0 , 45.23,),
+            ], dtype=[('value', '<f4'), ('w_factor', '<f4'),]
+        )
+
+        self.expected_all = numpy.array(
+            [
+                (20.0 , 45.23, self.newval),
+                (43.3 , 45.23, self.newval),
+                ( 0.32, 41.0 , self.newval),
+                ( 0.32,  4.0 , self.newval),
+                (32.0 , 45.23, self.newval),
+                ( 1.0 , 45.23, self.newval),
+            ], dtype=[('value', '<f4'), ('w_factor', '<f4'), (self.newcol, '<f8')]
+        )
+
+        self.expected_subset = numpy.array(
+            [
+                (20.0 , self.newval),
+                (43.3 , self.newval),
+                ( 0.32, self.newval),
+                ( 0.32, self.newval),
+                (32.0 , self.newval),
+                ( 1.0 , self.newval),
+            ], dtype=[('value', '<f4'), (self.newcol, '<f8')]
+        )
+
+    def test_basic(self):
+        result = utils.append_column_to_array(self.raw_data, self.newcol, self.newval)
+        nptest.assert_array_equal(result, self.expected_all)
+
+    def test_subset_scalar_colnames(self):
+        result = utils.append_column_to_array(self.raw_data, self.newcol, self.newval,
+                                              othercols='value')
+        nptest.assert_array_equal(result, self.expected_subset)
+
+    def test_subset_scalar_colnames(self):
+        result = utils.append_column_to_array(self.raw_data, self.newcol, self.newval,
+                                              othercols=['value'])
+        nptest.assert_array_equal(result, self.expected_subset)
+
+

@@ -279,39 +279,6 @@ def test_mark_edges():
     nptest.assert_array_equal(results, expected)
 
 
-def test_prepare_data():
-    ws = resource_filename("propagator.testing", "prepare_data")
-    with utils.OverwriteState(True), utils.WorkSpace(ws), warnings.catch_warnings():
-        warnings.simplefilter('ignore')
-        cat = resource_filename("propagator.testing.prepare_data", "cat.shp")
-        ml = resource_filename("propagator.testing.prepare_data", "ml.shp")
-        expected_cat_wq = resource_filename("propagator.testing.prepare_data", "cat_wq.shp")
-        header_fields = [
-            "FID",
-            "Shape",
-            "Catch_ID_a",
-            "Dwn_Catch_",
-            "Watershed",
-        ]
-        wq_fields = [
-            "Dry_WQI_Ba",
-            "Dry_WQI_Me",
-            "Dry_WQI_Nu",
-            "Dry_WQI_Pe",
-            "Dry_WQI_TD",
-            "Dry_WQI_To",
-            "Storm_WQI_",
-            "Storm_WQI1",
-            "Storm_WQ_1",
-            "Storm_WQ_2",
-            "Storm_WQ_3",
-        ]
-        cat_wq = analysis.prepare_data(ml, cat, "Catch_ID_a", 'FID_ml',
-                                       header_fields, wq_fields, 'testout.shp')
-        pptest.assert_shapefiles_are_close(cat_wq, expected_cat_wq)
-        utils.cleanup_temp_results(cat_wq)
-
-
 def test_reduce():
     ws = resource_filename("propagator.testing", "_reduce")
     with utils.OverwriteState(True), utils.WorkSpace(ws):
@@ -378,7 +345,7 @@ def test_collect_upstream_attributes():
         dtype=[('ID', '<U2')]
     )
 
-    results1 = analysis.collect_upstream_attributes(
+    result = analysis.collect_upstream_attributes(
         subcatchments_table=subcatchments_table,
         target_subcatchments=split_streams_table1,
         id_col='ID',
@@ -386,7 +353,7 @@ def test_collect_upstream_attributes():
         preserved_fields=['Imp', 'Area']
     )
 
-    expected_results = numpy.array(
+    expected = numpy.array(
         [
             (20, 45.23, 'A1',),
             (43.3, 45.23, 'A1',),
@@ -408,52 +375,9 @@ def test_collect_upstream_attributes():
             (0.32, 100, 'A2',),
             (50.3, 45.23, 'C2',),
             (0.32, 100, 'E2',),
-        ], dtype=[('Imp', '<f8'), ('Area', '<f8'), ('ID','<U2'),]
-    )
-    print expected_results
-    nptest.assert_array_equal(numpy.sort(results1.data), numpy.sort(expected_results))
-
-
-def test_score_acumulator():
-    ws = resource_filename('propagator.testing', 'score_accumulator')
-    with utils.WorkSpace(ws), utils.OverwriteState(True):
-        stats = [
-            utils.Statistic('Area', numpy.sum, 'Sum_Area'),
-            utils.Statistic(['Imp', 'Area'], lambda x: analysis.weighted_average(x, 'Imp', 'Area'), 'Weighted_Average_Imp'),
-        ]
-
-        results = analysis.score_accumulator(
-            streams_layer='streams.shp',
-            subcatchments_layer='subcatchment_wq.shp',
-            id_col='Catch_ID_a',
-            ds_col='Dwn_Catch_',
-            stats=stats,
-            output_layer='output.shp'
-        )
-
-        pptest.assert_shapefiles_are_close(os.path.join(ws, 'expected_results.shp'),
-                                           os.path.join(ws, results))
-
-        utils.cleanup_temp_results(os.path.join(ws, results))
-
-
-def test_weighted_average():
-    raw_data = numpy.array(
-        [
-            (20, 45.23,),
-            (43.3, 45.23,),
-            (0.32, 41,),
-            (0.32, 4,),
-            (32, 45.23,),
-            (1, 45.23,),
-        ], dtype=[('value', '<f4'), ('w_factor', '<f4'),]
+        ], dtype=[('Imp', '<f8'), ('Area', '<f8'), ('ID','<U5'),]
     )
 
-    expected_result = numpy.array(
-        [
-            (19.343349,),
-        ], dtype=[('value', '<f4'),]
-    )
-
-    result = analysis.weighted_average(raw_data, 'value', 'w_factor')
-    nt.assert_equal(result, expected_result['value'])
+    result.sort()
+    expected.sort()
+    nptest.assert_array_equal(result, expected)

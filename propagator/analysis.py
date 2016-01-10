@@ -19,6 +19,7 @@ import datetime
 import itertools
 from functools import partial
 import warnings
+from copy import copy
 
 import numpy
 from numpy.lib import recfunctions
@@ -458,121 +459,6 @@ def preprocess_wq(monitoring_locations, subcatchments, id_col, ds_col,
     return utils.load_attribute_table(output_path), res_columns
 
 
-@utils.update_status()
-def prepare_data(mon_locations, subcatchments, subcatch_id_col,
-                 sort_id, header_fields, wq_fields, outputfile,
-                 **verbose_options):
-    """
-    Assigns water quality ranking from monitoring locations to the
-    subcatchments. If multiple monitoring locations are present in
-    one subcatchment, water quality rankings are aggregated prior to
-    assignment.
-
-    Parameters
-    ----------
-    mon_locations : str
-        File path to the monitoring locations feature class.
-    subcatchments : str
-        File path to the subcatchments feature class.
-    subcatch_id_col : str
-        Field name of the subcatchment ID column in ``subcatchments``.
-    sort_id: str
-        Arbituary field name for sorting purpose. Default value is 'FID'
-    header_fields : list
-        List of header field names to be retained in the output feature class.
-    wq_fields : list
-        List of water quality field names to be analyzed
-    outputfile : str
-        Filename where the output should be saved.
-
-    Returns
-    -------
-    subcatchment_wq : arcpy.Layer
-        A subcatchment class that inherited water quality rankings
-        from respective monitoring locations.
-
-    """
-
-    # Step 0. Load input and create temporary shapes
-    raw_ml = utils.load_data(
-        datapath=mon_locations,
-        datatype="shape",
-        msg='Loading Monitoring Location {}'.format(mon_locations),
-        **verbose_options
-    )
-
-    raw_subcatchments = utils.load_data(
-        datapath=subcatchments,
-        datatype="shape",
-        msg='Loading Subcatchments {}'.format(subcatchments),
-        **verbose_options
-    )
-
-    _reduced_ml = utils.create_temp_filename("reML", filetype='shape')
-    _cat_ml_int = utils.create_temp_filename("Cat_ML_int", filetype='shape')
-    _ml = utils.create_temp_filename("ml", filetype='shape')
-    _out_ml = utils.create_temp_filename("out_ml", filetype='shape')
-    subcatchment_wq = utils.create_temp_filename(outputfile, filetype='shape')
-
-    # Step 1. Intersect ml and cat to generate a point shapefile
-    # that contains an additional catid field showing where the ML
-    # is located at.
-    utils.intersect_layers(
-        input_paths=[raw_subcatchments, raw_ml],
-        output_path=_cat_ml_int,
-        how="ALL",
-    )
-
-    # Step 2. Create a new point file (_reduced_ml) that pairs only one
-    # set of ranking data to each catchment.
-
-    # extract all subcatchment ID that has at least one
-    # monitoring location
-    arr = utils.load_attribute_table(_cat_ml_int, subcatch_id_col)
-    catid = numpy.unique(arr[subcatch_id_col])
-
-    for lc, ucat in enumerate(catid):
-        sqlexp = '"{}" = \'{}\''.format(subcatch_id_col, ucat)
-        _ml = utils.query_layer(_cat_ml_int, _ml, sqlexp)
-
-        # if there is only one monitoring location  in the subcatchment,
-        # this monitoring location is direclty copied to a new point
-        # feature class.
-        if lc == 0:
-            fxn = arcpy.management.Copy
-        # otherwise, aggregates monitoring locations to one single entry
-        else:
-            fxn = arcpy.management.Append
-
-        # count number of MLs within each catchment
-        fxn(_reduce(_ml, _out_ml, wq_fields, subcatch_id_col, sort_id), _reduced_ml)
-
-    # Step 3. Spatial join _reduced_ml with raw_subcatchments, so that
-    # the new cathcment shapefile will inherit water quality data from
-    # the only monitoring location in it.
-    subcatchment_wq = utils.spatial_join(
-        left=raw_subcatchments,
-        right=_reduced_ml,
-        outputfile=subcatchment_wq
-    )
-
-    # Remove extraneous columns
-    fields_to_remove = filter(
-        lambda name: name not in header_fields and name not in wq_fields,
-        [f.name for f in arcpy.ListFields(subcatchment_wq)]
-    )
-    utils.delete_columns(subcatchment_wq, *fields_to_remove)
-    # Delete temporary files.
-    utils.cleanup_temp_results(
-        _reduced_ml,
-        _cat_ml_int,
-        _ml,
-        _out_ml,
-    )
-
-    return subcatchment_wq
-
-
 def _reduce(_ml, _out_ml, wq_fields, subcatch_id_col, sort_id):
     """
     Aggregates water quality ranksing from all monitoring locations
@@ -748,111 +634,6 @@ def aggregate_streams_by_subcatchment(stream_layer, subcatchment_layer,
     return final
 
 
-@utils.update_status()
-def score_accumulator(streams_layer, subcatchments_layer, id_col, ds_col,
-                      stats, output_layer=None):
-
-    """
-    Accumulate upstream subcatchment properties in each stream segment.
-
-    Parameters
-    ----------
-    streams_layer, subcatchments_layer : str
-        Name of the feature class containing streams and subcatchments,
-        respectively.
-    id_col, ds_col : str
-        Names of the fields in ``subcatchment_layer`` that contain the
-        subcatchment ID and downstream subcatchment ID, respectively.
-    stats : list of `utils.Statistic`
-        List of object or namedtuples that contain the field names that
-        needs to be accumulated (`srccol`), and the corresponding
-        aggregation methods (`aggfxn`), and the name of the new
-        columns that will contain the aggregated values (`rescol`).
-    output_layer : str, optional
-        Names of the new layer where the results should be saved.
-
-    Returns
-    -------
-    output_layer : str
-        Names of the new layer where the results were successfully
-        saved.
-
-    See also
-    --------
-    propagator.analysis.aggregate_streams_by_subcatchment
-    propagator.analysis.collect_upstream_attributes
-    propagator.utils.rec_groupby
-
-    """
-
-    # create a unique list of columns we need
-    # from the subcatchment layer
-    target_fields = []
-    for s in stats:
-        if numpy.isscalar(s.srccol):
-            target_fields.append(s.srccol)
-        else:
-            target_fields.extend(s.srccol)
-
-    target_fields = numpy.unique(target_fields)
-
-    # split the stream at the subcatchment boundaries and then
-    # aggregate all of the stream w/i each subcatchment
-    # into single geometries/records.
-    split_streams_layer = aggregate_streams_by_subcatchment(
-            stream_layer=streams_layer,
-            subcatchment_layer=subcatchments_layer,
-            id_col=id_col,
-            ds_col=ds_col,
-            other_cols=target_fields,
-            output_layer='split_streams_layer.shp',
-            agg_method="first",  # first works b/c all values are equal
-    )
-
-    # Add target_field columns back to spilt_stream_layer.
-    for i in target_fields:
-        arcpy.management.AddField(split_streams_layer, i, "DOUBLE")
-
-    # load the split/aggregated streams' attribute table
-    split_streams_table = utils.load_attribute_table(
-        split_streams_layer, id_col, ds_col, *target_fields
-    )
-
-    # load the subcatchment attribute table
-    subcatchments_table = utils.load_attribute_table(
-        subcatchments_layer,id_col, ds_col, *target_fields
-    )
-
-
-    upstream_attributes = collect_upstream_attributes(
-        subcatchments_table,
-        split_streams_table,
-        id_col,
-        ds_col,
-        target_fields
-    )
-    aggregated_properties = utils.rec_groupby(upstream_attributes.data, id_col, *stats)
-
-    # Update output layer with aggregated values.
-    final_fields = [stat.rescol for stat in stats]
-    utils.update_attribute_table(
-        split_streams_layer,
-        aggregated_properties,
-        id_col,
-        target_fields,
-        final_fields,
-    )
-
-    # Remove extraneous columns
-    fields_to_remove = filter(
-        lambda name: name not in [id_col, ds_col, 'FID', 'Shape'] and name not in target_fields,
-        [f.name for f in arcpy.ListFields(split_streams_layer)]
-    )
-    utils.delete_columns(split_streams_layer, *fields_to_remove)
-
-    return split_streams_layer
-
-
 def collect_upstream_attributes(subcatchments_table, target_subcatchments,
                                 id_col, ds_col, preserved_fields):
     """
@@ -880,6 +661,10 @@ def collect_upstream_attributes(subcatchments_table, target_subcatchments,
 
     """
 
+    final_cols = list(preserved_fields)
+    final_cols.append(id_col)
+    template = subcatchments_table[final_cols].dtype
+
     n = -1
     for row in target_subcatchments:
         n = n+1
@@ -901,33 +686,11 @@ def collect_upstream_attributes(subcatchments_table, target_subcatchments,
                 _src_array = recfunctions.append_fields(upstream_subcatchments, [id_col], [id_array])
 
             if n == 0:
-                src_array = _src_array.copy()
+                src_array = _src_array.copy().tolist()
             else:
-                src_array = numpy.hstack([src_array, _src_array])
+                src_array.extend(_src_array.copy().tolist())
+                #src_array = numpy.hstack([src_array, _src_array])
         else:
             n = n-1
 
-    return src_array
-
-
-def weighted_average(arr, value_col, weight_col):
-    """
-    Computed weighted average from two columns in an array.
-
-    Parameters
-    ----------
-    arr : array-like
-        Contains source values and weighting factors.
-    value_col : str or int
-        ID of the values column.
-    weight_col : str or int
-        ID of the weighting factor column.
-
-    Returns
-    -------
-    output : float
-        Weighted average.
-
-    """
-
-    return numpy.average(arr[value_col], weights=arr[weight_col])
+    return numpy.array(src_array, dtype=template)
