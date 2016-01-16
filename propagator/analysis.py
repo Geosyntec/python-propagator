@@ -663,7 +663,6 @@ def collect_upstream_attributes(subcatchments_table, target_subcatchments,
 
     final_cols = list(preserved_fields)
     final_cols.append(id_col)
-    utils._status('===ck1===', verbose=True, asMessage=True)
     template = subcatchments_table[final_cols].dtype
 
     n = -1
