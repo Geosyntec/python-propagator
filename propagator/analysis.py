@@ -677,14 +677,19 @@ def collect_upstream_attributes(subcatchments_table, target_subcatchments,
             # factor out the next 5 SLOC
             # add the ID of the "bottom" subcatchment as a column to
             # the array of upstream attributes
-
             id_array = numpy.array([row[id_col]] * upstream_subcatchments.shape[0])
+
+            # recfunctions.append_fields is not compatible with unicode input; hence
+            # all inputs are converted to strings
             upstream_subcatchments = upstream_subcatchments[preserved_fields]
+            dname = numpy.array(upstream_subcatchments.dtype.names)
+            upstream_subcatchments.dtype.names = [i.encode('ascii', 'ignore') for i in dname]
+
             # recfunctions.append_fields has a nasty warnings that we don't need to see
             with warnings.catch_warnings(record=True) as w:
                 warnings.simplefilter("ignore")
-                _src_array = recfunctions.append_fields(upstream_subcatchments, [id_col], [id_array])
-
+                id_col_str = id_col.encode('ascii','ignore')
+                _src_array = recfunctions.append_fields(upstream_subcatchments, [id_col_str], [id_array])
             if n == 0:
                 src_array = _src_array.copy().tolist()
             else:
