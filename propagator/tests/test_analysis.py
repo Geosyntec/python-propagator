@@ -191,17 +191,16 @@ class Test_preprocess_wq(object):
         self.sc = 'subcatchments.shp'
         self.expected = 'expected.shp'
         self.results = 'test.shp'
-        self.wq_cols = ['Dry_B', 'Dry_M', 'Dry_N', 'Wet_B', 'Wet_M', 'Wet_N',]
+        self.wq_cols = [
+            'Dry_B', 'Dry_M', 'Dry_N',
+            'Wet_B', 'Wet_M', 'Wet_N',
+        ]
+        self.expected_cols = [
+            'avgDry_B', 'avgDry_M', 'avgDry_N',
+            'avgWet_B', 'avgWet_M', 'avgWet_N',
+        ]
 
     def test_baseline(self):
-        expected_cols =[
-            'avgDry_B',
-            'avgDry_M',
-            'avgDry_N',
-            'avgWet_B',
-            'avgWet_M',
-            'avgWet_N',
-        ]
         with utils.OverwriteState(True), utils.WorkSpace(self.ws):
             wq, cols = analysis.preprocess_wq(
                 monitoring_locations=self.ml,
@@ -211,13 +210,33 @@ class Test_preprocess_wq(object):
                 output_path=self.results,
                 value_columns=self.wq_cols
             )
-
+        expected = 'expected.shp'
         pptest.assert_shapefiles_are_close(
-            os.path.join(self.ws, self.expected),
+            os.path.join(self.ws, expected),
             os.path.join(self.ws, self.results),
         )
         nt.assert_true(isinstance(wq, numpy.ndarray))
-        nt.assert_list_equal(cols, expected_cols)
+        nt.assert_list_equal(cols, self.expected_cols)
+
+    def test_with_filter(self):
+        with utils.OverwriteState(True), utils.WorkSpace(self.ws):
+            wq, cols = analysis.preprocess_wq(
+                monitoring_locations=self.ml,
+                subcatchments=self.sc,
+                id_col='CID',
+                ds_col='DS_CID',
+                ml_filter_cols='StationTyp',
+                ml_filter=lambda row: row['StationTyp'] != 'Outfall',
+                output_path=self.results,
+                value_columns=self.wq_cols
+            )
+        expected = 'expected_filtered.shp'
+        pptest.assert_shapefiles_are_close(
+            os.path.join(self.ws, expected),
+            os.path.join(self.ws, self.results),
+        )
+        nt.assert_true(isinstance(wq, numpy.ndarray))
+        nt.assert_list_equal(cols, self.expected_cols)
 
     @nt.raises(ValueError)
     def test_no_wq_col_error(self):

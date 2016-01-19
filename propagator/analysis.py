@@ -356,8 +356,9 @@ def remove_orphan_subcatchments(subcatchment_array, id_col='ID', ds_col='DS_ID',
 
 @utils.update_status()
 def preprocess_wq(monitoring_locations, subcatchments, id_col, ds_col,
-                  output_path, value_columns=None, aggfxn=numpy.mean,
-                  ignored_value=0, terminator_value=-99, cleanup=True):
+                  output_path, value_columns=None, ml_filter=None,
+                  ml_filter_cols=None, aggfxn=numpy.mean, ignored_value=0,
+                  terminator_value=-99, cleanup=True):
     """
     Preprocess the water quality data to have to averaged score for
     each subcatchment.
@@ -370,15 +371,21 @@ def preprocess_wq(monitoring_locations, subcatchments, id_col, ds_col,
     subcatchments : str
         Path to the feature class containing the subcatchment
         boundaries.
-    id_col : str, ds_col
+    id_col, ds_col : str
         Name of the column in ``subcatchments`` that contains the
         (ds = downstream) subcatchment IDs.
+    ml_filter_cols : str, optional
+        Name of any additional columns in ``monitoring_locations`` that
+        are required to use ``ml_filter``.
     output_path : str
         Path of the new feature class where the preprocessed data
         should be saved.
     value_columns : list of str
         A list of the names of the fields containing water quality
         scores that need to be analyzed.
+    ml_filter : callable, optional
+        Function used to exclude (remove) monitoring locations from
+        from aggregation/propagation.
     aggfxn : callable, optional
         A function, lambda, or class method that reduces arrays into
         scalar values. By default, this is `numpy.mean`.
@@ -396,6 +403,10 @@ def preprocess_wq(monitoring_locations, subcatchments, id_col, ds_col,
         water quality scores.
 
     """
+
+    ml_filter_cols = validate.non_empty_list(ml_filter_cols, on_fail='create')
+    if ml_filter is None:
+        ml_filter = lambda row: row
 
     # validate value_columns
     value_columns = validate.non_empty_list(value_columns, msg="you must provide `value_columns` to aggregate")
@@ -426,7 +437,11 @@ def preprocess_wq(monitoring_locations, subcatchments, id_col, ds_col,
     # compile the original fields to read in from the joined table
     orig_fields = [id_col, ds_col]
     orig_fields.extend([stat.srccol for stat in statistics])
-    array = utils.load_attribute_table(joined, *orig_fields)
+    orig_fields.extend(ml_filter_cols)
+
+    raw_array = utils.load_attribute_table(joined, *orig_fields)
+    # factor this into load_attribute_table
+    array = numpy.array(filter(ml_filter, raw_array), dtype=raw_array.dtype)
 
     # compile the final results (aggregated) fields for the output
     final_fields = [id_col, ds_col]
@@ -532,14 +547,14 @@ def _non_zero_means(_arr):
     utils.groupby_and_aggregate
     """
 
-    if isinstance (_arr, list) or isinstance(_arr, numpy.ndarray):
+    if isinstance(_arr, list) or isinstance(_arr, numpy.ndarray):
         _numlst = filter(lambda n: n > 0, _arr)
     else:
         # This hanldes the case when the function is
         # an input for utils.groupby_and_aggregate.
         _numlst = filter(lambda n: n > 0, [r[1] for r in _arr])
 
-    if numpy.isnan(numpy.mean(_numlst)):
+    if len(_numlst) == 0:
         return 0
     else:
         return numpy.mean(_numlst)

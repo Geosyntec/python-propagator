@@ -13,6 +13,7 @@ Written by Paul Hobson (phobson@geosyntec.com)
 
 import numpy
 
+
 def flow_direction(up_or_down):
     """
     Validates the direction of propation or accumulation
@@ -103,4 +104,3 @@ def non_empty_list(list_obj, msg=None, on_fail='error'):
             list_obj = []
 
     return list_obj
-

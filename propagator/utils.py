@@ -36,7 +36,7 @@ from propagator import validate
 Statistic = namedtuple("Statistic", ("srccol", "aggfxn", "rescol"))
 
 
-def _status(msg, verbose=False, asMessage=False, addTab=False): # pragma: no cover
+def _status(msg, verbose=False, asMessage=False, addTab=False):  # pragma: no cover
     if verbose:
         if addTab:
             msg = '\t' + msg
@@ -46,7 +46,7 @@ def _status(msg, verbose=False, asMessage=False, addTab=False): # pragma: no cov
             print(msg)
 
 
-def update_status(): # pragma: no cover
+def update_status():  # pragma: no cover
     """ Decorator to allow a function to take a additional keyword
     arguments related to printing status messages to stdin or as arcpy
     messages.
@@ -485,7 +485,6 @@ def check_fields(table, *fieldnames, **kwargs):
         raise ValueError('fields {} are {} in {}'.format(bad_names, qual, table))
 
 
-@update_status() # raster
 def result_to_raster(result):
     """ Gets the actual `arcpy.Raster`_ from an `arcpy.Result`_ object.
 
@@ -510,7 +509,6 @@ def result_to_raster(result):
     return arcpy.Raster(result.getOutput(0))
 
 
-@update_status() # layer
 def result_to_layer(result):
     """ Gets the actual `arcpy.mapping.Layer`_ from an `arcpy.Result`_
     object.
@@ -537,7 +535,6 @@ def result_to_layer(result):
     return arcpy.mapping.Layer(result.getOutput(0))
 
 
-@update_status() # raster or layer
 def load_data(datapath, datatype, greedyRasters=True, **verbosity):
     """ Loads vector and raster data from filepaths.
 
@@ -592,7 +589,6 @@ def load_data(datapath, datatype, greedyRasters=True, **verbosity):
     return data
 
 
-@update_status() # None
 def add_field_with_value(table, field_name, field_value=None,
                          overwrite=False, **field_opts):
     """ Adds a numeric or text field to an attribute table and sets it
@@ -668,7 +664,6 @@ def add_field_with_value(table, field_name, field_value=None,
         populate_field(table, lambda row: field_value, field_name)
 
 
-@update_status() # None
 def cleanup_temp_results(*results):
     """ Deletes temporary results from the current workspace.
 
@@ -706,7 +701,6 @@ def cleanup_temp_results(*results):
         arcpy.management.Delete(fullpath)
 
 
-@update_status() # layer
 def intersect_polygon_layers(destination, *layers, **intersect_options):
     """
     Intersect polygon layers with each other. Basically a thin wrapper
@@ -752,7 +746,6 @@ def intersect_polygon_layers(destination, *layers, **intersect_options):
     return intersected
 
 
-@update_status() # record array
 def load_attribute_table(input_path, *fields):
     """
     Loads a shapefile's attribute table as a numpy record array.
@@ -807,7 +800,29 @@ def load_attribute_table(input_path, *fields):
     return array
 
 
-@update_status() # dict
+def unique_field_values(input_path, field):
+    """
+    Get an array of unique values in a table field.
+
+    Parameters
+    ----------
+    input_path : str
+        Fiilepath to the shapefile or feature class whose table needs
+        to be read.
+    fields : str
+        Name of the field whose unique values will be returned
+
+    Returns
+    -------
+    values : numpy.array
+        The unique values of `field`.
+
+    """
+
+    table = load_attribute_table(input_path, field)
+    return numpy.unique(table[field])
+
+
 def groupby_and_aggregate(input_path, groupfield, valuefield,
                           aggfxn=None):
     """
@@ -875,8 +890,7 @@ def groupby_and_aggregate(input_path, groupfield, valuefield,
     return counts
 
 
-@update_status() # None
-def rename_column(table, oldname, newname, newalias=None): # pragma: no cover
+def rename_column(table, oldname, newname, newalias=None):  # pragma: no cover
     """
     .. warning: Not yet implemented.
     """
@@ -894,7 +908,6 @@ def rename_column(table, oldname, newname, newalias=None): # pragma: no cover
     )
 
 
-@update_status() # None
 def populate_field(table, value_fxn, valuefield, *keyfields):
     """
     Loops through the records of a table and populates the value of one
@@ -945,7 +958,6 @@ def populate_field(table, value_fxn, valuefield, *keyfields):
             cur.updateRow(row)
 
 
-@update_status()
 def copy_layer(existing_layer, new_layer):
     """
     Makes copies of features classes, shapefiles, and maybe rasters.
@@ -967,7 +979,6 @@ def copy_layer(existing_layer, new_layer):
     return new_layer
 
 
-@update_status() # layer
 def concat_results(destination, *input_files):
     """ Concatentates (merges) serveral datasets into a single shapefile
     or feature class.
@@ -997,7 +1008,6 @@ def concat_results(destination, *input_files):
     return result_to_layer(result)
 
 
-@update_status()
 def update_attribute_table(layerpath, attribute_array, id_column,
                            orig_columns, new_columns=None):
     """
@@ -1460,7 +1470,7 @@ def append_column_to_array(array, newcolumn, newvalues, othercols=None):
         else:
             # this raises a nasty warning in numpy even though this is the
             # way the warning says we should do this:
-            with warnings.catch_warnings(record=True) as w: # pragma: no cover
+            with warnings.catch_warnings(record=True) as w:  # pragma: no cover
                 warnings.simplefilter("ignore")
                 array = array[othercols].copy()
 

@@ -27,9 +27,9 @@ from propagator import base_tbx
 
 
 def propagate(subcatchments=None, id_col=None, ds_col=None,
-              monitoring_locations=None, value_columns=None,
-              streams=None, output_path=None,
-              verbose=False, asMessage=False):
+              monitoring_locations=None, ml_filter=None,
+              ml_filter_cols=None, value_columns=None, streams=None,
+              output_path=None, verbose=False, asMessage=False):
     """
     Propagate water quality scores upstream from the subcatchments of
     a watershed.
@@ -50,6 +50,12 @@ def propagate(subcatchments=None, id_col=None, ds_col=None,
     value_columns : list of str
         List of the fields in ``monitoring_locations`` that contains
         water quality score that should be propagated.
+    ml_filter : callable, optional
+        Function used to exclude (remove) monitoring locations from
+        from aggregation/propagation.
+    ml_filter_cols : str, optional
+        Name of any additional columns in ``monitoring_locations`` that
+        are required to use ``ml_filter``.
     streams : str
         Path to the feature class containing the streams.
     output_path : str
@@ -71,6 +77,8 @@ def propagate(subcatchments=None, id_col=None, ds_col=None,
     ...         ds_col='DS_ID',
     ...         monitoring_locations='wq_data',
     ...         value_columns=['Dry_Metals', 'Wet_Metals', 'Wet_TSS'],
+    ...         ml_filter=lambda row: row['StationType'] != 'Coastal',
+    ...         ml_filter_cols=['StationType'],
     ...         streams='SOC_streams',
     ...         output_path='propagated_metals'
     ...     )
@@ -90,11 +98,13 @@ def propagate(subcatchments=None, id_col=None, ds_col=None,
 
     wq, result_columns = analysis.preprocess_wq(
         monitoring_locations=monitoring_locations,
+        ml_filter=ml_filter,
+        ml_filter_cols=ml_filter_cols,
         subcatchments=subcatchments,
+        value_columns=value_columns,
         id_col=id_col,
         ds_col=ds_col,
         output_path=subcatchment_output,
-        value_columns=value_columns,
         verbose=verbose,
         asMessage=asMessage,
         msg="Aggregating water quality data in subcatchments"
@@ -122,9 +132,7 @@ def propagate(subcatchments=None, id_col=None, ds_col=None,
             msg="{} of {}: Propagating {} scores".format(n, len(result_columns), res_col)
         )
 
-    utils.update_attribute_table(subcatchment_output, wq, id_col, result_columns,
-                                 verbose=verbose, asMessage=asMessage,
-                                 msg="Updating attribute table with propagated scores")
+    utils.update_attribute_table(subcatchment_output, wq, id_col, result_columns)
 
     stream_output = analysis.aggregate_streams_by_subcatchment(
         stream_layer=streams,
@@ -190,7 +198,6 @@ def accumulate(subcatchments_layer=None, id_col=None, ds_col=None,
     if imp_col is None:
         raise ValueError("imperviousness is required")
 
-
     stats = [
         utils.Statistic(area_col, numpy.sum, 'Sum_Area'),
         utils.Statistic(
@@ -214,13 +221,13 @@ def accumulate(subcatchments_layer=None, id_col=None, ds_col=None,
     # aggregate all of the stream w/i each subcatchment
     # into single geometries/records.
     split_streams_layer = analysis.aggregate_streams_by_subcatchment(
-            stream_layer=streams_layer,
-            subcatchment_layer=subcatchments_layer,
-            id_col=id_col,
-            ds_col=ds_col,
-            other_cols=target_fields,
-            output_layer=output_layer,
-            agg_method="first",  # first works b/c all values are equal
+        stream_layer=streams_layer,
+        subcatchment_layer=subcatchments_layer,
+        id_col=id_col,
+        ds_col=ds_col,
+        other_cols=target_fields,
+        output_layer=output_layer,
+        agg_method="first",  # first works b/c all values are equal
     )
 
     # Add target_field columns back to spilt_stream_layer.
@@ -234,7 +241,7 @@ def accumulate(subcatchments_layer=None, id_col=None, ds_col=None,
 
     # load the subcatchment attribute table
     subcatchments_table = utils.load_attribute_table(
-        subcatchments_layer,id_col, ds_col, *target_fields
+        subcatchments_layer, id_col, ds_col, *target_fields
     )
 
     upstream_attributes = analysis.collect_upstream_attributes(
@@ -299,6 +306,8 @@ class Propagator(base_tbx.BaseToolbox_Mixin):
         self._ID_column = None
         self._downstream_ID_column = None
         self._monitoring_locations = None
+        self._ml_type_col = None
+        self._included_ml_types = None
         self._value_columns = None
         self._output_layer = None
         self._streams = None
@@ -322,6 +331,35 @@ class Propagator(base_tbx.BaseToolbox_Mixin):
         return self._monitoring_locations
 
     @property
+    def ml_type_col(self):
+        if self._ml_type_col is None:
+            self._ml_type_col = arcpy.Parameter(
+                displayName="Monitoring Location Type Column",
+                name="ml_type_col",
+                datatype="Field",
+                parameterType="Required",
+                direction="Input",
+                multiValue=False
+            )
+            self._set_parameter_dependency(self._ml_type_col, self.monitoring_locations)
+        return self._ml_type_col
+
+    @property
+    def included_ml_types(self):
+        if self._included_ml_types is None:
+            self._included_ml_types = arcpy.Parameter(
+                displayName="Monitoring Location Types To Include",
+                name="included_ml_types",
+                datatype="GPString",
+                parameterType="Required",
+                direction="Input",
+                multiValue=True,
+            )
+
+            self._included_ml_types.filter.type = "ValueList"
+        return self._included_ml_types
+
+    @property
     def value_columns(self):
         """ The names of the fields to be propagated into upstream
         subcatchments. """
@@ -337,6 +375,18 @@ class Propagator(base_tbx.BaseToolbox_Mixin):
             self._set_parameter_dependency(self._value_columns, self.monitoring_locations)
         return self._value_columns
 
+    def updateParameters(self, parameters):
+        params = self._get_parameter_dict(parameters)
+        param_vals = self._get_parameter_values(parameters)
+        ws = param_vals.get('workspace', '.')
+
+        with utils.WorkSpace(ws):
+            if params['ml_type_col'].altered:
+                ml = param_vals['monitoring_locations']
+                col = param_vals['ml_type_col']
+                values = utils.unique_field_values(ml, col).tolist()
+                params['included_ml_types'].filter.list = values
+
     def _params_as_list(self):
         params = [
             self.workspace,
@@ -344,6 +394,8 @@ class Propagator(base_tbx.BaseToolbox_Mixin):
             self.ID_column,
             self.downstream_ID_column,
             self.monitoring_locations,
+            self.ml_type_col,
+            self.included_ml_types,
             self.value_columns,
             self.streams,
             self.output_layer,
@@ -366,9 +418,18 @@ class Propagator(base_tbx.BaseToolbox_Mixin):
         ID_col = params.pop('ID_column', None)
         downstream_ID_col = params.pop('downstream_ID_column', None)
         ml = params.pop('monitoring_locations', None)
+        ml_type_col = params.pop('ml_type_col', None)
+        included_ml_types = params.pop('included_ml_types', None)
         streams = params.pop('streams', None)
         value_cols = params.pop('value_columns', None)
         output_layer = params.pop('output_layer', None)
+
+        validate.non_empty_list(included_ml_types, on_fail='create')
+
+        if ml_type_col is not None:
+            ml_filter = lambda row: row[ml_type_col] in included_ml_types
+        else:
+            ml_filter = None
 
         # perform the analysis
         with utils.WorkSpace(ws), utils.OverwriteState(overwrite):
@@ -377,6 +438,8 @@ class Propagator(base_tbx.BaseToolbox_Mixin):
                 id_col=ID_col,
                 ds_col=downstream_ID_col,
                 monitoring_locations=ml,
+                ml_filter=ml_filter,
+                ml_filter_cols=ml_type_col,
                 value_columns=value_cols,
                 output_path=output_layer,
                 streams=streams,
