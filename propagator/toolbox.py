@@ -198,7 +198,6 @@ def accumulate(subcatchments_layer=None, id_col=None, ds_col=None,
     if imp_col is None:
         raise ValueError("imperviousness is required")
 
-
     stats = [
         utils.Statistic(area_col, numpy.sum, 'Sum_Area'),
         utils.Statistic(
@@ -222,13 +221,13 @@ def accumulate(subcatchments_layer=None, id_col=None, ds_col=None,
     # aggregate all of the stream w/i each subcatchment
     # into single geometries/records.
     split_streams_layer = analysis.aggregate_streams_by_subcatchment(
-            stream_layer=streams_layer,
-            subcatchment_layer=subcatchments_layer,
-            id_col=id_col,
-            ds_col=ds_col,
-            other_cols=target_fields,
-            output_layer=output_layer,
-            agg_method="first",  # first works b/c all values are equal
+        stream_layer=streams_layer,
+        subcatchment_layer=subcatchments_layer,
+        id_col=id_col,
+        ds_col=ds_col,
+        other_cols=target_fields,
+        output_layer=output_layer,
+        agg_method="first",  # first works b/c all values are equal
     )
 
     # Add target_field columns back to spilt_stream_layer.
@@ -242,7 +241,7 @@ def accumulate(subcatchments_layer=None, id_col=None, ds_col=None,
 
     # load the subcatchment attribute table
     subcatchments_table = utils.load_attribute_table(
-        subcatchments_layer,id_col, ds_col, *target_fields
+        subcatchments_layer, id_col, ds_col, *target_fields
     )
 
     upstream_attributes = analysis.collect_upstream_attributes(
