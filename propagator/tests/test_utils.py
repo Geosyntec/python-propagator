@@ -1015,7 +1015,6 @@ def test_weighted_average():
     nt.assert_equal(result, expected_result['value'])
 
 
-
 class Test_append_column_to_array():
     def setup(self):
         self.newval = 12.34
@@ -1062,9 +1061,7 @@ class Test_append_column_to_array():
                                               othercols='value')
         nptest.assert_array_equal(result, self.expected_subset)
 
-    def test_subset_scalar_colnames(self):
+    def test_subset_list_colnames(self):
         result = utils.append_column_to_array(self.raw_data, self.newcol, self.newval,
                                               othercols=['value'])
         nptest.assert_array_equal(result, self.expected_subset)
-
-
