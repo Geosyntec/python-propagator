@@ -20,7 +20,7 @@ class BaseToolbox_Mixin(object):
         """
         return True
 
-    def updateMessages(self, parameters): # pragma: no cover
+    def updateMessages(self, parameters):  # pragma: no cover
         """ PART OF THE ESRI BLACK BOX.
 
         Esri says:
@@ -36,7 +36,7 @@ class BaseToolbox_Mixin(object):
         """
         return
 
-    def updateParameters(self, parameters): # pragma: no cover
+    def updateParameters(self, parameters):  # pragma: no cover
         """ PART OF THE ESRI BLACK BOX.
 
         Automatically called when any parameter is updated in the GUI.
@@ -68,7 +68,7 @@ class BaseToolbox_Mixin(object):
         """
         return self._params_as_list()
 
-    def execute(self, parameters, messages): # pragma: no cover
+    def execute(self, parameters, messages):  # pragma: no cover
         """ PART OF THE ESRI BLACK BOX
 
         This method is called when the tool is actually executed. It
@@ -187,10 +187,31 @@ class BaseToolbox_Mixin(object):
         return ezmd
 
     @staticmethod
+    def _get_parameter_dict(parameters):
+        """ Returns a dictionary of the *raw* arcpy parameters as passed
+        in from the ESRI black box. Keys are the parameter names. Values
+        are the raw arcpy parameters.
+
+        Parameters
+        ----------
+        parameters : list of arcpy.Parameter-type thingies
+            The list of whatever-the-hell ESRI passes to the
+            :meth:`.execute` method of a toolbox.
+
+        Returns
+        -------
+        raw_params : dict
+            A python dictionary of arcpy parameters mapped to the
+            parameters' names.
+
+        """
+        return {p.name: p for p in parameters}
+
+    @staticmethod
     def _get_parameter_values(parameters):
-        """ Returns a dictionary of the parameters values as passed in from
-        the ESRI black box. Keys are the parameter names, values are the
-        actual values (as text) of the parameters.
+        """ Returns a dictionary of the parameters *values* as passed in
+        from the ESRI black box. Keys are the parameter names. Values
+        are the actual values (as text) of the parameters.
 
         Parameters
         ----------
@@ -202,20 +223,21 @@ class BaseToolbox_Mixin(object):
 
         Returns
         -------
-        params : dict
+        param_values : dict
             A python dictionary of parameter values mapped to the
             parameter names.
 
         """
 
-        params = {}
+        param_values = {}
         for p in parameters:
             value = p.valueAsText
-            if p.multiValue:
+            if p.multiValue and value is not None:
                 value = value.split(';')
-            params[p.name] = value
 
-        return params
+            param_values[p.name] = value
+
+        return param_values
 
     @property
     def workspace(self):

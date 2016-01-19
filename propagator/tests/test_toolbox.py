@@ -107,11 +107,18 @@ class BaseToolboxChecker_Mixin(object):
         MockParam('value_columns', 'SHAPE_AREA;SHAPE_LENGTH;NAME', True),
     ]
 
-    parameter_dict = {
+    parameter_value_dict = {
         'workspace': 'path/to/the/workspace.gdb',
         'ID_column': 'GeoID',
         'downstream_ID_column': 'DS_GeoID',
         'value_columns': ['SHAPE_AREA', 'SHAPE_LENGTH', 'NAME'],
+    }
+
+    parameter_dict = {
+        'workspace': parameters[0],
+        'ID_column': parameters[1],
+        'downstream_ID_column': parameters[2],
+        'value_columns': parameters[3],
     }
 
     def test_isLicensed(self):
@@ -127,7 +134,7 @@ class BaseToolboxChecker_Mixin(object):
         messages = ['message1', 'message2']
         with mock.patch.object(self.tbx, 'analyze') as analyze:
             self.tbx.execute(self.parameters, messages)
-            analyze.assert_called_once_with(**self.parameter_dict)
+            analyze.assert_called_once_with(**self.parameter_value_dict)
 
     def test__set_parameter_dependency_single(self):
         self.tbx._set_parameter_dependency(
@@ -163,13 +170,18 @@ class BaseToolboxChecker_Mixin(object):
             nt.assert_true(isinstance(ezmd, utils.EasyMapDoc))
             add_layer.assert_called_once_with(self.simple_shp)
 
+    def test__get_parameter_dict(self):
+        param_dict = self.tbx_get_parameter_dict(self.parameters)
+        nt.assert_dict_equal(param_vals, self.parameter_dict)
+
     def test__get_parameter_values(self):
         param_vals = self.tbx._get_parameter_values(self.parameters)
         expected = {
             'workspace': 'path/to/the/workspace.gdb',
             'ID_column': 'GeoID',
             'downstream_ID_column': 'DS_GeoID',
-            'value_columns': ['SHAPE_AREA', 'SHAPE_LENGTH', 'NAME'],        }
+            'value_columns': ['SHAPE_AREA', 'SHAPE_LENGTH', 'NAME'],
+        }
         nt.assert_dict_equal(param_vals, expected)
 
     def test_workspace(self):
