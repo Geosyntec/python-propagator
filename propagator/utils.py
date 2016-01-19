@@ -800,6 +800,29 @@ def load_attribute_table(input_path, *fields):
     return array
 
 
+def unique_field_values(input_path, field):
+    """
+    Get an array of unique values in a table field.
+
+    Parameters
+    ----------
+    input_path : str
+        Fiilepath to the shapefile or feature class whose table needs
+        to be read.
+    fields : str
+        Name of the field whose unique values will be returned
+
+    Returns
+    -------
+    values : numpy.array
+        The unique values of `field`.
+
+    """
+
+    table = load_attribute_table(input_path, field)
+    return numpy.unique(table[field])
+
+
 def groupby_and_aggregate(input_path, groupfield, valuefield,
                           aggfxn=None):
     """

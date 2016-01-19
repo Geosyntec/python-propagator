@@ -512,6 +512,7 @@ def test_cleanup_temp_results():
     nt.assert_false(os.path.exists(os.path.join(workspace, 'temp_1.tif')))
     nt.assert_false(os.path.exists(os.path.join(workspace, 'temp_2.tif')))
 
+
 @nt.raises(ValueError)
 def test_cleanup_with_bad_input():
     utils.cleanup_temp_results(1, 2, ['a', 'b', 'c'])
@@ -556,6 +557,12 @@ def test_load_attribute_table():
 
     result = utils.load_attribute_table(path, 'CatchID', 'DwnCatchID', 'Watershed')
     nptest.assert_array_equal(result[:5], expected_top_five)
+
+
+def test_unique_field_values():
+    path = resource_filename('propagator.testing.load_attribute_table', 'subcatchments.shp')
+    result = utils.unique_field_values(path, 'Watershed')
+    nptest.assert_array_equal(result, numpy.array(['San Clemente', 'San Juan Creek']))
 
 
 class Test_groupby_and_aggregate():
