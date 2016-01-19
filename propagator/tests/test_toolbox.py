@@ -68,6 +68,43 @@ def test_propagate():
     )
 
 
+@nptest.dec.skipif(not pptest.has_fiona)
+def test_propagate_filtered():
+    ws = resource_filename('propagator.testing', 'tbx_propagate')
+    columns = ['Dry_B', 'Dry_M', 'Dry_N', 'Wet_B', 'Wet_M', 'Wet_N']
+    stacol = 'StationTyp'
+    with utils.WorkSpace(ws), utils.OverwriteState(True):
+        subc_layer, stream_layer = propagator.toolbox.propagate(
+            subcatchments='subcatchments.shp',
+            id_col='CID',
+            ds_col='DS_CID',
+            monitoring_locations='monitoring_locations.shp',
+            ml_filter=lambda row: row[stacol] in ['Channel', 'Outfall', 'Outfall, Coastal'],
+            ml_filter_cols=stacol,
+            value_columns=columns,
+            streams='streams.shp',
+            output_path='test_filtered.shp'
+        )
+
+    nt.assert_equal(subc_layer, 'test_filtered_subcatchments.shp')
+    nt.assert_equal(stream_layer, 'test_filtered_streams.shp')
+
+    pptest.assert_shapefiles_are_close(
+        os.path.join(ws, 'expected_filtered_subc.shp'),
+        os.path.join(ws, subc_layer),
+    )
+
+    pptest.assert_shapefiles_are_close(
+        os.path.join(ws, 'expected_filtered_streams.shp'),
+        os.path.join(ws, stream_layer),
+    )
+
+    utils.cleanup_temp_results(
+        os.path.join(ws, subc_layer),
+        os.path.join(ws, stream_layer)
+    )
+
+
 def test_accumulate():
     ws = resource_filename('propagator.testing', 'score_accumulator')
     with utils.WorkSpace(ws), utils.OverwriteState(True):

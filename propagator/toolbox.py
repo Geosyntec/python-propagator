@@ -27,9 +27,9 @@ from propagator import base_tbx
 
 
 def propagate(subcatchments=None, id_col=None, ds_col=None,
-              monitoring_locations=None, value_columns=None,
-              streams=None, output_path=None,
-              verbose=False, asMessage=False):
+              monitoring_locations=None, ml_filter=None,
+              ml_filter_cols=None, value_columns=None, streams=None,
+              output_path=None, verbose=False, asMessage=False):
     """
     Propagate water quality scores upstream from the subcatchments of
     a watershed.
@@ -50,6 +50,12 @@ def propagate(subcatchments=None, id_col=None, ds_col=None,
     value_columns : list of str
         List of the fields in ``monitoring_locations`` that contains
         water quality score that should be propagated.
+    ml_filter : callable, optional
+        Function used to exclude (remove) monitoring locations from
+        from aggregation/propagation.
+    ml_filter_cols : str, optional
+        Name of any additional columns in ``monitoring_locations`` that
+        are required to use ``ml_filter``.
     streams : str
         Path to the feature class containing the streams.
     output_path : str
@@ -71,6 +77,8 @@ def propagate(subcatchments=None, id_col=None, ds_col=None,
     ...         ds_col='DS_ID',
     ...         monitoring_locations='wq_data',
     ...         value_columns=['Dry_Metals', 'Wet_Metals', 'Wet_TSS'],
+    ...         ml_filter=lambda row: row['StationType'] != 'Coastal',
+    ...         ml_filter_cols=['StationType'],
     ...         streams='SOC_streams',
     ...         output_path='propagated_metals'
     ...     )
@@ -90,11 +98,13 @@ def propagate(subcatchments=None, id_col=None, ds_col=None,
 
     wq, result_columns = analysis.preprocess_wq(
         monitoring_locations=monitoring_locations,
+        ml_filter=ml_filter,
+        ml_filter_cols=ml_filter_cols,
         subcatchments=subcatchments,
+        value_columns=value_columns,
         id_col=id_col,
         ds_col=ds_col,
         output_path=subcatchment_output,
-        value_columns=value_columns,
         verbose=verbose,
         asMessage=asMessage,
         msg="Aggregating water quality data in subcatchments"
@@ -122,9 +132,7 @@ def propagate(subcatchments=None, id_col=None, ds_col=None,
             msg="{} of {}: Propagating {} scores".format(n, len(result_columns), res_col)
         )
 
-    utils.update_attribute_table(subcatchment_output, wq, id_col, result_columns,
-                                 verbose=verbose, asMessage=asMessage,
-                                 msg="Updating attribute table with propagated scores")
+    utils.update_attribute_table(subcatchment_output, wq, id_col, result_columns)
 
     stream_output = analysis.aggregate_streams_by_subcatchment(
         stream_layer=streams,
