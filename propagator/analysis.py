@@ -532,14 +532,14 @@ def _non_zero_means(_arr):
     utils.groupby_and_aggregate
     """
 
-    if isinstance (_arr, list) or isinstance(_arr, numpy.ndarray):
+    if isinstance(_arr, list) or isinstance(_arr, numpy.ndarray):
         _numlst = filter(lambda n: n > 0, _arr)
     else:
         # This hanldes the case when the function is
         # an input for utils.groupby_and_aggregate.
         _numlst = filter(lambda n: n > 0, [r[1] for r in _arr])
 
-    if numpy.isnan(numpy.mean(_numlst)):
+    if len(_numlst) == 0:
         return 0
     else:
         return numpy.mean(_numlst)
