@@ -29,6 +29,10 @@ import arcpy
 from . import utils
 from . import validate
 
+AGG_METHOD_DIC = {
+    'average': numpy.mean,
+    'median': numpy.median,
+}
 
 @utils.update_status()
 def trace_upstream(subcatchment_array, subcatchment_ID, id_col='ID',
@@ -422,13 +426,16 @@ def preprocess_wq(monitoring_locations, subcatchments, id_col, ds_col,
     )
 
     # define the Statistic objects that will be passed to `rec_groupby`
-    statfxn = partial(
-        utils.stats_with_ignored_values,
-        statfxn=aggfxn,
-        ignored_value=ignored_value
-    )
+    statfxn_columns = []
+    for i in value_columns_aggmethod:
+        statfxn_columns.append(partial(
+            utils.stats_with_ignored_values,
+            statfxn=AGG_METHOD_DIC[i.lower()],
+            ignored_value=ignored_value
+        )
+        )
+    res_columns = ['{}_{}'.format(prefix[0:3].lower(), col) for prefix, col in zip(value_columns_aggmethod, value_columns_field)]
 
-    res_columns = ['avg{}'.format(col) for col in value_columns]
     statistics = [
         utils.Statistic(srccol, statfxn, rescol)
         for srccol, rescol in zip(value_columns, res_columns)
