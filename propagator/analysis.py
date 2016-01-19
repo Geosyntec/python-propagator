@@ -32,6 +32,8 @@ from . import validate
 AGG_METHOD_DIC = {
     'average': numpy.mean,
     'median': numpy.median,
+    'max': numpy.max,
+    'min': numpy.min
 }
 
 @utils.update_status()
