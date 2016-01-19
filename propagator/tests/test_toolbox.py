@@ -49,9 +49,9 @@ def test_propagate():
             output_path='test.shp'
         )
 
-
     nt.assert_equal(subc_layer, 'test_subcatchments.shp')
     nt.assert_equal(stream_layer, 'test_streams.shp')
+
     pptest.assert_shapefiles_are_close(
         os.path.join(ws, 'expected_subc.shp'),
         os.path.join(ws, subc_layer),
@@ -208,8 +208,8 @@ class BaseToolboxChecker_Mixin(object):
             add_layer.assert_called_once_with(self.simple_shp)
 
     def test__get_parameter_dict(self):
-        param_dict = self.tbx_get_parameter_dict(self.parameters)
-        nt.assert_dict_equal(param_vals, self.parameter_dict)
+        param_dict = self.tbx._get_parameter_dict(self.parameters)
+        nt.assert_dict_equal(param_dict, self.parameter_dict)
 
     def test__get_parameter_values(self):
         param_vals = self.tbx._get_parameter_values(self.parameters)
@@ -319,6 +319,27 @@ class Test_Propagator(BaseToolboxChecker_Mixin):
         nt.assert_list_equal(self.tbx.monitoring_locations.parameterDependencies, ['workspace'])
         nt.assert_false(self.tbx.monitoring_locations.multiValue)
 
+    def test_ml_type_col(self):
+        nt.assert_true(hasattr(self.tbx, 'ml_type_col'))
+        nt.assert_true(isinstance(self.tbx.ml_type_col, arcpy.Parameter))
+        nt.assert_equal(self.tbx.ml_type_col.parameterType, 'Required')
+        nt.assert_equal(self.tbx.ml_type_col.direction, 'Input')
+        nt.assert_equal(self.tbx.ml_type_col.datatype, 'Field')
+        nt.assert_equal(self.tbx.ml_type_col.name, 'ml_type_col')
+        nt.assert_list_equal(self.tbx.ml_type_col.parameterDependencies, ['monitoring_locations'])
+        nt.assert_false(self.tbx.ml_type_col.multiValue)
+
+    def test_included_ml_types(self):
+        nt.assert_true(hasattr(self.tbx, 'included_ml_types'))
+        nt.assert_true(isinstance(self.tbx.included_ml_types, arcpy.Parameter))
+        nt.assert_equal(self.tbx.included_ml_types.parameterType, 'Required')
+        nt.assert_equal(self.tbx.included_ml_types.direction, 'Input')
+        nt.assert_equal(self.tbx.included_ml_types.datatype, 'String')
+        nt.assert_equal(self.tbx.included_ml_types.name, 'included_ml_types')
+        nt.assert_list_equal(self.tbx.included_ml_types.parameterDependencies, [])
+        nt.assert_true(self.tbx.included_ml_types.multiValue)
+        nt.assert_equal(self.tbx.included_ml_types.filter.type, "ValueList")
+
     def test_params_as_list(self):
         params = self.tbx._params_as_list()
         names = [str(p.name) for p in params]
@@ -328,6 +349,8 @@ class Test_Propagator(BaseToolboxChecker_Mixin):
             'ID_column',
             'downstream_ID_column',
             'monitoring_locations',
+            'ml_type_col',
+            'included_ml_types',
             'value_columns',
             'streams',
             'output_layer',
@@ -371,6 +394,48 @@ class Test_Propagator(BaseToolboxChecker_Mixin):
                 os.path.join(ws, subc_layer),
                 os.path.join(ws, stream_layer)
             )
+            atm.assert_has_calls([mock.call(subc_layer), mock.call(stream_layer)])
+
+    @nptest.dec.skipif(not pptest.has_fiona)
+    def test_analyze_filter(self):
+        tbx = toolbox.Propagator()
+        ws = resource_filename('propagator.testing', 'tbx_propagate')
+        columns = ['Dry_B', 'Dry_M', 'Dry_N', 'Wet_B', 'Wet_M', 'Wet_N']
+        stacol = 'StationTyp'
+        with mock.patch.object(toolbox.Propagator, '_add_to_map') as atm:
+            subc_layer, stream_layer = tbx.analyze(
+                workspace=ws,
+                overwrite=True,
+                subcatchments='subcatchments.shp',
+                ID_column='CID',
+                downstream_ID_column='DS_CID',
+                monitoring_locations='monitoring_locations.shp',
+                ml_type_col=stacol,
+                included_ml_types=['Channel', 'Outfall', 'Outfall, Coastal'],
+                value_columns=columns,
+                output_layer='test_filtered.shp',
+                streams='streams.shp',
+                add_output_to_map=True
+            )
+
+            nt.assert_equal(subc_layer, 'test_filtered_subcatchments.shp')
+            nt.assert_equal(stream_layer, 'test_filtered_streams.shp')
+
+            pptest.assert_shapefiles_are_close(
+                os.path.join(ws, 'expected_filtered_subc.shp'),
+                os.path.join(ws, subc_layer),
+            )
+
+            pptest.assert_shapefiles_are_close(
+                os.path.join(ws, 'expected_filtered_streams.shp'),
+                os.path.join(ws, stream_layer),
+            )
+
+            utils.cleanup_temp_results(
+                os.path.join(ws, subc_layer),
+                os.path.join(ws, stream_layer)
+            )
+
             atm.assert_has_calls([mock.call(subc_layer), mock.call(stream_layer)])
 
 

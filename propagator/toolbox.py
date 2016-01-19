@@ -306,6 +306,8 @@ class Propagator(base_tbx.BaseToolbox_Mixin):
         self._ID_column = None
         self._downstream_ID_column = None
         self._monitoring_locations = None
+        self._ml_type_col = None
+        self._included_ml_types = None
         self._value_columns = None
         self._output_layer = None
         self._streams = None
@@ -329,6 +331,35 @@ class Propagator(base_tbx.BaseToolbox_Mixin):
         return self._monitoring_locations
 
     @property
+    def ml_type_col(self):
+        if self._ml_type_col is None:
+            self._ml_type_col = arcpy.Parameter(
+                displayName="Monitoring Location Type Column",
+                name="ml_type_col",
+                datatype="Field",
+                parameterType="Required",
+                direction="Input",
+                multiValue=False
+            )
+            self._set_parameter_dependency(self._ml_type_col, self.monitoring_locations)
+        return self._ml_type_col
+
+    @property
+    def included_ml_types(self):
+        if self._included_ml_types is None:
+            self._included_ml_types = arcpy.Parameter(
+                displayName="Monitoring Location Types To Include",
+                name="included_ml_types",
+                datatype="GPString",
+                parameterType="Required",
+                direction="Input",
+                multiValue=True,
+            )
+
+            self._included_ml_types.filter.type = "ValueList"
+        return self._included_ml_types
+
+    @property
     def value_columns(self):
         """ The names of the fields to be propagated into upstream
         subcatchments. """
@@ -344,6 +375,18 @@ class Propagator(base_tbx.BaseToolbox_Mixin):
             self._set_parameter_dependency(self._value_columns, self.monitoring_locations)
         return self._value_columns
 
+    def updateParameters(self, parameters):
+        params = self._get_parameter_dict(parameters)
+        param_vals = self._get_parameter_values(parameters)
+        ws = param_vals.get('workspace', '.')
+
+        with utils.WorkSpace(ws):
+            if params['ml_type_col'].altered:
+                ml = param_vals['monitoring_locations']
+                col = param_vals['ml_type_col']
+                values = utils.unique_field_values(ml, col).tolist()
+                params['included_ml_types'].filter.list = values
+
     def _params_as_list(self):
         params = [
             self.workspace,
@@ -351,6 +394,8 @@ class Propagator(base_tbx.BaseToolbox_Mixin):
             self.ID_column,
             self.downstream_ID_column,
             self.monitoring_locations,
+            self.ml_type_col,
+            self.included_ml_types,
             self.value_columns,
             self.streams,
             self.output_layer,
@@ -373,9 +418,18 @@ class Propagator(base_tbx.BaseToolbox_Mixin):
         ID_col = params.pop('ID_column', None)
         downstream_ID_col = params.pop('downstream_ID_column', None)
         ml = params.pop('monitoring_locations', None)
+        ml_type_col = params.pop('ml_type_col', None)
+        included_ml_types = params.pop('included_ml_types', None)
         streams = params.pop('streams', None)
         value_cols = params.pop('value_columns', None)
         output_layer = params.pop('output_layer', None)
+
+        validate.non_empty_list(included_ml_types, on_fail='create')
+
+        if ml_type_col is not None:
+            ml_filter = lambda row: row[ml_type_col] in included_ml_types
+        else:
+            ml_filter = None
 
         # perform the analysis
         with utils.WorkSpace(ws), utils.OverwriteState(overwrite):
@@ -384,6 +438,8 @@ class Propagator(base_tbx.BaseToolbox_Mixin):
                 id_col=ID_col,
                 ds_col=downstream_ID_col,
                 monitoring_locations=ml,
+                ml_filter=ml_filter,
+                ml_filter_cols=ml_type_col,
                 value_columns=value_cols,
                 output_path=output_layer,
                 streams=streams,
