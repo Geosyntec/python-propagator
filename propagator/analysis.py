@@ -417,6 +417,11 @@ def preprocess_wq(monitoring_locations, subcatchments, id_col, ds_col,
     # validate value_columns
     value_columns = validate.non_empty_list(value_columns, msg="you must provide `value_columns` to aggregate")
 
+    # Seperate aggregation method from value_columns input
+    split_value_columns = [i.split(";") for i in value_columns]
+    split_value_columns = [i.split() for i in split_value_columns[0]]
+    value_columns_field = [i[0] for i in split_value_columns]
+    value_columns_aggmethod = [i[1] for i in split_value_columns]
     # create the output feature class as a copy of the `subcatchments`
     output_path = utils.copy_layer(subcatchments, output_path)
 
@@ -440,7 +445,7 @@ def preprocess_wq(monitoring_locations, subcatchments, id_col, ds_col,
 
     statistics = [
         utils.Statistic(srccol, statfxn, rescol)
-        for srccol, rescol in zip(value_columns, res_columns)
+        for srccol, statfxn, rescol in zip(value_columns_field, statfxn_columns, res_columns)
     ]
 
     # compile the original fields to read in from the joined table
