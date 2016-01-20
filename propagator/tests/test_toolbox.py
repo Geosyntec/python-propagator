@@ -37,7 +37,7 @@ def mock_status(*args, **kwargs):
 @nptest.dec.skipif(not pptest.has_fiona)
 def test_propagate():
     ws = resource_filename('propagator.testing', 'tbx_propagate')
-    columns = ['Dry_B Average', 'Dry_M Median', 'Dry_N Min', 'Wet_B Max', 'Wet_M Average', 'Wet_N Median']
+    columns = ['Dry_B Average;Dry_M Median;Dry_N Min;Wet_B Max;Wet_M Average;Wet_N Median']
     with utils.WorkSpace(ws), utils.OverwriteState(True):
         subc_layer, stream_layer = propagator.toolbox.propagate(
             subcatchments='subcatchments.shp',
@@ -71,7 +71,7 @@ def test_propagate():
 @nptest.dec.skipif(not pptest.has_fiona)
 def test_propagate_filtered():
     ws = resource_filename('propagator.testing', 'tbx_propagate')
-    columns = ['Dry_B Average', 'Dry_M Median', 'Dry_N Min', 'Wet_B Max', 'Wet_M Average', 'Wet_N Median']
+    columns = ['Dry_B Average;Dry_M Median;Dry_N Min;Wet_B Max;Wet_M Average;Wet_N Median']
     stacol = 'StationTyp'
     with utils.WorkSpace(ws), utils.OverwriteState(True):
         subc_layer, stream_layer = propagator.toolbox.propagate(
@@ -304,10 +304,11 @@ class Test_Propagator(BaseToolboxChecker_Mixin):
         nt.assert_true(isinstance(self.tbx.value_columns, arcpy.Parameter))
         nt.assert_equal(self.tbx.value_columns.parameterType, 'Required')
         nt.assert_equal(self.tbx.value_columns.direction, 'Input')
-        nt.assert_equal(self.tbx.value_columns.datatype, 'Field')
+        nt.assert_equal(self.tbx.value_columns.datatype, 'Value Table')
         nt.assert_equal(self.tbx.value_columns.name, 'value_columns')
         nt.assert_list_equal(self.tbx.value_columns.parameterDependencies, [self.value_col_dependency])
-        nt.assert_true(self.tbx.value_columns.multiValue)
+        # see explanation in toolbox.value_columns.
+        nt.assert_false(self.tbx.value_columns.multiValue)
 
     def test_monitoring_locations(self):
         nt.assert_true(hasattr(self.tbx, 'monitoring_locations'))
