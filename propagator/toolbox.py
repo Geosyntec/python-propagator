@@ -362,7 +362,13 @@ class Propagator(base_tbx.BaseToolbox_Mixin):
     @property
     def value_columns(self):
         """ The names of the fields to be propagated into upstream
-        subcatchments. """
+        subcatchments.
+        Note on property 'multiValue': it appears that by setting
+        datatype to 'Value Table' the multiValue becomes irrevlant.
+        Regardless on how we set the value here, when the function
+        is called a False value is assigned to multiValue. However,
+        the toolbox will still accept multiple entries.
+        """
         if self._value_columns is None:
             self._value_columns = arcpy.Parameter(
                 displayName="Values to be Propagated",
@@ -370,7 +376,7 @@ class Propagator(base_tbx.BaseToolbox_Mixin):
                 datatype="Value Table",
                 parameterType="Required",
                 direction="Input",
-                multiValue=True
+                multiValue=True,
             )
             self._value_columns.columns = [['Field','Fields'], ['String', 'Aggregation Method']]
             self._set_parameter_dependency(self._value_columns, self.monitoring_locations)
