@@ -367,11 +367,12 @@ class Propagator(base_tbx.BaseToolbox_Mixin):
             self._value_columns = arcpy.Parameter(
                 displayName="Values to be Propagated",
                 name="value_columns",
-                datatype="Field",
+                datatype="Value Table",
                 parameterType="Required",
                 direction="Input",
                 multiValue=True
             )
+            self._value_columns.columns = [['Field','Fields'], ['String', 'Aggregation Method']]
             self._set_parameter_dependency(self._value_columns, self.monitoring_locations)
         return self._value_columns
 
