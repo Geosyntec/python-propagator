@@ -29,12 +29,30 @@ import arcpy
 from . import utils
 from . import validate
 
+
 AGG_METHOD_DIC = {
     'average': numpy.mean,
+    'ave': numpy.mean,
+    'avg': numpy.mean,
+    'mean': numpy.mean,
     'median': numpy.median,
+    'med': numpy.median,
+    'maximum': numpy.max,
     'max': numpy.max,
-    'min': numpy.min
+    'minimum': numpy.min,
+    'min': numpy.min,
+    '10th': partial(numpy.percentile, q=10),
+    '10%': partial(numpy.percentile, q=10),
+    '25th': partial(numpy.percentile, q=25),
+    '25%': partial(numpy.percentile, q=25),
+    '50th': partial(numpy.percentile, q=50),
+    '50%': partial(numpy.percentile, q=50),
+    '75th': partial(numpy.percentile, q=75),
+    '75%': partial(numpy.percentile, q=75),
+    '90th': partial(numpy.percentile, q=90),
+    '90%': partial(numpy.percentile, q=90),
 }
+
 
 @utils.update_status()
 def trace_upstream(subcatchment_array, subcatchment_ID, id_col='ID',
