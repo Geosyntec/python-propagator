@@ -12,14 +12,8 @@ Written by Paul Hobson (phobson@geosyntec.com)
 """
 
 
-import os
-import sys
-import glob
-import datetime
-import itertools
 from functools import partial
 import warnings
-from copy import copy
 
 import numpy
 from numpy.lib import recfunctions
@@ -99,7 +93,6 @@ def trace_upstream(subcatchment_array, subcatchment_ID, id_col='ID',
     """
     if downstream is None:
         downstream = []
-
 
     # If needed, add the bottom subcatchment to the output list
     if include_base:
@@ -433,13 +426,16 @@ def preprocess_wq(monitoring_locations, subcatchments, id_col, ds_col,
         ml_filter = lambda row: row
 
     # validate value_columns
-    value_columns = validate.non_empty_list(value_columns, msg="you must provide `value_columns` to aggregate")
+    bad_cols_msg = "you must provide `value_columns` to aggregate"
+    value_columns = validate.non_empty_list(value_columns, msg=bad_cols_msg)
 
+    # TODO: factor this into it's own function
     # Seperate aggregation method from value_columns input
     split_value_columns = [i.split(";") for i in value_columns]
     split_value_columns = [i.split() for i in split_value_columns[0]]
     value_columns_field = [i[0] for i in split_value_columns]
     value_columns_aggmethod = [i[1] for i in split_value_columns]
+
     # create the output feature class as a copy of the `subcatchments`
     output_path = utils.copy_layer(subcatchments, output_path)
 
@@ -451,19 +447,22 @@ def preprocess_wq(monitoring_locations, subcatchments, id_col, ds_col,
     )
 
     # define the Statistic objects that will be passed to `rec_groupby`
-    statfxn_columns = []
-    for i in value_columns_aggmethod:
-        statfxn_columns.append(partial(
+    statfxns = []
+    for agg in value_columns_aggmethod:
+        statfxns.append(partial(
             utils.stats_with_ignored_values,
-            statfxn=AGG_METHOD_DIC[i.lower()],
+            statfxn=AGG_METHOD_DIC[agg.lower()],
             ignored_value=ignored_value
-        )
-        )
-    res_columns = ['{}{}'.format(prefix[0:3].lower(), col) for prefix, col in zip(value_columns_aggmethod, value_columns_field)]
+        ))
+
+    res_columns = [
+        '{}{}'.format(prefix[0:3].lower(), col)
+        for prefix, col in zip(value_columns_aggmethod, value_columns_field)
+    ]
 
     statistics = [
         utils.Statistic(srccol, statfxn, rescol)
-        for srccol, statfxn, rescol in zip(value_columns_field, statfxn_columns, res_columns)
+        for srccol, statfxn, rescol in zip(value_columns_field, statfxns, res_columns)
     ]
 
     # compile the original fields to read in from the joined table
@@ -714,7 +713,7 @@ def collect_upstream_attributes(subcatchments_table, target_subcatchments,
 
     n = -1
     for row in target_subcatchments:
-        n = n+1
+        n += 1
         upstream_subcatchments = trace_upstream(
             subcatchments_table, row[id_col],
             id_col=id_col, ds_col=ds_col, include_base=True
@@ -733,16 +732,16 @@ def collect_upstream_attributes(subcatchments_table, target_subcatchments,
             upstream_subcatchments.dtype.names = [i.encode('ascii', 'ignore') for i in dname]
 
             # recfunctions.append_fields has a nasty warnings that we don't need to see
-            with warnings.catch_warnings(record=True) as w:
+            with warnings.catch_warnings(record=True):
                 warnings.simplefilter("ignore")
-                id_col_str = id_col.encode('ascii','ignore')
+                id_col_str = id_col.encode('ascii', 'ignore')
                 _src_array = recfunctions.append_fields(upstream_subcatchments, [id_col_str], [id_array])
             if n == 0:
                 src_array = _src_array.copy().tolist()
             else:
                 src_array.extend(_src_array.copy().tolist())
-                #src_array = numpy.hstack([src_array, _src_array])
+
         else:
-            n = n-1
+            n += -1
 
     return numpy.array(src_array, dtype=template)
