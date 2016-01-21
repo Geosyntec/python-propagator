@@ -34,85 +34,80 @@ def mock_status(*args, **kwargs):
     pass
 
 
-@nptest.dec.skipif(not pptest.has_fiona)
-def test_propagate():
-    ws = resource_filename('propagator.testing', 'tbx_propagate')
-    columns = ['Dry_B Average;Dry_M Median;Dry_N Min;Wet_B Max;Wet_M Average;Wet_N Median']
-    with utils.WorkSpace(ws), utils.OverwriteState(True):
-        subc_layer, stream_layer = propagator.toolbox.propagate(
-            subcatchments='subcatchments.shp',
-            monitoring_locations='monitoring_locations.shp',
-            id_col='CID',
-            ds_col='DS_CID',
-            value_columns=columns,
-            streams='streams.shp',
-            output_path='test.shp'
+class Test_propagate(object):
+    def setup(self):
+        self.ws = resource_filename('propagator.testing', 'tbx_propagate')
+        self.columns = [
+            ['Dry_B', 'Average'],
+            ['Dry_M', 'Median'],
+            ['Dry_N', 'Min'],
+            ['Wet_B', 'Max'],
+            ['Wet_M', 'Average'],
+            ['Wet_N', 'Median'],
+        ]
+        self.subc_res = 'test_subcatchments.shp'
+        self.stream_res = 'test_streams.shp'
+
+    @nt.nottest
+    def check(self, subc_res, stream_res, subc_exp, stream_exp):
+        nt.assert_equal(subc_res, self.subc_res)
+        nt.assert_equal(stream_res, self.stream_res)
+
+        pptest.assert_shapefiles_are_close(
+            os.path.join(self.ws, subc_exp),
+            os.path.join(self.ws, self.subc_res),
         )
 
-    nt.assert_equal(subc_layer, 'test_subcatchments.shp')
-    nt.assert_equal(stream_layer, 'test_streams.shp')
-
-    pptest.assert_shapefiles_are_close(
-        os.path.join(ws, 'expected_subc.shp'),
-        os.path.join(ws, subc_layer),
-    )
-
-    pptest.assert_shapefiles_are_close(
-        os.path.join(ws, 'expected_streams.shp'),
-        os.path.join(ws, stream_layer),
-    )
-
-    utils.cleanup_temp_results(
-        os.path.join(ws, subc_layer),
-        os.path.join(ws, stream_layer)
-    )
-
-
-@nptest.dec.skipif(not pptest.has_fiona)
-def test_propagate_filtered():
-    ws = resource_filename('propagator.testing', 'tbx_propagate')
-    columns = ['Dry_B Average;Dry_M Median;Dry_N Min;Wet_B Max;Wet_M Average;Wet_N Median']
-    stacol = 'StationTyp'
-    with utils.WorkSpace(ws), utils.OverwriteState(True):
-        subc_layer, stream_layer = propagator.toolbox.propagate(
-            subcatchments='subcatchments.shp',
-            id_col='CID',
-            ds_col='DS_CID',
-            monitoring_locations='monitoring_locations.shp',
-            ml_filter=lambda row: row[stacol] in ['Channel', 'Outfall', 'Outfall, Coastal'],
-            ml_filter_cols=stacol,
-            value_columns=columns,
-            streams='streams.shp',
-            output_path='test_filtered.shp'
+        pptest.assert_shapefiles_are_close(
+            os.path.join(self.ws, stream_exp),
+            os.path.join(self.ws, self.stream_res),
         )
 
-    nt.assert_equal(subc_layer, 'test_filtered_subcatchments.shp')
-    nt.assert_equal(stream_layer, 'test_filtered_streams.shp')
+    def teardown(self):
+        utils.cleanup_temp_results(
+            os.path.join(self.ws, self.subc_res),
+            os.path.join(self.ws, self.stream_res)
+        )
 
-    pptest.assert_shapefiles_are_close(
-        os.path.join(ws, 'expected_filtered_subc.shp'),
-        os.path.join(ws, subc_layer),
-    )
+    @nptest.dec.skipif(not pptest.has_fiona)
+    def test_baseline(self):
+        with utils.WorkSpace(self.ws), utils.OverwriteState(True):
+            subc_layer, stream_layer = propagator.toolbox.propagate(
+                subcatchments='subcatchments.shp',
+                monitoring_locations='monitoring_locations.shp',
+                id_col='CID',
+                ds_col='DS_CID',
+                value_columns=self.columns,
+                streams='streams.shp',
+                output_path='test.shp'
+            )
 
-    pptest.assert_shapefiles_are_close(
-        os.path.join(ws, 'expected_filtered_streams.shp'),
-        os.path.join(ws, stream_layer),
-    )
+        self.check(subc_layer, stream_layer, 'expected_subc.shp', 'expected_streams.shp')
 
-    utils.cleanup_temp_results(
-        os.path.join(ws, subc_layer),
-        os.path.join(ws, stream_layer)
-    )
+    @nptest.dec.skipif(not pptest.has_fiona)
+    def test_filtered(self):
+        stacol = 'StationTyp'
+        with utils.WorkSpace(self.ws), utils.OverwriteState(True):
+            subc_layer, stream_layer = propagator.toolbox.propagate(
+                subcatchments='subcatchments.shp',
+                id_col='CID',
+                ds_col='DS_CID',
+                monitoring_locations='monitoring_locations.shp',
+                ml_filter=lambda row: row[stacol] in ['Channel', 'Outfall', 'Outfall, Coastal'],
+                ml_filter_cols=stacol,
+                value_columns=self.columns,
+                streams='streams.shp',
+                output_path='test.shp'
+            )
+
+        self.check(subc_layer, stream_layer, 'expected_filtered_subc.shp', 'expected_filtered_streams.shp')
+        nt.assert_equal(subc_layer, 'test_subcatchments.shp')
+        nt.assert_equal(stream_layer, 'test_streams.shp')
 
 
 def test_accumulate():
     ws = resource_filename('propagator.testing', 'score_accumulator')
     with utils.WorkSpace(ws), utils.OverwriteState(True):
-        # stats = [
-        #     utils.Statistic('Area', numpy.sum, 'Sum_Area'),
-        #     utils.Statistic(['Imp', 'Area'], lambda x: utils.weighted_average(x, 'Imp', 'Area'), 'Weighted_Average_Imp'),
-        # ]
-
         results = toolbox.accumulate(
             subcatchments_layer='subcatchment_wq.shp',
             id_col='Catch_ID_a',
@@ -363,7 +358,7 @@ class Test_Propagator(BaseToolboxChecker_Mixin):
     def test_analyze(self):
         tbx = toolbox.Propagator()
         ws = resource_filename('propagator.testing', 'tbx_propagate')
-        columns = ['Dry_B Average;Dry_M Median;Dry_N Min;Wet_B Max;Wet_M Average;Wet_N Median']
+        columns = 'Dry_B Average;Dry_M Median;Dry_N Min;Wet_B Max;Wet_M Average;Wet_N Median'
         with mock.patch.object(toolbox.Propagator, '_add_to_map') as atm:
             subc_layer, stream_layer = tbx.analyze(
                 workspace=ws,
@@ -401,7 +396,7 @@ class Test_Propagator(BaseToolboxChecker_Mixin):
     def test_analyze_filter(self):
         tbx = toolbox.Propagator()
         ws = resource_filename('propagator.testing', 'tbx_propagate')
-        columns = ['Dry_B Average;Dry_M Median;Dry_N Min;Wet_B Max;Wet_M Average;Wet_N Median']
+        columns = 'Dry_B Average;Dry_M Median;Dry_N Min;Wet_B Max;Wet_M Average;Wet_N Median'
         stacol = 'StationTyp'
         with mock.patch.object(toolbox.Propagator, '_add_to_map') as atm:
             subc_layer, stream_layer = tbx.analyze(
