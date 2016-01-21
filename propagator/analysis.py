@@ -35,16 +35,11 @@ AGG_METHOD_DICT = {
     'max': numpy.max,
     'minimum': numpy.min,
     'min': numpy.min,
-    '10th': partial(numpy.percentile, q=10),
-    '10%': partial(numpy.percentile, q=10),
-    '25th': partial(numpy.percentile, q=25),
-    '25%': partial(numpy.percentile, q=25),
-    '50th': partial(numpy.percentile, q=50),
-    '50%': partial(numpy.percentile, q=50),
-    '75th': partial(numpy.percentile, q=75),
-    '75%': partial(numpy.percentile, q=75),
-    '90th': partial(numpy.percentile, q=90),
-    '90%': partial(numpy.percentile, q=90),
+    'p10': partial(numpy.percentile, q=10),
+    'p25': partial(numpy.percentile, q=25),
+    'p50': partial(numpy.percentile, q=50),
+    'p75': partial(numpy.percentile, q=75),
+    'p90': partial(numpy.percentile, q=90),
 }
 
 
