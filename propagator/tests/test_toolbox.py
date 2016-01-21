@@ -358,7 +358,7 @@ class Test_Propagator(BaseToolboxChecker_Mixin):
     def test_analyze(self):
         tbx = toolbox.Propagator()
         ws = resource_filename('propagator.testing', 'tbx_propagate')
-        columns = 'Dry_B Average;Dry_M Median;Dry_N Min;Wet_B Max;Wet_M Average;Wet_N Median'
+        columns = 'Dry_B Average;Dry_M Median;Dry_N Min;Wet_B Max;Wet_M #;Wet_N Median'
         with mock.patch.object(toolbox.Propagator, '_add_to_map') as atm:
             subc_layer, stream_layer = tbx.analyze(
                 workspace=ws,
@@ -396,7 +396,7 @@ class Test_Propagator(BaseToolboxChecker_Mixin):
     def test_analyze_filter(self):
         tbx = toolbox.Propagator()
         ws = resource_filename('propagator.testing', 'tbx_propagate')
-        columns = 'Dry_B Average;Dry_M Median;Dry_N Min;Wet_B Max;Wet_M Average;Wet_N Median'
+        columns = 'Dry_B #;Dry_M Median;Dry_N Min;Wet_B Max;Wet_M Average;Wet_N Median'
         stacol = 'StationTyp'
         with mock.patch.object(toolbox.Propagator, '_add_to_map') as atm:
             subc_layer, stream_layer = tbx.analyze(
