@@ -432,7 +432,7 @@ class Propagator(base_tbx.BaseToolbox_Mixin):
 
         validate.non_empty_list(included_ml_types, on_fail='create')
 
-        value_columns = [vc.split(' ') for vc in value_cols_string.split(';')]
+        value_columns = [vc.split(' ') for vc in value_cols_string.replace(' #', ' average').split(';')]
         utils._status(value_columns, asMessage=True, verbose=True)
 
         if ml_type_col is not None:
