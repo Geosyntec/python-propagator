@@ -12,9 +12,8 @@ Written by Paul Hobson (phobson@geosyntec.com)
 """
 
 
-import os
+from functools import partial
 from textwrap import dedent
-from collections import OrderedDict
 
 import arcpy
 
@@ -428,10 +427,13 @@ class Propagator(base_tbx.BaseToolbox_Mixin):
         ml_type_col = params.pop('ml_type_col', None)
         included_ml_types = params.pop('included_ml_types', None)
         streams = params.pop('streams', None)
-        value_cols = params.pop('value_columns', None)
+        value_cols_string = params.pop('value_columns', None)
         output_layer = params.pop('output_layer', None)
 
         validate.non_empty_list(included_ml_types, on_fail='create')
+
+        value_columns = [vc.split(' ') for vc in value_cols_string.split(';')]
+        utils._status(value_columns, asMessage=True, verbose=True)
 
         if ml_type_col is not None:
             ml_filter = lambda row: row[ml_type_col] in included_ml_types
@@ -447,7 +449,7 @@ class Propagator(base_tbx.BaseToolbox_Mixin):
                 monitoring_locations=ml,
                 ml_filter=ml_filter,
                 ml_filter_cols=ml_type_col,
-                value_columns=value_cols,
+                value_columns=value_columns,
                 output_path=output_layer,
                 streams=streams,
                 verbose=True,
@@ -579,6 +581,5 @@ class Accumulator(base_tbx.BaseToolbox_Mixin):
 
             if add_output_to_map:
                 self._add_to_map(output_layers)
-                #for lyr in output_layers:
 
         return output_layers

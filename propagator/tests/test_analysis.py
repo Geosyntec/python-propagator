@@ -192,8 +192,14 @@ class Test_preprocess_wq(object):
         self.expected = 'expected.shp'
         self.results = 'test.shp'
         self.wq_cols = [
-            'Dry_B Median;Dry_M Median;Dry_N Min;Wet_B Min;Wet_M Average;Wet_N Max',
+            ('Dry_B', 'med'),
+            ('Dry_M', 'Median'),
+            ('Dry_N', 'Min'),
+            ('Wet_B', 'Min'),
+            ('Wet_M',),
+            ('Wet_N', 'Max'),
         ]
+
         self.expected_cols = [
             'medDry_B', 'medDry_M', 'minDry_N',
             'minWet_B', 'aveWet_M', 'maxWet_N',

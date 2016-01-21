@@ -1,14 +1,4 @@
-import os
-from pkg_resources import resource_filename
-import time
-
-import arcpy
-import numpy
-
 import nose.tools as nt
-import numpy.testing as nptest
-import propagator.testing as tgtest
-import mock
 
 from propagator import validate
 
@@ -23,6 +13,7 @@ def test_flow_direction_good():
         validate.flow_direction("downSTReam"),
         "downstream"
     )
+
 
 @nt.raises(ValueError)
 def test_flow_direction_bad():
@@ -51,3 +42,24 @@ class Test_non_empty_list(object):
 
     def test_empty_creates(self):
         nt.assert_list_equal(validate.non_empty_list([], on_fail='create'), [])
+
+
+def test_value_column_stats():
+    value_cols = [
+        ('test1', 'mean'),
+        'test2',
+        ('test3', 'median'),
+        'test4',
+        ('test5',),
+    ]
+
+    expected = [
+        ('test1', 'mean'),
+        ('test2', 'mean'),
+        ('test3', 'median'),
+        ('test4', 'mean'),
+        ('test5', 'mean'),
+    ]
+
+    result = validate.value_column_stats(value_cols, 'mean')
+    nt.assert_list_equal(result, expected)

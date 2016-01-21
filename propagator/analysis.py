@@ -24,7 +24,7 @@ from . import utils
 from . import validate
 
 
-AGG_METHOD_DIC = {
+AGG_METHOD_DICT = {
     'average': numpy.mean,
     'ave': numpy.mean,
     'avg': numpy.mean,
@@ -35,16 +35,11 @@ AGG_METHOD_DIC = {
     'max': numpy.max,
     'minimum': numpy.min,
     'min': numpy.min,
-    '10th': partial(numpy.percentile, q=10),
-    '10%': partial(numpy.percentile, q=10),
-    '25th': partial(numpy.percentile, q=25),
-    '25%': partial(numpy.percentile, q=25),
-    '50th': partial(numpy.percentile, q=50),
-    '50%': partial(numpy.percentile, q=50),
-    '75th': partial(numpy.percentile, q=75),
-    '75%': partial(numpy.percentile, q=75),
-    '90th': partial(numpy.percentile, q=90),
-    '90%': partial(numpy.percentile, q=90),
+    'p10': partial(numpy.percentile, q=10),
+    'p25': partial(numpy.percentile, q=25),
+    'p50': partial(numpy.percentile, q=50),
+    'p75': partial(numpy.percentile, q=75),
+    'p90': partial(numpy.percentile, q=90),
 }
 
 
@@ -374,8 +369,8 @@ def remove_orphan_subcatchments(subcatchment_array, id_col='ID', ds_col='DS_ID',
 @utils.update_status()
 def preprocess_wq(monitoring_locations, subcatchments, id_col, ds_col,
                   output_path, value_columns=None, ml_filter=None,
-                  ml_filter_cols=None, aggfxn=numpy.mean, ignored_value=0,
-                  terminator_value=-99, cleanup=True):
+                  ml_filter_cols=None, default_aggfxn='ave',
+                  ignored_value=0, terminator_value=-99, cleanup=True):
     """
     Preprocess the water quality data to have to averaged score for
     each subcatchment.
@@ -397,13 +392,15 @@ def preprocess_wq(monitoring_locations, subcatchments, id_col, ds_col,
     output_path : str
         Path of the new feature class where the preprocessed data
         should be saved.
-    value_columns : list of str
+    value_columns : list of str or tuples
         A list of the names of the fields containing water quality
-        scores that need to be analyzed.
+        scores that need to be analyzed. If elements are tuples, the
+        tuple should be in the form (<field name>, <stat key>), where
+        "stat key" is a key valid key in ``analysis.AGG_METHOD_DICT``.
     ml_filter : callable, optional
         Function used to exclude (remove) monitoring locations from
         from aggregation/propagation.
-    aggfxn : callable, optional
+    default_aggfxn : callable, optional
         A function, lambda, or class method that reduces arrays into
         scalar values. By default, this is `numpy.mean`.
     ignored_value : int, optional
@@ -426,15 +423,9 @@ def preprocess_wq(monitoring_locations, subcatchments, id_col, ds_col,
         ml_filter = lambda row: row
 
     # validate value_columns
-    bad_cols_msg = "you must provide `value_columns` to aggregate"
-    value_columns = validate.non_empty_list(value_columns, msg=bad_cols_msg)
-
-    # TODO: factor this into it's own function
-    # Seperate aggregation method from value_columns input
-    split_value_columns = [i.split(";") for i in value_columns]
-    split_value_columns = [i.split() for i in split_value_columns[0]]
-    value_columns_field = [i[0] for i in split_value_columns]
-    value_columns_aggmethod = [i[1] for i in split_value_columns]
+    value_columns = validate.value_column_stats(value_columns, default_aggfxn)
+    value_columns_field = [i[0] for i in value_columns]
+    value_columns_aggmethod = [i[1] for i in value_columns]
 
     # create the output feature class as a copy of the `subcatchments`
     output_path = utils.copy_layer(subcatchments, output_path)
@@ -451,7 +442,7 @@ def preprocess_wq(monitoring_locations, subcatchments, id_col, ds_col,
     for agg in value_columns_aggmethod:
         statfxns.append(partial(
             utils.stats_with_ignored_values,
-            statfxn=AGG_METHOD_DIC[agg.lower()],
+            statfxn=AGG_METHOD_DICT[agg.lower()],
             ignored_value=ignored_value
         ))
 

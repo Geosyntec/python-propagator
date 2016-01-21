@@ -11,6 +11,8 @@ Written by Paul Hobson (phobson@geosyntec.com)
 
 """
 
+from copy import copy
+
 import numpy
 
 
@@ -104,3 +106,40 @@ def non_empty_list(list_obj, msg=None, on_fail='error'):
             list_obj = []
 
     return list_obj
+
+
+def value_column_stats(value_columns, default_second_value):
+    """
+    Validates a list's elements as being at least two-tuples.
+
+    Parameters
+    ----------
+    value_columns : list of str or two-tuples
+        List of columns to be aggregated. If a tuple, the first element
+        specifies the column, the second specifies the statistic used
+        to aggregate values in that column. If there is not second
+        element, ``default_second_value`` is used.
+    default_second_value
+        The default aggregation method to be used when one is not
+        provided.
+
+    Returns
+    -------
+    validated : list
+        List of two-tuples (<colname>, <stat. fxn>).
+
+    """
+
+    value_columns = non_empty_list(value_columns, on_fail='error')
+
+    validated = copy(value_columns)
+    for n, vc in enumerate(value_columns):
+        if len(vc) == 1:
+            vc = vc[0]
+
+        if numpy.isscalar(vc):
+            validated[n] = (vc, default_second_value)
+        elif len(vc) == 0:
+            raise ValueError("1value_columns` cannot contain empty elements.")
+
+    return validated
