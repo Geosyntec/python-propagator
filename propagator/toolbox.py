@@ -12,12 +12,11 @@ Written by Paul Hobson (phobson@geosyntec.com)
 """
 
 
-from functools import partial
 from textwrap import dedent
 
-import arcpy
-
 import numpy
+
+import arcpy
 
 from propagator import analysis
 from propagator import validate

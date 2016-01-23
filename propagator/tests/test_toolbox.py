@@ -2,7 +2,6 @@ import os
 from pkg_resources import resource_filename
 
 import arcpy
-import numpy
 
 import nose.tools as nt
 import numpy.testing as nptest

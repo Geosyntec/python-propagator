@@ -1,5 +1,3 @@
-import arcpy
-
 from propagator.toolbox import Propagator, Accumulator
 
 

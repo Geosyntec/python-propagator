@@ -1,14 +1,11 @@
 import os
-import warnings
 from pkg_resources import resource_filename
 
-import arcpy
 import numpy
 
 import nose.tools as nt
 import numpy.testing as nptest
 import propagator.testing as pptest
-from numpy.lib import recfunctions
 
 from propagator import analysis
 from propagator import utils
