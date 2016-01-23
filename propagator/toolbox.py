@@ -418,27 +418,33 @@ class Propagator(base_tbx.BaseToolbox_Mixin):
         ws = params.pop('workspace', '.')
         overwrite = params.pop('overwrite', True)
         add_output_to_map = params.pop('add_output_to_map', False)
+        output_layer = params.pop('output_layer', None)
 
-        # input parameters
+        # subcatchment info
         sc = params.pop('subcatchments', None)
         ID_col = params.pop('ID_column', None)
         downstream_ID_col = params.pop('downstream_ID_column', None)
+
+        # monitoring location info
         ml = params.pop('monitoring_locations', None)
         ml_type_col = params.pop('ml_type_col', None)
-        included_ml_types = params.pop('included_ml_types', None)
-        streams = params.pop('streams', None)
-        value_cols_string = params.pop('value_columns', None)
-        output_layer = params.pop('output_layer', None)
+        included_ml_types = validate.non_empty_list(
+            params.pop('included_ml_types', None),
+            on_fail='create'
+        )
 
-        validate.non_empty_list(included_ml_types, on_fail='create')
-
-        value_columns = [vc.split(' ') for vc in value_cols_string.replace(' #', ' average').split(';')]
-        utils._status(value_columns, asMessage=True, verbose=True)
-
-        if ml_type_col is not None:
+        # monitoring location type filter function
+        if ml_type_col is not None and len(included_ml_types) > 0:
             ml_filter = lambda row: row[ml_type_col] in included_ml_types
         else:
             ml_filter = None
+
+        # value columns and aggregations
+        value_cols_string = params.pop('value_columns', None)
+        value_columns = [vc.split(' ') for vc in value_cols_string.replace(' #', ' average').split(';')]
+
+        # streams data
+        streams = params.pop('streams', None)
 
         # perform the analysis
         with utils.WorkSpace(ws), utils.OverwriteState(overwrite):
