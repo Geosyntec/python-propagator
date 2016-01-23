@@ -303,6 +303,16 @@ def test_mark_edges():
     nptest.assert_array_equal(results, expected)
 
 
+def test__get_wq_fields():
+    ws = resource_filename('propagator.testing', 'get_wq_fields')
+    with utils.WorkSpace(ws):
+        results = analysis._get_wq_fields('monitoring_locations.shp', ['dry', 'wet'])
+
+    expected = [u'Dry_B', u'Dry_M', u'Dry_N', u'Wet_B', u'Wet_M', u'Wet_N']
+
+    nt.assert_list_equal(results, expected)
+
+
 def test_reduce():
     ws = resource_filename("propagator.testing", "_reduce")
     with utils.OverwriteState(True), utils.WorkSpace(ws):

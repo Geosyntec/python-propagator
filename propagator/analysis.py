@@ -496,6 +496,42 @@ def preprocess_wq(monitoring_locations, subcatchments, id_col, ds_col,
     return utils.load_attribute_table(output_path), res_columns
 
 
+def _get_wq_fields(layer, prefixes):
+    """
+    Gets all of the (water quality) fields in a shapefile whose names
+    start with one of the blessed ``prefixes``.
+
+    Parameters
+    ----------
+    layer : str
+        Path to a shapefile or feature class
+    prefixes : list of str
+        List of valid prefixes of the water quality fields in
+        ``prefixes``.
+
+    Returns
+    -------
+    wq_field_names : list of str
+
+    Notes
+    -----
+    This function is case *in*sensitive when it determines the matches.
+    However, the field names are returned in their original form.
+
+    """
+    # list of all the fields
+    fields = utils.get_field_names(layer)
+    prefix_list = [p.lower() for p in prefixes]
+
+    def prefix_filter(fieldname):
+        fieldname = fieldname.lower()
+        for prefix in prefix_list:
+            if fieldname.lower().startswith(prefix):
+                return True
+
+    return list(filter(prefix_filter, fields))
+
+
 def _reduce(_ml, _out_ml, wq_fields, subcatch_id_col, sort_id):
     """
     Aggregates water quality ranksing from all monitoring locations
