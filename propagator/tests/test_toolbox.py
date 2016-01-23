@@ -2,7 +2,6 @@ import os
 from pkg_resources import resource_filename
 
 import arcpy
-import numpy
 
 import nose.tools as nt
 import numpy.testing as nptest
@@ -30,6 +29,39 @@ class MockParam(object):
 
 
 @nt.nottest
+class MockValueTable(object):
+    def __init__(self, values):
+        self._values = values
+
+    @property
+    def values(self):
+        return self._values
+
+    @values.setter
+    def values(self, value):
+        self._values = value
+
+
+@nt.nottest
+class MockFilter(object):
+    @property
+    def type(self):
+        return self._type
+
+    @type.setter
+    def type(self, value):
+        self._type = value
+
+    @property
+    def list(self):
+        return self._list
+
+    @list.setter
+    def list(self, value):
+        self._list = value
+
+
+@nt.nottest
 def mock_status(*args, **kwargs):
     pass
 
@@ -38,11 +70,11 @@ class Test_propagate(object):
     def setup(self):
         self.ws = resource_filename('propagator.testing', 'tbx_propagate')
         self.columns = [
-            ['Dry_B', 'Average'],
-            ['Dry_M', 'Median'],
-            ['Dry_N', 'Min'],
-            ['Wet_B', 'Max'],
-            ['Wet_M', 'Average'],
+            ['Dry_B', 'averAgE'],
+            ['Dry_M', 'MEDIAN'],
+            ['Dry_N', 'MINIMUM'],
+            ['Wet_B', 'MAXIMum'],
+            ['Wet_M', 'averAgE'],
             ['Wet_N', 'Median'],
         ]
         self.subc_res = 'test_subcatchments.shp'
@@ -190,6 +222,38 @@ class BaseToolboxChecker_Mixin(object):
             self.tbx.ID_column.parameterDependencies,
             [self.tbx.workspace.name, self.tbx.subcatchments.name]
         )
+
+    def test__update_value_table_with_default(self):
+        vt_vlist = [
+            ['test1', 'average'],
+            ['test2', 'median'],
+            ['test3', None],
+            ['test4', 'maximum'],
+            ['test5', ''],
+            ['test6', False],
+        ]
+        default_val = 'updated'
+
+        expected = [
+            ['test1', 'average'],
+            ['test2', 'median'],
+            ['test3', default_val],
+            ['test4', 'maximum'],
+            ['test5', default_val],
+            ['test6', default_val],
+        ]
+
+        table = MockValueTable(vt_vlist)
+        self.tbx._update_value_table_with_default(table, default_val)
+
+        nt.assert_list_equal(table.values, expected)
+
+    def test__set_filter_list(self):
+        mock_filter = MockFilter()
+        example_list = ['a', 'b', 'c']
+        self.tbx._set_filter_list(mock_filter, example_list)
+        nt.assert_equal(mock_filter.type, 'ValueList')
+        nt.assert_list_equal(mock_filter.list, example_list)
 
     def test__show_header(self):
         header = self.tbx._show_header('TEST MESSAGE', verbose=False)
@@ -358,7 +422,7 @@ class Test_Propagator(BaseToolboxChecker_Mixin):
     def test_analyze(self):
         tbx = toolbox.Propagator()
         ws = resource_filename('propagator.testing', 'tbx_propagate')
-        columns = 'Dry_B Average;Dry_M Median;Dry_N Min;Wet_B Max;Wet_M #;Wet_N Median'
+        columns = 'Dry_B averAgE;Dry_M Median;Dry_N minimum;Wet_B maximum;Wet_M #;Wet_N Median'
         with mock.patch.object(toolbox.Propagator, '_add_to_map') as atm:
             subc_layer, stream_layer = tbx.analyze(
                 workspace=ws,
@@ -396,7 +460,7 @@ class Test_Propagator(BaseToolboxChecker_Mixin):
     def test_analyze_filter(self):
         tbx = toolbox.Propagator()
         ws = resource_filename('propagator.testing', 'tbx_propagate')
-        columns = 'Dry_B #;Dry_M Median;Dry_N Min;Wet_B Max;Wet_M Average;Wet_N Median'
+        columns = 'Dry_B #;Dry_M Median;Dry_N minimum;Wet_B maximum;Wet_M averAgE;Wet_N Median'
         stacol = 'StationTyp'
         with mock.patch.object(toolbox.Propagator, '_add_to_map') as atm:
             subc_layer, stream_layer = tbx.analyze(

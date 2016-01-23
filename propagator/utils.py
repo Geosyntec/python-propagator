@@ -17,7 +17,6 @@ Written by Paul Hobson (phobson@geosyntec.com)
 
 
 import os
-import datetime
 import itertools
 from functools import wraps
 from contextlib import contextmanager

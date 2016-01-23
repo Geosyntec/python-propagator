@@ -1,14 +1,11 @@
 import os
-import warnings
 from pkg_resources import resource_filename
 
-import arcpy
 import numpy
 
 import nose.tools as nt
 import numpy.testing as nptest
 import propagator.testing as pptest
-from numpy.lib import recfunctions
 
 from propagator import analysis
 from propagator import utils
@@ -192,12 +189,12 @@ class Test_preprocess_wq(object):
         self.expected = 'expected.shp'
         self.results = 'test.shp'
         self.wq_cols = [
-            ('Dry_B', 'med'),
+            ('Dry_B', 'medIAN'),
             ('Dry_M', 'Median'),
-            ('Dry_N', 'Min'),
-            ('Wet_B', 'Min'),
+            ('Dry_N', 'minIMUM'),
+            ('Wet_B', 'minIMUM'),
             ('Wet_M',),
-            ('Wet_N', 'Max'),
+            ('Wet_N', 'MAXIMUM'),
         ]
 
         self.expected_cols = [
@@ -301,6 +298,16 @@ def test_mark_edges():
     )
     results = analysis.mark_edges(input_array, id_col='ID', ds_col='DS_ID', edge_ID='EDGE')
     nptest.assert_array_equal(results, expected)
+
+
+def test__get_wq_fields():
+    ws = resource_filename('propagator.testing', 'get_wq_fields')
+    with utils.WorkSpace(ws):
+        results = analysis._get_wq_fields('monitoring_locations.shp', ['dry', 'wet'])
+
+    expected = [u'Dry_B', u'Dry_M', u'Dry_N', u'Wet_B', u'Wet_M', u'Wet_N']
+
+    nt.assert_list_equal(results, expected)
 
 
 def test_reduce():

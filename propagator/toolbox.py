@@ -12,12 +12,11 @@ Written by Paul Hobson (phobson@geosyntec.com)
 """
 
 
-from functools import partial
 from textwrap import dedent
 
-import arcpy
-
 import numpy
+
+import arcpy
 
 from propagator import analysis
 from propagator import validate
@@ -377,7 +376,7 @@ class Propagator(base_tbx.BaseToolbox_Mixin):
                 direction="Input",
                 multiValue=True,
             )
-            self._value_columns.columns = [['Field','Fields'], ['String', 'Aggregation Method']]
+            self._value_columns.columns = [['String', 'Values To Propagate'], ['String', 'Aggregation Method']]
             self._set_parameter_dependency(self._value_columns, self.monitoring_locations)
         return self._value_columns
 
@@ -385,13 +384,21 @@ class Propagator(base_tbx.BaseToolbox_Mixin):
         params = self._get_parameter_dict(parameters)
         param_vals = self._get_parameter_values(parameters)
         ws = param_vals.get('workspace', '.')
+        vc = params['value_columns']
 
         with utils.WorkSpace(ws):
+            ml = param_vals['monitoring_locations']
             if params['ml_type_col'].altered:
-                ml = param_vals['monitoring_locations']
                 col = param_vals['ml_type_col']
                 values = utils.unique_field_values(ml, col).tolist()
                 params['included_ml_types'].filter.list = values
+
+            if params['monitoring_locations'].value:
+                fields = analysis._get_wq_fields(ml, ['dry', 'wet'])
+                self._set_filter_list(vc.filters[0], fields)
+                self._set_filter_list(vc.filters[1], list(analysis.AGG_METHOD_DICT.keys()))
+
+            self._update_value_table_with_default(vc, 'average')
 
     def _params_as_list(self):
         params = [
@@ -418,27 +425,33 @@ class Propagator(base_tbx.BaseToolbox_Mixin):
         ws = params.pop('workspace', '.')
         overwrite = params.pop('overwrite', True)
         add_output_to_map = params.pop('add_output_to_map', False)
+        output_layer = params.pop('output_layer', None)
 
-        # input parameters
+        # subcatchment info
         sc = params.pop('subcatchments', None)
         ID_col = params.pop('ID_column', None)
         downstream_ID_col = params.pop('downstream_ID_column', None)
+
+        # monitoring location info
         ml = params.pop('monitoring_locations', None)
         ml_type_col = params.pop('ml_type_col', None)
-        included_ml_types = params.pop('included_ml_types', None)
-        streams = params.pop('streams', None)
-        value_cols_string = params.pop('value_columns', None)
-        output_layer = params.pop('output_layer', None)
+        included_ml_types = validate.non_empty_list(
+            params.pop('included_ml_types', None),
+            on_fail='create'
+        )
 
-        validate.non_empty_list(included_ml_types, on_fail='create')
-
-        value_columns = [vc.split(' ') for vc in value_cols_string.replace(' #', ' average').split(';')]
-        utils._status(value_columns, asMessage=True, verbose=True)
-
-        if ml_type_col is not None:
+        # monitoring location type filter function
+        if ml_type_col is not None and len(included_ml_types) > 0:
             ml_filter = lambda row: row[ml_type_col] in included_ml_types
         else:
             ml_filter = None
+
+        # value columns and aggregations
+        value_cols_string = params.pop('value_columns', None)
+        value_columns = [vc.split(' ') for vc in value_cols_string.replace(' #', ' average').split(';')]
+
+        # streams data
+        streams = params.pop('streams', None)
 
         # perform the analysis
         with utils.WorkSpace(ws), utils.OverwriteState(overwrite):
