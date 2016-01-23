@@ -13,6 +13,7 @@ Written by Paul Hobson (phobson@geosyntec.com)
 
 
 from functools import partial
+from collections import OrderedDict
 import warnings
 
 import numpy
@@ -24,23 +25,19 @@ from . import utils
 from . import validate
 
 
-AGG_METHOD_DICT = {
-    'average': numpy.mean,
-    'ave': numpy.mean,
-    'avg': numpy.mean,
-    'mean': numpy.mean,
-    'median': numpy.median,
-    'med': numpy.median,
-    'maximum': numpy.max,
-    'max': numpy.max,
-    'minimum': numpy.min,
-    'min': numpy.min,
-    'p10': partial(numpy.percentile, q=10),
-    'p25': partial(numpy.percentile, q=25),
-    'p50': partial(numpy.percentile, q=50),
-    'p75': partial(numpy.percentile, q=75),
-    'p90': partial(numpy.percentile, q=90),
-}
+AGG_METHOD_DICT = OrderedDict()
+AGG_METHOD_DICT['average'] = numpy.mean
+AGG_METHOD_DICT['median'] = numpy.median
+AGG_METHOD_DICT['minimum'] = numpy.min
+AGG_METHOD_DICT['p10'] = partial(numpy.percentile, q=10)
+AGG_METHOD_DICT['p25'] = partial(numpy.percentile, q=25)
+AGG_METHOD_DICT['p50'] = partial(numpy.percentile, q=50)
+AGG_METHOD_DICT['p75'] = partial(numpy.percentile, q=75)
+AGG_METHOD_DICT['p90'] = partial(numpy.percentile, q=90)
+AGG_METHOD_DICT['maximum'] = numpy.max
+AGG_METHOD_DICT['first'] = lambda x: x[0]
+AGG_METHOD_DICT['last'] = lambda x: x[-1]
+AGG_METHOD_DICT['#'] = numpy.mean
 
 
 @utils.update_status()
@@ -369,7 +366,7 @@ def remove_orphan_subcatchments(subcatchment_array, id_col='ID', ds_col='DS_ID',
 @utils.update_status()
 def preprocess_wq(monitoring_locations, subcatchments, id_col, ds_col,
                   output_path, value_columns=None, ml_filter=None,
-                  ml_filter_cols=None, default_aggfxn='ave',
+                  ml_filter_cols=None, default_aggfxn='average',
                   ignored_value=0, terminator_value=-99, cleanup=True):
     """
     Preprocess the water quality data to have to averaged score for
