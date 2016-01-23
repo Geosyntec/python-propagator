@@ -377,7 +377,7 @@ class Propagator(base_tbx.BaseToolbox_Mixin):
                 direction="Input",
                 multiValue=True,
             )
-            self._value_columns.columns = [['Field','Fields'], ['String', 'Aggregation Method']]
+            self._value_columns.columns = [['String', 'Values To Propagate'], ['String', 'Aggregation Method']]
             self._set_parameter_dependency(self._value_columns, self.monitoring_locations)
         return self._value_columns
 
@@ -385,13 +385,21 @@ class Propagator(base_tbx.BaseToolbox_Mixin):
         params = self._get_parameter_dict(parameters)
         param_vals = self._get_parameter_values(parameters)
         ws = param_vals.get('workspace', '.')
+        vc = params['value_columns']
 
         with utils.WorkSpace(ws):
+            ml = param_vals['monitoring_locations']
             if params['ml_type_col'].altered:
-                ml = param_vals['monitoring_locations']
                 col = param_vals['ml_type_col']
                 values = utils.unique_field_values(ml, col).tolist()
                 params['included_ml_types'].filter.list = values
+
+            if params['monitoring_locations'].value:
+                fields = analysis._get_wq_fields(ml, ['dry', 'wet'])
+                self._set_filter_list(vc.filters[0], fields)
+                self._set_filter_list(vc.filters[1], list(analysis.AGG_METHOD_DICT.keys()))
+
+            self._update_value_table_with_default(vc, 'average')
 
     def _params_as_list(self):
         params = [
