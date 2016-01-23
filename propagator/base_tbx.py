@@ -1,3 +1,5 @@
+from copy import copy
+
 import arcpy
 
 from propagator import utils
@@ -238,6 +240,26 @@ class BaseToolbox_Mixin(object):
             param_values[p.name] = value
 
         return param_values
+
+    @staticmethod
+    def _update_value_table_with_default(value_table, default_value):
+        """ updates the second column in a value table with a default
+        value after the first column has been updated, but before the
+        user has a chance to select the second column.
+        """
+        if value_table.values:
+            table = copy(value_table.values)
+            for n, row in enumerate(value_table.values):
+                table[n] = [row[0], row[1] or default_value]
+
+            value_table.values = table
+
+    @staticmethod
+    def _set_filter_list(filter_obj, value_list):
+        """ sets the relevant properties of an :class:`~arcpy.Filter`.
+        """
+        filter_obj.type = "ValueList"
+        filter_obj.list = value_list
 
     @property
     def workspace(self):
