@@ -139,13 +139,22 @@ class Test_propagate(object):
 
 def test_accumulate():
     ws = resource_filename('propagator.testing', 'score_accumulator')
+
     with utils.WorkSpace(ws), utils.OverwriteState(True):
         results = toolbox.accumulate(
             subcatchments_layer='subcatchment_wq.shp',
             id_col='Catch_ID_a',
             ds_col='Dwn_Catch_',
-            area_col='Area',
-            imp_col='Imp',
+            value_columns = [
+            ('medDry_B', 'suM'),
+            ('medDry_M', 'Minimum'),
+            ('minDry_N', 'SUM'),
+            ('minWet_B', 'minIMUM'),
+            ('aveWet_M', 'averAgE'),
+            ('maxWet_N', 'MAXIMUM'),
+            ('Area', 'sum'),
+            ('Imp','weighted Average'),
+            ],
             streams_layer='streams.shp',
             output_layer='output.shp',
         )
@@ -153,7 +162,7 @@ def test_accumulate():
         pptest.assert_shapefiles_are_close(os.path.join(ws, 'expected_results.shp'),
                                            os.path.join(ws, results))
 
-        utils.cleanup_temp_results(os.path.join(ws, results))
+        # utils.cleanup_temp_results(os.path.join(ws, results))
 
 
 class BaseToolboxChecker_Mixin(object):
