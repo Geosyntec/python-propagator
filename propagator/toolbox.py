@@ -593,42 +593,8 @@ class Accumulator(base_tbx.BaseToolbox_Mixin):
                 self._set_filter_list(vc.filters[0], fields)
                 self._set_filter_list(vc.filters[1], list(analysis.AGG_METHOD_DICT.keys()))
                 self._set_filter_list(vc.filters[2], fields)
+
             self._update_value_table_with_default(vc, ['sum','n/a'])
-
-    # @property
-    # def area_col(self):
-    #     """ Name of the field in the `subcatchments` layer specifies
-    #     the catchment area. Optional as this can be computed on-the-fly.
-    #     """
-
-    #     if self._area_col is None:
-    #         self._area_col = arcpy.Parameter(
-    #             displayName="Column with Subcatchment Areas",
-    #             name="area_col",
-    #             datatype="Field",
-    #             parameterType="Optional",
-    #             direction="Input",
-    #             multiValue=False
-    #         )
-    #         self._set_parameter_dependency(self._area_col, self.subcatchments)
-    #     return self._area_col
-
-    # @property
-    # def imp_col(self):
-    #     """ Name of the field in the `subcatchments` layer specifies
-    #     the percent impervious cover. """
-
-    #     if self._imp_col is None:
-    #         self._imp_col = arcpy.Parameter(
-    #             displayName="Column with Subcatchment Percents impervious",
-    #             name="imp_col",
-    #             datatype="Field",
-    #             parameterType="Required",
-    #             direction="Input",
-    #             multiValue=False
-    #         )
-    #         self._set_parameter_dependency(self._imp_col, self.subcatchments)
-    #     return self._imp_col
 
     def analyze(self, **params):
         """ Accumulates subcatchments properties from upstream
