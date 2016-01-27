@@ -400,7 +400,10 @@ class Propagator(base_tbx.BaseToolbox_Mixin):
                 direction="Input",
                 multiValue=True,
             )
-            self._value_columns.columns = [['String', 'Values To Propagate'], ['String', 'Aggregation Method']]
+            self._value_columns.columns = [
+                ['String', 'Values To Propagate'],
+                ['String', 'Aggregation Method']
+            ]
             self._set_parameter_dependency(self._value_columns, self.monitoring_locations)
         return self._value_columns
 
@@ -570,7 +573,7 @@ class Accumulator(base_tbx.BaseToolbox_Mixin):
                 ['String', 'Accumulation Method'],
                 ['String', 'Weighting Factor']
             ]
-            self._set_parameter_dependency(self._value_columns, self.workspace)
+            self._set_parameter_dependency(self._value_columns, self.subcatchments)
         return self._value_columns
 
     def updateParameters(self, parameters):
