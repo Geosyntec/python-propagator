@@ -21,12 +21,44 @@ class MockResult(object):
 
 
 @nt.nottest
+class MockFilter(object):
+    def __init__(self, _type, _list):
+        self._list = _list
+        self._type = _type
+
+    @property
+    def list(self):
+        return self._list
+
+    @list.setter
+    def list(self, value):
+        self._list = value
+
+    @property
+    def type(self):
+        return self._type
+
+    @type.setter
+    def type(self, value):
+        self._type = value
+
+
+@nt.nottest
 class MockParam(object):
     def __init__(self, name, value, multival):
         self.name = name
         self.valueAsText = value
         self.value = value
         self.multiValue = multival
+        self._filters = None
+
+    @property
+    def filters(self):
+        return self._filters
+
+    @filters.setter
+    def filters(self, value):
+        self._filters = value
 
 
 @nt.nottest
@@ -539,12 +571,13 @@ class Test_Accumulator_Tbx(BaseToolboxChecker_Mixin):
         nt.assert_equal(self.tbx.value_columns.direction, 'Input')
         nt.assert_equal(self.tbx.value_columns.datatype, 'Value Table')
         nt.assert_equal(self.tbx.value_columns.name, 'value_columns')
-        nt.assert_list_equal(self.tbx.value_columns.parameterDependencies, ['workspace'])
+        nt.assert_list_equal(self.tbx.value_columns.parameterDependencies, ['subcatchments'])
         nt.assert_false(self.tbx.value_columns.multiValue)
 
     def test_updateParameters(self):
         params_dict = self.tbx._get_parameter_dict(self.tbx._params_as_list())
         params_dict['subcatchments'] = MockParam('subcatchments', 'subcatchment_wq.shp', False)
+        params_dict['value_columns'] = MockParam('value_columns', 'X', False)
         params_val = {
             'workspace': resource_filename('propagator.testing', 'score_accumulator'),
             'value_columns': [
@@ -556,9 +589,10 @@ class Test_Accumulator_Tbx(BaseToolboxChecker_Mixin):
         with mock.patch.object(self.tbx, '_update_value_table_with_default') as _uvt:
             with mock.patch.object(self.tbx, '_get_parameter_dict', return_value=params_dict) as _gpd:
                 with mock.patch.object(self.tbx,'_get_parameter_values', return_value=params_val) as _gpv:
-                    self.tbx.updateParameters(self.tbx._params_as_list())
                     vc = params_dict['value_columns']
+                    vc.filters = [MockFilter(), MockFilter(), MockFilter()]
                     filters = vc.filters
+                    self.tbx.updateParameters(self.tbx._params_as_list())
                     for f in filters:
                         nt.assert_equal(f.type, 'ValueList')
 
