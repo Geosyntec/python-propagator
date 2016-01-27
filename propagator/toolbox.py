@@ -420,9 +420,12 @@ class Propagator(base_tbx.BaseToolbox_Mixin):
                 params['included_ml_types'].filter.list = values
 
             if params['monitoring_locations'].value:
+                agg_methods = analysis.AGG_METHOD_DICT.copy()
+                agg_methods.pop('weighted_average', None)
+
                 fields = analysis._get_wq_fields(ml, ['dry', 'wet'])
                 self._set_filter_list(vc.filters[0], fields)
-                self._set_filter_list(vc.filters[1], list(analysis.AGG_METHOD_DICT.keys()))
+                self._set_filter_list(vc.filters[1], list(agg_methods.keys()))
 
             self._update_value_table_with_default(vc, 'average')
 
