@@ -21,29 +21,6 @@ class MockResult(object):
 
 
 @nt.nottest
-class MockFilter(object):
-    def __init__(self, _type, _list):
-        self._list = _list
-        self._type = _type
-
-    @property
-    def list(self):
-        return self._list
-
-    @list.setter
-    def list(self, value):
-        self._list = value
-
-    @property
-    def type(self):
-        return self._type
-
-    @type.setter
-    def type(self, value):
-        self._type = value
-
-
-@nt.nottest
 class MockParam(object):
     def __init__(self, name, value, multival):
         self.name = name
@@ -178,16 +155,16 @@ def test_accumulate():
             subcatchments_layer='subcatchment_wq.shp',
             id_col='Catch_ID_a',
             ds_col='Dwn_Catch_',
-            value_columns = [
-                ('medDry_M', 'maximum','n/a'),
-                ('p10Dry_N', 'First','area'),
-                ('Wet_B', 'WeIghtED_AveragE','imp_area'),
-                ('aveWet_M', 'minimum','imp_area'),
-                ('maxWet_N', 'average','n/a'),
-                ('Area', 'sum','n/a'),
-                ('Imp','weighted_Average','Area'),
-                ('imp_area','sum','n/a')
-                ],
+            value_columns=[
+                ('medDry_M', 'maximum', 'n/a'),
+                ('p10Dry_N', 'First', 'area'),
+                ('Wet_B', 'WeIghtED_AveragE', 'imp_area'),
+                ('aveWet_M', 'minimum', 'imp_area'),
+                ('maxWet_N', 'average', 'n/a'),
+                ('Area', 'sum', 'n/a'),
+                ('Imp', 'weighted_Average', 'Area'),
+                ('imp_area', 'sum', 'n/a')
+            ],
             streams_layer='streams.shp',
             output_layer='output.shp',
         )
@@ -598,19 +575,24 @@ class Test_Accumulator_Tbx(BaseToolboxChecker_Mixin):
 
                     nt.assert_list_equal(
                         filters[0].list,
-                        [u'Imp', u'Area', u'aveWet_M', u'maxWet_N', u'medDry_M',
-                        u'p10Dry_N', u'imp_area', u'Wet_B', u'n/a']
+                        [
+                            u'Imp', u'Area', u'aveWet_M', u'maxWet_N', u'medDry_M',
+                            u'p10Dry_N', u'imp_area', u'Wet_B', u'n/a'
+                        ]
                     )
 
                     nt.assert_list_equal(filters[0].list, filters[2].list)
                     _uvt.assert_called_once_with(vc, ['sum', 'n/a'])
 
-
     @nptest.dec.skipif(not pptest.has_fiona)
     def test_analyze(self):
         tbx = toolbox.Accumulator()
         ws = resource_filename('propagator.testing', 'score_accumulator')
-        vc = 'medDry_M maximum n/a;p10Dry_N First area;Wet_B WeIghtED_AveragE imp_area;aveWet_M minimum imp_area;maxWet_N average n/a;Area sum n/a;Imp weighted_Average Area;imp_area sum n/a'
+        vc = (
+            'medDry_M maximum n/a;p10Dry_N First area;Wet_B WeIghtED_AveragE imp_area;'
+            'aveWet_M minimum imp_area;maxWet_N average n/a;Area sum n/a;'
+            'Imp weighted_Average Area;imp_area sum n/a'
+        )
         with mock.patch.object(tbx, '_add_to_map') as atm:
             stream_layer = tbx.analyze(
                 workspace=ws,
@@ -618,7 +600,7 @@ class Test_Accumulator_Tbx(BaseToolboxChecker_Mixin):
                 subcatchments='subcatchment_wq.shp',
                 ID_column='Catch_ID_a',
                 downstream_ID_column='Dwn_Catch_',
-                value_columns = vc,
+                value_columns=vc,
                 streams='streams.shp',
                 output_layer='output.shp',
                 add_output_to_map=True
