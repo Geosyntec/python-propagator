@@ -38,9 +38,8 @@ AGG_METHOD_DICT['maximum'] = numpy.max
 AGG_METHOD_DICT['first'] = lambda x: x[0]
 AGG_METHOD_DICT['last'] = lambda x: x[-1]
 AGG_METHOD_DICT['sum'] = numpy.sum
-AGG_METHOD_DICT['weighted average'] = numpy.weighted_average
+AGG_METHOD_DICT['weighted_average'] = utils.weighted_average
 AGG_METHOD_DICT['#'] = numpy.mean
-
 
 
 @utils.update_status()
