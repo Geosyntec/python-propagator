@@ -152,7 +152,7 @@ def propagate(subcatchments=None, id_col=None, ds_col=None,
 def accumulate(subcatchments_layer=None, id_col=None, ds_col=None,
                value_columns=None, streams_layer=None,
                output_layer=None, default_aggfxn='sum',
-               ignored_value=0, verbose=False, asMessage=False):
+               ignored_value=None, verbose=False, asMessage=False):
     """
     Accumulate upstream subcatchment properties in each stream segment.
 
@@ -201,7 +201,15 @@ def accumulate(subcatchments_layer=None, id_col=None, ds_col=None,
     value_columns = validate.value_column_stats(value_columns, default_aggfxn)
     value_columns_field = [i[0] for i in value_columns]
     value_columns_aggmethod = [i[1] for i in value_columns]
-
+    value_columns_weightfactor = [i[2] for i in value_columns]
+    vc_field_wfactor = []
+    for col,wfactor,aggmethod in zip(value_columns_field,value_columns_weightfactor, value_columns_aggmethod):
+        if aggmethod.lower() == 'weighted_average':
+            dummy = [col]
+            dummy.append(wfactor)
+        else:
+            dummy = col
+        vc_field_wfactor.append(dummy)
 
     # define the Statistic objects that will be passed to `rec_groupby`
     statfxns = []
@@ -216,21 +224,10 @@ def accumulate(subcatchments_layer=None, id_col=None, ds_col=None,
         '{}{}'.format(prefix[0:2].upper(), col)
         for prefix, col in zip(value_columns_aggmethod, value_columns_field)
     ]
-
     stats = [
         utils.Statistic(srccol, statfxn, rescol)
-        for srccol, statfxn, rescol in zip(value_columns_field, statfxns, res_columns)
+        for srccol, statfxn, rescol in zip(vc_field_wfactor, statfxns, res_columns)
     ]
-
-
-    # stats = [
-    #     utils.Statistic(area_col, numpy.sum, 'Sum_Area'),
-    #     utils.Statistic(
-    #         [imp_col, area_col],
-    #         lambda x: utils.weighted_average(x, imp_col, area_col),
-    #         'Wt_Avg_Imp'
-    #     ),
-    # ]
 
     # create a unique list of columns we need
     # from the subcatchment layer
@@ -568,7 +565,11 @@ class Accumulator(base_tbx.BaseToolbox_Mixin):
                 direction="Input",
                 multiValue=True,
             )
-            self._value_columns.columns = [['String', 'Values To Accumulate'], ['String', 'Accumulation Method']]
+            self._value_columns.columns = [
+                ['String', 'Values To Accumulate'],
+                ['String', 'Accumulation Method'],
+                ['String', 'Weighting Factor']
+            ]
             self._set_parameter_dependency(self._value_columns, self.workspace)
         return self._value_columns
 
@@ -588,10 +589,11 @@ class Accumulator(base_tbx.BaseToolbox_Mixin):
 
             if params['subcatchments'].value:
                 fields = analysis._get_wq_fields(sc, prefix)
+                fields.append('n/a')
                 self._set_filter_list(vc.filters[0], fields)
                 self._set_filter_list(vc.filters[1], list(analysis.AGG_METHOD_DICT.keys()))
-
-            self._update_value_table_with_default(vc, 'sum')
+                self._set_filter_list(vc.filters[2], fields)
+            self._update_value_table_with_default(vc, ['sum','n/a'])
 
     # @property
     # def area_col(self):
@@ -645,7 +647,9 @@ class Accumulator(base_tbx.BaseToolbox_Mixin):
         downstream_ID_col = params.pop('downstream_ID_column', None)
         # value columns and aggregations
         value_cols_string = params.pop('value_columns', None)
+        utils._status(value_cols_string, True, True)
         value_columns = [vc.split(' ') for vc in value_cols_string.replace(' #', ' average').split(';')]
+        utils._status(value_columns, True, True)
 
         streams = params.pop('streams', None)
         output_layer = params.pop('output_layer', None)
@@ -655,7 +659,7 @@ class Accumulator(base_tbx.BaseToolbox_Mixin):
                 subcatchments_layer=sc,
                 id_col=ID_col,
                 ds_col=downstream_ID_col,
-                value_col=value_columns,
+                value_columns=value_columns,
                 streams_layer=streams,
                 output_layer=output_layer,
                 verbose=True,

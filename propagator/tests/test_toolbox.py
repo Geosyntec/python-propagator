@@ -146,14 +146,14 @@ def test_accumulate():
             id_col='Catch_ID_a',
             ds_col='Dwn_Catch_',
             value_columns = [
-            ('medDry_B', 'suM'),
-            ('medDry_M', 'Minimum'),
-            ('minDry_N', 'SUM'),
-            ('minWet_B', 'minIMUM'),
-            ('aveWet_M', 'averAgE'),
-            ('maxWet_N', 'MAXIMUM'),
-            ('Area', 'sum'),
-            ('Imp','weighted Average'),
+            ('medDry_M', 'maximum','n/a'),
+            ('p10Dry_N', 'First','area'),
+            ('Wet_B', 'WeIghtED_AveragE','imp_area'),
+            ('aveWet_M', 'minimum','imp_area'),
+            ('maxWet_N', 'average','n/a'),
+            ('Area', 'sum','n/a'),
+            ('Imp','weighted_Average','Area'),
+            ('imp_area','sum','n/a')
             ],
             streams_layer='streams.shp',
             output_layer='output.shp',
@@ -162,7 +162,7 @@ def test_accumulate():
         pptest.assert_shapefiles_are_close(os.path.join(ws, 'expected_results.shp'),
                                            os.path.join(ws, results))
 
-        # utils.cleanup_temp_results(os.path.join(ws, results))
+        utils.cleanup_temp_results(os.path.join(ws, results))
 
 
 class BaseToolboxChecker_Mixin(object):
@@ -524,39 +524,29 @@ class Test_Accumulator(BaseToolboxChecker_Mixin):
             'subcatchments',
             'ID_column',
             'downstream_ID_column',
-            'area_col',
-            'imp_col',
+            'value_columns',
             'streams',
             'output_layer',
             'add_output_to_map',
         ]
         nt.assert_list_equal(names, known_names)
 
-    def test_area_col(self):
-        nt.assert_true(hasattr(self.tbx, 'area_col'))
-        nt.assert_true(isinstance(self.tbx.area_col, arcpy.Parameter))
-        nt.assert_equal(self.tbx.area_col.parameterType, 'Optional')
-        nt.assert_equal(self.tbx.area_col.direction, 'Input')
-        nt.assert_equal(self.tbx.area_col.datatype, 'Field')
-        nt.assert_equal(self.tbx.area_col.name, 'area_col')
-        nt.assert_list_equal(self.tbx.area_col.parameterDependencies, ['subcatchments'])
-        nt.assert_false(self.tbx.area_col.multiValue)
+    def test_value_columns(self):
+        nt.assert_true(hasattr(self.tbx, 'value_columns'))
+        nt.assert_true(isinstance(self.tbx.value_columns, arcpy.Parameter))
+        nt.assert_equal(self.tbx.value_columns.parameterType, 'Required')
+        nt.assert_equal(self.tbx.value_columns.direction, 'Input')
+        nt.assert_equal(self.tbx.value_columns.datatype, 'Value Table')
+        nt.assert_equal(self.tbx.value_columns.name, 'value_columns')
+        nt.assert_list_equal(self.tbx.value_columns.parameterDependencies, ['workspace'])
+        nt.assert_false(self.tbx.value_columns.multiValue)
 
-    def test_imp_col(self):
-        nt.assert_true(hasattr(self.tbx, 'imp_col'))
-        nt.assert_true(isinstance(self.tbx.imp_col, arcpy.Parameter))
-        nt.assert_equal(self.tbx.imp_col.parameterType, 'Required')
-        nt.assert_equal(self.tbx.imp_col.direction, 'Input')
-        nt.assert_equal(self.tbx.imp_col.datatype, 'Field')
-        nt.assert_equal(self.tbx.imp_col.name, 'imp_col')
-        nt.assert_list_equal(self.tbx.imp_col.parameterDependencies, ['subcatchments'])
-        nt.assert_false(self.tbx.imp_col.multiValue)
 
     @nptest.dec.skipif(not pptest.has_fiona)
     def test_analyze(self):
         tbx = toolbox.Accumulator()
         ws = resource_filename('propagator.testing', 'score_accumulator')
-        columns = ['Dry_B', 'Dry_M', 'Dry_N', 'Wet_B', 'Wet_M', 'Wet_N']
+        vc = 'medDry_M maximum n/a;p10Dry_N First area;Wet_B WeIghtED_AveragE imp_area;aveWet_M minimum imp_area;maxWet_N average n/a;Area sum n/a;Imp weighted_Average Area;imp_area sum n/a'
         with mock.patch.object(tbx, '_add_to_map') as atm:
             stream_layer = tbx.analyze(
                 workspace=ws,
@@ -564,8 +554,7 @@ class Test_Accumulator(BaseToolboxChecker_Mixin):
                 subcatchments='subcatchment_wq.shp',
                 ID_column='Catch_ID_a',
                 downstream_ID_column='Dwn_Catch_',
-                area_col='Area',
-                imp_col='Imp',
+                value_columns = vc,
                 streams='streams.shp',
                 output_layer='output.shp',
                 add_output_to_map=True
