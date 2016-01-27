@@ -21,11 +21,44 @@ class MockResult(object):
 
 
 @nt.nottest
+class MockFilter(object):
+    def __init__(self, _type, _list):
+        self._list = _list
+        self._type = _type
+
+    @property
+    def list(self):
+        return self._list
+
+    @list.setter
+    def list(self, value):
+        self._list = value
+
+    @property
+    def type(self):
+        return self._type
+
+    @type.setter
+    def type(self, value):
+        self._type = value
+
+
+@nt.nottest
 class MockParam(object):
     def __init__(self, name, value, multival):
         self.name = name
         self.valueAsText = value
+        self.value = value
         self.multiValue = multival
+        self._filters = None
+
+    @property
+    def filters(self):
+        return self._filters
+
+    @filters.setter
+    def filters(self, value):
+        self._filters = value
 
 
 @nt.nottest
@@ -139,13 +172,22 @@ class Test_propagate(object):
 
 def test_accumulate():
     ws = resource_filename('propagator.testing', 'score_accumulator')
+
     with utils.WorkSpace(ws), utils.OverwriteState(True):
         results = toolbox.accumulate(
             subcatchments_layer='subcatchment_wq.shp',
             id_col='Catch_ID_a',
             ds_col='Dwn_Catch_',
-            area_col='Area',
-            imp_col='Imp',
+            value_columns = [
+                ('medDry_M', 'maximum','n/a'),
+                ('p10Dry_N', 'First','area'),
+                ('Wet_B', 'WeIghtED_AveragE','imp_area'),
+                ('aveWet_M', 'minimum','imp_area'),
+                ('maxWet_N', 'average','n/a'),
+                ('Area', 'sum','n/a'),
+                ('Imp','weighted_Average','Area'),
+                ('imp_area','sum','n/a')
+                ],
             streams_layer='streams.shp',
             output_layer='output.shp',
         )
@@ -351,7 +393,7 @@ class BaseToolboxChecker_Mixin(object):
 
 
 @mock.patch('propagator.utils._status', mock_status)
-class Test_Propagator(BaseToolboxChecker_Mixin):
+class Test_Propagator_Tbx(BaseToolboxChecker_Mixin):
     def setup(self):
         self.tbx = toolbox.Propagator()
         self.main_execute_dir = 'propagator.testing.Propagator'
@@ -500,7 +542,7 @@ class Test_Propagator(BaseToolboxChecker_Mixin):
 
 
 @mock.patch('propagator.utils._status', mock_status)
-class Test_Accumulator(BaseToolboxChecker_Mixin):
+class Test_Accumulator_Tbx(BaseToolboxChecker_Mixin):
     def setup(self):
         self.tbx = toolbox.Accumulator()
         self.main_execute_dir = 'propagator.testing.Accumulator'
@@ -515,39 +557,60 @@ class Test_Accumulator(BaseToolboxChecker_Mixin):
             'subcatchments',
             'ID_column',
             'downstream_ID_column',
-            'area_col',
-            'imp_col',
+            'value_columns',
             'streams',
             'output_layer',
             'add_output_to_map',
         ]
         nt.assert_list_equal(names, known_names)
 
-    def test_area_col(self):
-        nt.assert_true(hasattr(self.tbx, 'area_col'))
-        nt.assert_true(isinstance(self.tbx.area_col, arcpy.Parameter))
-        nt.assert_equal(self.tbx.area_col.parameterType, 'Optional')
-        nt.assert_equal(self.tbx.area_col.direction, 'Input')
-        nt.assert_equal(self.tbx.area_col.datatype, 'Field')
-        nt.assert_equal(self.tbx.area_col.name, 'area_col')
-        nt.assert_list_equal(self.tbx.area_col.parameterDependencies, ['subcatchments'])
-        nt.assert_false(self.tbx.area_col.multiValue)
+    def test_value_columns(self):
+        nt.assert_true(hasattr(self.tbx, 'value_columns'))
+        nt.assert_true(isinstance(self.tbx.value_columns, arcpy.Parameter))
+        nt.assert_equal(self.tbx.value_columns.parameterType, 'Required')
+        nt.assert_equal(self.tbx.value_columns.direction, 'Input')
+        nt.assert_equal(self.tbx.value_columns.datatype, 'Value Table')
+        nt.assert_equal(self.tbx.value_columns.name, 'value_columns')
+        nt.assert_list_equal(self.tbx.value_columns.parameterDependencies, ['subcatchments'])
+        nt.assert_false(self.tbx.value_columns.multiValue)
 
-    def test_imp_col(self):
-        nt.assert_true(hasattr(self.tbx, 'imp_col'))
-        nt.assert_true(isinstance(self.tbx.imp_col, arcpy.Parameter))
-        nt.assert_equal(self.tbx.imp_col.parameterType, 'Required')
-        nt.assert_equal(self.tbx.imp_col.direction, 'Input')
-        nt.assert_equal(self.tbx.imp_col.datatype, 'Field')
-        nt.assert_equal(self.tbx.imp_col.name, 'imp_col')
-        nt.assert_list_equal(self.tbx.imp_col.parameterDependencies, ['subcatchments'])
-        nt.assert_false(self.tbx.imp_col.multiValue)
+    def test_updateParameters(self):
+        params_dict = self.tbx._get_parameter_dict(self.tbx._params_as_list())
+        params_dict['subcatchments'] = MockParam('subcatchments', 'subcatchment_wq.shp', False)
+        params_dict['value_columns'] = MockParam('value_columns', 'X', False)
+        params_val = {
+            'workspace': resource_filename('propagator.testing', 'score_accumulator'),
+            'value_columns': [
+                'medDry_M average n/a',
+                'Wet_B weighted_average area',
+            ],
+            'subcatchments': 'subcatchment_wq.shp',
+        }
+        with mock.patch.object(self.tbx, '_update_value_table_with_default') as _uvt:
+            with mock.patch.object(self.tbx, '_get_parameter_dict', return_value=params_dict) as _gpd:
+                with mock.patch.object(self.tbx,'_get_parameter_values', return_value=params_val) as _gpv:
+                    vc = params_dict['value_columns']
+                    vc.filters = [MockFilter(), MockFilter(), MockFilter()]
+                    filters = vc.filters
+                    self.tbx.updateParameters(self.tbx._params_as_list())
+                    for f in filters:
+                        nt.assert_equal(f.type, 'ValueList')
+
+                    nt.assert_list_equal(
+                        filters[0].list,
+                        [u'Imp', u'Area', u'aveWet_M', u'maxWet_N', u'medDry_M',
+                        u'p10Dry_N', u'imp_area', u'Wet_B', u'n/a']
+                    )
+
+                    nt.assert_list_equal(filters[0].list, filters[2].list)
+                    _uvt.assert_called_once_with(vc, ['sum', 'n/a'])
+
 
     @nptest.dec.skipif(not pptest.has_fiona)
     def test_analyze(self):
         tbx = toolbox.Accumulator()
         ws = resource_filename('propagator.testing', 'score_accumulator')
-        columns = ['Dry_B', 'Dry_M', 'Dry_N', 'Wet_B', 'Wet_M', 'Wet_N']
+        vc = 'medDry_M maximum n/a;p10Dry_N First area;Wet_B WeIghtED_AveragE imp_area;aveWet_M minimum imp_area;maxWet_N average n/a;Area sum n/a;Imp weighted_Average Area;imp_area sum n/a'
         with mock.patch.object(tbx, '_add_to_map') as atm:
             stream_layer = tbx.analyze(
                 workspace=ws,
@@ -555,8 +618,7 @@ class Test_Accumulator(BaseToolboxChecker_Mixin):
                 subcatchments='subcatchment_wq.shp',
                 ID_column='Catch_ID_a',
                 downstream_ID_column='Dwn_Catch_',
-                area_col='Area',
-                imp_col='Imp',
+                value_columns = vc,
                 streams='streams.shp',
                 output_layer='output.shp',
                 add_output_to_map=True

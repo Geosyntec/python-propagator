@@ -136,10 +136,8 @@ def value_column_stats(value_columns, default_second_value):
     for n, vc in enumerate(value_columns):
         if len(vc) == 1:
             vc = vc[0]
-
         if numpy.isscalar(vc):
             validated[n] = (vc, default_second_value)
         elif len(vc) == 0:
-            raise ValueError("1value_columns` cannot contain empty elements.")
-
+            raise ValueError("value_columns` cannot contain empty elements.")
     return validated

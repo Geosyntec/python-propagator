@@ -1,5 +1,7 @@
 from copy import copy
 
+import numpy
+
 import arcpy
 
 from propagator import utils
@@ -250,7 +252,10 @@ class BaseToolbox_Mixin(object):
         if value_table.values:
             table = copy(value_table.values)
             for n, row in enumerate(value_table.values):
-                table[n] = [row[0], row[1] or default_value]
+                if numpy.isscalar(default_value):
+                    table[n] = [row[0], row[1] or default_value]
+                else:
+                    table[n] = [row[0], row[1] or default_value[0], row[2] or default_value[1]]
 
             value_table.values = table
 

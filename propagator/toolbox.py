@@ -12,6 +12,7 @@ Written by Paul Hobson (phobson@geosyntec.com)
 """
 
 
+from functools import partial
 from textwrap import dedent
 
 import numpy
@@ -149,8 +150,9 @@ def propagate(subcatchments=None, id_col=None, ds_col=None,
 
 
 def accumulate(subcatchments_layer=None, id_col=None, ds_col=None,
-               area_col=None, imp_col=None, streams_layer=None,
-               output_layer=None, verbose=False, asMessage=False):
+               value_columns=None, streams_layer=None,
+               output_layer=None, default_aggfxn='sum',
+               ignored_value=None, verbose=False, asMessage=False):
     """
     Accumulate upstream subcatchment properties in each stream segment.
 
@@ -171,8 +173,11 @@ def accumulate(subcatchments_layer=None, id_col=None, ds_col=None,
            Do not include a column for subcatchment area in
            ``sum_cols``. Specify that in ``area_col`` instead.
 
-    area_col : str, optional
-        Name of a specific field of areas in the attribute table of
+    value_columns : list of str
+        List of the fields in ``subcatchments`` that contains
+        water quality score and watershed property that should
+        be propagated.
+
         ``subcatchments_layer``. Falls back to computing areas
         on-the-fly if not provided.
     output_layer : str, optional
@@ -192,17 +197,36 @@ def accumulate(subcatchments_layer=None, id_col=None, ds_col=None,
 
     """
 
-    area_col = area_col or 'SHAPE@AREA'
-    if imp_col is None:
-        raise ValueError("imperviousness is required")
+    #Seperate value columns into field name and aggregation method
+    value_columns = validate.value_column_stats(value_columns, default_aggfxn)
+    value_columns_field = [i[0] for i in value_columns]
+    value_columns_aggmethod = [i[1] for i in value_columns]
+    value_columns_weightfactor = [i[2] for i in value_columns]
+    vc_field_wfactor = []
+    for col,wfactor,aggmethod in zip(value_columns_field,value_columns_weightfactor, value_columns_aggmethod):
+        if aggmethod.lower() == 'weighted_average':
+            dummy = [col]
+            dummy.append(wfactor)
+        else:
+            dummy = col
+        vc_field_wfactor.append(dummy)
 
+    # define the Statistic objects that will be passed to `rec_groupby`
+    statfxns = []
+    for agg in value_columns_aggmethod:
+        statfxns.append(partial(
+            utils.stats_with_ignored_values,
+            statfxn=analysis.AGG_METHOD_DICT[agg.lower()],
+            ignored_value=ignored_value
+        ))
+
+    res_columns = [
+        '{}{}'.format(prefix[0:2].upper(), col)
+        for prefix, col in zip(value_columns_aggmethod, value_columns_field)
+    ]
     stats = [
-        utils.Statistic(area_col, numpy.sum, 'Sum_Area'),
-        utils.Statistic(
-            [imp_col, area_col],
-            lambda x: utils.weighted_average(x, imp_col, area_col),
-            'Wt_Avg_Imp'
-        ),
+        utils.Statistic(srccol, statfxn, rescol)
+        for srccol, statfxn, rescol in zip(vc_field_wfactor, statfxns, res_columns)
     ]
 
     # create a unique list of columns we need
@@ -227,14 +251,15 @@ def accumulate(subcatchments_layer=None, id_col=None, ds_col=None,
         output_layer=output_layer,
         agg_method="first",  # first works b/c all values are equal
     )
-
+    final_fields = [stat.rescol for stat in stats]
     # Add target_field columns back to spilt_stream_layer.
-    for i in target_fields:
+    for i in final_fields:
         arcpy.management.AddField(split_streams_layer, i, "DOUBLE")
+
 
     # load the split/aggregated streams' attribute table
     split_streams_table = utils.load_attribute_table(
-        split_streams_layer, id_col, ds_col, *target_fields
+        split_streams_layer, id_col, ds_col, *final_fields
     )
 
     # load the subcatchment attribute table
@@ -252,19 +277,18 @@ def accumulate(subcatchments_layer=None, id_col=None, ds_col=None,
     aggregated_properties = utils.rec_groupby(upstream_attributes, id_col, *stats)
 
     # Update output layer with aggregated values.
-    final_fields = [stat.rescol for stat in stats]
+
     utils.update_attribute_table(
         split_streams_layer,
         aggregated_properties,
         id_col,
-        target_fields,
         final_fields,
     )
 
     # Remove extraneous columns
     required_columns = [id_col, ds_col, 'FID', 'Shape', 'Shape_Length', 'Shape_Area', 'OBJECTID']
     fields_to_remove = filter(
-        lambda name: name not in required_columns and name not in target_fields,
+        lambda name: name not in required_columns and name not in final_fields,
         [f.name for f in arcpy.ListFields(split_streams_layer)]
     )
     utils.delete_columns(split_streams_layer, *fields_to_remove)
@@ -376,7 +400,10 @@ class Propagator(base_tbx.BaseToolbox_Mixin):
                 direction="Input",
                 multiValue=True,
             )
-            self._value_columns.columns = [['String', 'Values To Propagate'], ['String', 'Aggregation Method']]
+            self._value_columns.columns = [
+                ['String', 'Values To Propagate'],
+                ['String', 'Aggregation Method']
+            ]
             self._set_parameter_dependency(self._value_columns, self.monitoring_locations)
         return self._value_columns
 
@@ -504,8 +531,7 @@ class Accumulator(base_tbx.BaseToolbox_Mixin):
         self._subcatchments = None
         self._ID_column = None
         self._downstream_ID_column = None
-        self._area_col = None
-        self._imp_col = None
+        self._value_columns = None
         self._streams = None
         self._output_layer = None
         self._add_output_to_map = None
@@ -516,8 +542,7 @@ class Accumulator(base_tbx.BaseToolbox_Mixin):
             self.subcatchments,
             self.ID_column,
             self.downstream_ID_column,
-            self.area_col,
-            self.imp_col,
+            self.value_columns,
             self.streams,
             self.output_layer,
             self.add_output_to_map,
@@ -525,39 +550,54 @@ class Accumulator(base_tbx.BaseToolbox_Mixin):
         return params
 
     @property
-    def area_col(self):
-        """ Name of the field in the `subcatchments` layer specifies
-        the catchment area. Optional as this can be computed on-the-fly.
+    def value_columns(self):
+        """ The names of the fields to be propagated into upstream
+        subcatchments.
+        Note on property 'multiValue': it appears that by setting
+        datatype to 'Value Table' the multiValue becomes irrevlant.
+        Regardless on how we set the value here, when the function
+        is called a False value is assigned to multiValue. However,
+        the toolbox will still accept multiple entries.
         """
-
-        if self._area_col is None:
-            self._area_col = arcpy.Parameter(
-                displayName="Column with Subcatchment Areas",
-                name="area_col",
-                datatype="Field",
-                parameterType="Optional",
-                direction="Input",
-                multiValue=False
-            )
-            self._set_parameter_dependency(self._area_col, self.subcatchments)
-        return self._area_col
-
-    @property
-    def imp_col(self):
-        """ Name of the field in the `subcatchments` layer specifies
-        the percent impervious cover. """
-
-        if self._imp_col is None:
-            self._imp_col = arcpy.Parameter(
-                displayName="Column with Subcatchment Percents impervious",
-                name="imp_col",
-                datatype="Field",
+        if self._value_columns is None:
+            self._value_columns = arcpy.Parameter(
+                displayName="Values to be Accumulated",
+                name="value_columns",
+                datatype="Value Table",
                 parameterType="Required",
                 direction="Input",
-                multiValue=False
+                multiValue=True,
             )
-            self._set_parameter_dependency(self._imp_col, self.subcatchments)
-        return self._imp_col
+            self._value_columns.columns = [
+                ['String', 'Values To Accumulate'],
+                ['String', 'Accumulation Method'],
+                ['String', 'Weighting Factor']
+            ]
+            self._set_parameter_dependency(self._value_columns, self.subcatchments)
+        return self._value_columns
+
+    def updateParameters(self, parameters):
+        params = self._get_parameter_dict(parameters)
+        param_vals = self._get_parameter_values(parameters)
+        ws = param_vals.get('workspace', '.')
+        vc = params['value_columns']
+
+        with utils.WorkSpace(ws):
+            sc = param_vals['subcatchments']
+
+            # handles field name from Propagator output
+            prefix = [i[0:3] for i in analysis.AGG_METHOD_DICT.keys()]
+            # handles unmodified field name
+            prefix.extend(['area', 'imp', 'dry', 'wet'])
+
+            if params['subcatchments'].value:
+                fields = analysis._get_wq_fields(sc, prefix)
+                fields.append('n/a')
+                self._set_filter_list(vc.filters[0], fields)
+                self._set_filter_list(vc.filters[1], list(analysis.AGG_METHOD_DICT.keys()))
+                self._set_filter_list(vc.filters[2], fields)
+
+            self._update_value_table_with_default(vc, ['sum','n/a'])
 
     def analyze(self, **params):
         """ Accumulates subcatchments properties from upstream
@@ -574,9 +614,13 @@ class Accumulator(base_tbx.BaseToolbox_Mixin):
         sc = params.pop('subcatchments', None)
         ID_col = params.pop('ID_column', None)
         downstream_ID_col = params.pop('downstream_ID_column', None)
+        # value columns and aggregations
+        value_cols_string = params.pop('value_columns', None)
+        utils._status(value_cols_string, True, True)
+        value_columns = [vc.split(' ') for vc in value_cols_string.replace(' #', ' average').split(';')]
+        utils._status(value_columns, True, True)
+
         streams = params.pop('streams', None)
-        area_col = params.pop('area_col', 'SHAPE@AREA')
-        imp_col = params.pop('imp_col', None)
         output_layer = params.pop('output_layer', None)
 
         with utils.WorkSpace(ws), utils.OverwriteState(overwrite):
@@ -584,8 +628,7 @@ class Accumulator(base_tbx.BaseToolbox_Mixin):
                 subcatchments_layer=sc,
                 id_col=ID_col,
                 ds_col=downstream_ID_col,
-                area_col=area_col,
-                imp_col=imp_col,
+                value_columns=value_columns,
                 streams_layer=streams,
                 output_layer=output_layer,
                 verbose=True,

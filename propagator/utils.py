@@ -29,6 +29,7 @@ import numpy
 import arcpy
 
 from propagator import validate
+import pdb
 
 
 # basic named tuple for recarray aggregation
@@ -1434,7 +1435,7 @@ def stats_with_ignored_values(array, statfxn, ignored_value=None,
     return res
 
 
-def weighted_average(arr, value_col, weight_col):
+def weighted_average(arr):
     """
     Computed weighted average from two columns in an array.
 
@@ -1453,8 +1454,8 @@ def weighted_average(arr, value_col, weight_col):
         Weighted average.
 
     """
-
-    return numpy.average(arr[value_col], weights=arr[weight_col])
+    columns = arr.dtype.names
+    return numpy.average(arr[columns[0]], weights=arr[columns[1]])
 
 
 def append_column_to_array(array, newcolumn, newvalues, othercols=None):

@@ -1011,7 +1011,7 @@ def test_weighted_average():
         ], dtype=[('value', '<f4'),]
     )
 
-    result = utils.weighted_average(raw_data, 'value', 'w_factor')
+    result = utils.weighted_average(raw_data)
     nt.assert_equal(result, expected_result['value'])
 
 
