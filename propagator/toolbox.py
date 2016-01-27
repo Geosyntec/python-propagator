@@ -197,18 +197,19 @@ def accumulate(subcatchments_layer=None, id_col=None, ds_col=None,
 
     """
 
-    #Seperate value columns into field name and aggregation method
+    # Separate value columns into field name and aggregation method
     value_columns = validate.value_column_stats(value_columns, default_aggfxn)
     value_columns_field = [i[0] for i in value_columns]
     value_columns_aggmethod = [i[1] for i in value_columns]
-    value_columns_weightfactor = [i[2] for i in value_columns]
+    value_columns_weight = [i[2] for i in value_columns]
     vc_field_wfactor = []
-    for col,wfactor,aggmethod in zip(value_columns_field,value_columns_weightfactor, value_columns_aggmethod):
+    for col, wfactor, aggmethod in zip(value_columns_field, value_columns_weight, value_columns_aggmethod):
         if aggmethod.lower() == 'weighted_average':
             dummy = [col]
             dummy.append(wfactor)
         else:
             dummy = col
+
         vc_field_wfactor.append(dummy)
 
     # define the Statistic objects that will be passed to `rec_groupby`
@@ -256,7 +257,6 @@ def accumulate(subcatchments_layer=None, id_col=None, ds_col=None,
     for i in final_fields:
         arcpy.management.AddField(split_streams_layer, i, "DOUBLE")
 
-
     # load the split/aggregated streams' attribute table
     split_streams_table = utils.load_attribute_table(
         split_streams_layer, id_col, ds_col, *final_fields
@@ -277,7 +277,6 @@ def accumulate(subcatchments_layer=None, id_col=None, ds_col=None,
     aggregated_properties = utils.rec_groupby(upstream_attributes, id_col, *stats)
 
     # Update output layer with aggregated values.
-
     utils.update_attribute_table(
         split_streams_layer,
         aggregated_properties,
@@ -597,7 +596,7 @@ class Accumulator(base_tbx.BaseToolbox_Mixin):
                 self._set_filter_list(vc.filters[1], list(analysis.AGG_METHOD_DICT.keys()))
                 self._set_filter_list(vc.filters[2], fields)
 
-            self._update_value_table_with_default(vc, ['sum','n/a'])
+            self._update_value_table_with_default(vc, ['sum', 'n/a'])
 
     def analyze(self, **params):
         """ Accumulates subcatchments properties from upstream
