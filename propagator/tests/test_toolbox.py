@@ -437,6 +437,43 @@ class Test_Propagator_Tbx(BaseToolboxChecker_Mixin):
         ]
         nt.assert_list_equal(names, known_names)
 
+    def test_updateParameters(self):
+        params_dict = self.tbx._get_parameter_dict(self.tbx._params_as_list())
+        params_dict['subcatchments'] = MockParam('subcatchments', 'subcatchment.shp', False)
+        params_dict['monitoring_locations'] = MockParam('monitoring_locations', 'monitoring_locations.shp', False)
+        params_dict['streams'] = MockParam('streams', 'streams.shp', False)
+        params_dict['value_columns'] = MockParam('value_columns', 'X', False)
+        params_val = {
+            'workspace': resource_filename('propagator.testing', 'tbx_propagate'),
+            'value_columns': [
+                'Dry_M average',
+                'Wet_B median',
+            ],
+            'subcatchments': 'subcatchment.shp',
+            'monitoring_locations': 'monitoring_locations.shp',
+            'streams': 'streams.shp',
+
+        }
+        with mock.patch.object(self.tbx, '_update_value_table_with_default') as _uvt:
+            with mock.patch.object(self.tbx, '_get_parameter_dict', return_value=params_dict) as _gpd:
+                with mock.patch.object(self.tbx,'_get_parameter_values', return_value=params_val) as _gpv:
+                    vc = params_dict['value_columns']
+                    vc.filters = [MockFilter(), MockFilter()]
+                    filters = vc.filters
+                    self.tbx.updateParameters(self.tbx._params_as_list())
+                    for f in filters:
+                        nt.assert_equal(f.type, 'ValueList')
+
+                    nt.assert_list_equal(
+                        filters[0].list,
+                        [
+                            u'Dry_B', u'Dry_M', u'Dry_N',
+                            u'Wet_B', u'Wet_M', u'Wet_N',
+                        ]
+                    )
+
+                    _uvt.assert_called_once_with(vc, 'average')
+
     @nptest.dec.skipif(not pptest.has_fiona)
     def test_analyze(self):
         tbx = toolbox.Propagator()
