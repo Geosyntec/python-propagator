@@ -908,7 +908,7 @@ def rename_column(table, oldname, newname, newalias=None):  # pragma: no cover
     )
 
 
-def populate_field(table, value_fxn, valuefield, *keyfields):
+def populate_field(table, value_fxn, valuefield, keyfields=None):
     """
     Loops through the records of a table and populates the value of one
     field (`valuefield`) based on another field (`keyfield`) by passing
@@ -927,7 +927,7 @@ def populate_field(table, value_fxn, valuefield, *keyfields):
         and returns a *single* value.
     valuefield : string
         The name of the field to be computed.
-    *keyfields : strings, optional
+    keyfields : list of str, optional
         The other fields that need to be present in the rows of the
         cursor.
 
@@ -948,7 +948,7 @@ def populate_field(table, value_fxn, valuefield, *keyfields):
 
     """
 
-    fields = list(keyfields)
+    fields = validate.non_empty_list(keyfields, on_fail='create')
     fields.append(valuefield)
     check_fields(table, *fields, should_exist=True)
 

@@ -667,7 +667,7 @@ class Test_populate_field(object):
             self.testfile,
             lambda row: value_dict.get(row[0], -1),
             self.field_added,
-            "FID"
+            ["FID"]
         )
 
         with arcpy.da.SearchCursor(self.testfile, [self.field_added, "FID"]) as cur:
@@ -680,7 +680,7 @@ class Test_populate_field(object):
             self.testfile,
             lambda row: row[0]**2,
             self.field_added,
-            "FID"
+            ["FID"]
         )
 
         with arcpy.da.SearchCursor(self.testfile, [self.field_added, "FID"]) as cur:
