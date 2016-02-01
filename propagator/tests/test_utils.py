@@ -1058,10 +1058,10 @@ class Test_append_column_to_array():
 
     def test_subset_scalar_colnames(self):
         result = utils.append_column_to_array(self.raw_data, self.newcol, self.newval,
-                                              othercols='value')
+                                              other_cols='value')
         nptest.assert_array_equal(result, self.expected_subset)
 
     def test_subset_list_colnames(self):
         result = utils.append_column_to_array(self.raw_data, self.newcol, self.newval,
-                                              othercols=['value'])
+                                              other_cols=['value'])
         nptest.assert_array_equal(result, self.expected_subset)

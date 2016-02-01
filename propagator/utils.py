@@ -1458,25 +1458,56 @@ def weighted_average(arr):
     return numpy.average(arr[columns[0]], weights=arr[columns[1]])
 
 
-def append_column_to_array(array, newcolumn, newvalues, othercols=None):
+def append_column_to_array(array, new_column, new_values, other_cols=None):
+    """
+    Adds a new column to a record array
+
+    Parameters
+    ----------
+    array : numpy record array
+    new_column : str
+        The name of the new column to be created
+    new_values : scalar or sequence
+        The value or array of values to be inserted into the new column.
+    other_cols : sequence of str, optional
+        A subset of exististing columns that will be kept in the final
+        array. If not provided, all existing columns are retained.
+
+    Returns
+    -------
+    new_array : numpy record array
+        The new array with the new column.
+
+    """
+
     from numpy.lib.recfunctions import append_fields
 
-    newcolumn = validate.non_empty_list(newcolumn)
-    if othercols is not None:
-        othercols = validate.non_empty_list(othercols)
-        if newcolumn in othercols:
-            msg = "`newcolumn` can not be the name of an existing column."
+    # validate and convert the new column to a list to work
+    # with the numpy API
+    new_column = validate.non_empty_list(new_column)
+
+    # validate and select out all of the "other" columns
+    if other_cols is not None:
+        other_cols = validate.non_empty_list(other_cols)
+        if new_column in other_cols:
+            msg = "`new_column` can not be the name of an existing column."
             raise ValueError(msg)
         else:
             # this raises a nasty warning in numpy even though this is the
             # way the warning says we should do this:
             with warnings.catch_warnings(record=True) as w:  # pragma: no cover
                 warnings.simplefilter("ignore")
-                array = array[othercols].copy()
+                array = array[other_cols].copy()
 
-    if numpy.isscalar(newvalues):
-        newvalues = numpy.array([newvalues] * array.shape[0])
+                # make sure we don't have any unicode column names
+                col_names = numpy.array(array.dtype.names)
+                array.dtype.names = [cn.encode('ascii', 'ignore') for cn in col_names]
 
-    new_array = append_fields(array, newcolumn, [newvalues])
+    # convert the new value to an array if necessary
+    if numpy.isscalar(new_values):
+        new_values = numpy.array([new_values] * array.shape[0])
+
+    # append the new colum
+    new_array = append_fields(array, new_column, [new_values])
 
     return new_array.data
