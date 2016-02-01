@@ -248,10 +248,16 @@ def accumulate(subcatchments_layer=None, id_col=None, ds_col=None,
         output_layer=output_layer,
         agg_method="first",  # first works b/c all values are equal
     )
-    final_fields = [stat.rescol for stat in stats]
+
     # Add target_field columns back to spilt_stream_layer.
-    for i in final_fields:
-        arcpy.management.AddField(split_streams_layer, i, "DOUBLE")
+    final_fields = [s.rescol for s in stats]
+    for field in final_fields:
+        utils.add_field_with_value(
+            table=split_streams_layer,
+            field_name=field,
+            field_value=None,
+            field_type='DOUBLE',
+        )
 
     # load the split/aggregated streams' attribute table
     split_streams_table = utils.load_attribute_table(
