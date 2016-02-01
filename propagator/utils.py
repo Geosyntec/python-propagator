@@ -979,7 +979,7 @@ def copy_layer(existing_layer, new_layer):
     return new_layer
 
 
-def concat_results(destination, *input_files):
+def concat_results(destination, input_files):
     """ Concatentates (merges) serveral datasets into a single shapefile
     or feature class.
 
@@ -991,7 +991,7 @@ def concat_results(destination, *input_files):
     ----------
     destination : str
         Path to where the concatentated dataset should be saved.
-    *input_files : str
+    input_files : list of str
         Strings of the paths of the datasets to be merged.
 
     Returns

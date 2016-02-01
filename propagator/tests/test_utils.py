@@ -720,8 +720,8 @@ def test_concat_results():
     with utils.OverwriteState(True):
         test = utils.concat_results(
             resource_filename('propagator.testing.concat_results', 'result.shp'),
-            resource_filename('propagator.testing.concat_results', 'input1.shp'),
-            resource_filename('propagator.testing.concat_results', 'input2.shp')
+            [resource_filename('propagator.testing.concat_results', 'input1.shp'),
+             resource_filename('propagator.testing.concat_results', 'input2.shp')]
         )
 
     nt.assert_true(isinstance(test, arcpy.mapping.Layer))
