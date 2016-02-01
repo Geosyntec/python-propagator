@@ -95,7 +95,7 @@ class Test_EasyMapDoc(object):
 class Test_Extension(object):
     def setup(self):
         self.known_available = 'spatial'
-        self.known_unavailable = 'Datareviewer'
+        self.known_unavailable = 'tracking'
 
     @nt.raises(RuntimeError)
     def test_unlicensed_extension(self):
@@ -110,7 +110,7 @@ class Test_Extension(object):
         nt.assert_equal(arcpy.CheckExtension(self.known_available), u'Available')
 
     def teardown(self):
-        arcpy.CheckExtension(self.known_available)
+        arcpy.CheckInExtension(self.known_available)
 
 
 class Test_OverwriteState(object):
