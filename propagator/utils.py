@@ -701,7 +701,7 @@ def cleanup_temp_results(*results):
         arcpy.management.Delete(fullpath)
 
 
-def intersect_polygon_layers(destination, *layers, **intersect_options):
+def intersect_polygon_layers(destination, layers, **intersect_options):
     """
     Intersect polygon layers with each other. Basically a thin wrapper
     around `arcpy.analysis.Intersect`_.
@@ -712,7 +712,7 @@ def intersect_polygon_layers(destination, *layers, **intersect_options):
     ----------
     destination : str
         Filepath where the intersected output will be saved.
-    *layers : str or arcpy.Mapping.Layer
+    layers : list of str or arcpy.Mapping.Layer
         The polygon layers (or their paths) that will be intersected
         with each other.
     **intersect_options : keyword arguments

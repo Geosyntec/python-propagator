@@ -528,8 +528,7 @@ def test_intersect_polygon_layers():
     with utils.OverwriteState(True):
         output = utils.intersect_polygon_layers(
             output_file,
-            input1_file,
-            input2_file,
+            [input1_file, input2_file,]
         )
 
     nt.assert_true(isinstance(output, arcpy.mapping.Layer))
