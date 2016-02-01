@@ -199,22 +199,18 @@ def accumulate(subcatchments_layer=None, id_col=None, ds_col=None,
 
     # Separate value columns into field name and aggregation method
     value_columns = validate.value_column_stats(value_columns, default_aggfxn)
-    value_columns_field = [i[0] for i in value_columns]
-    value_columns_aggmethod = [i[1] for i in value_columns]
-    value_columns_weight = [i[2] for i in value_columns]
+    value_columns_aggmethods = [i[1] for i in value_columns]
     vc_field_wfactor = []
-    for col, wfactor, aggmethod in zip(value_columns_field, value_columns_weight, value_columns_aggmethod):
+    for col, aggmethod, wfactor in value_columns:
         if aggmethod.lower() == 'weighted_average':
-            dummy = [col]
-            dummy.append(wfactor)
+            vc_field_wfactor.append([col, wfactor])
         else:
-            dummy = col
+            vc_field_wfactor.append(col)
 
-        vc_field_wfactor.append(dummy)
 
     # define the Statistic objects that will be passed to `rec_groupby`
     statfxns = []
-    for agg in value_columns_aggmethod:
+    for agg in value_columns_aggmethods:
         statfxns.append(partial(
             utils.stats_with_ignored_values,
             statfxn=analysis.AGG_METHOD_DICT[agg.lower()],
@@ -223,7 +219,7 @@ def accumulate(subcatchments_layer=None, id_col=None, ds_col=None,
 
     res_columns = [
         '{}{}'.format(prefix[0:2].upper(), col)
-        for prefix, col in zip(value_columns_aggmethod, value_columns_field)
+        for col, prefix, _ in value_columns
     ]
     stats = [
         utils.Statistic(srccol, statfxn, rescol)
