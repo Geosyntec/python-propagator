@@ -218,7 +218,7 @@ def accumulate(subcatchments_layer=None, id_col=None, ds_col=None,
         ))
 
     res_columns = [
-        '{}{}'.format(prefix[0:2].upper(), col)
+        '{}{}'.format(prefix[:3].upper(), col)
         for col, prefix, _ in value_columns
     ]
     stats = [

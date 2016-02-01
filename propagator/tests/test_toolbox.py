@@ -156,14 +156,14 @@ def test_accumulate():
             id_col='Catch_ID_a',
             ds_col='Dwn_Catch_',
             value_columns=[
-                ('medDry_M', 'maximum', 'n/a'),
-                ('p10Dry_N', 'First', 'area'),
-                ('Wet_B', 'WeIghtED_AveragE', 'imp_area'),
-                ('aveWet_M', 'minimum', 'imp_area'),
-                ('maxWet_N', 'average', 'n/a'),
+                ('DryM', 'maximum', 'n/a'),
+                ('DryN', 'First', 'area'),
+                ('WetB', 'WeIghtED_AveragE', 'imp_ar'),
+                ('WetM', 'minimum', 'imp_ar'),
+                ('WetN', 'average', 'n/a'),
                 ('Area', 'sum', 'n/a'),
                 ('Imp', 'weighted_Average', 'Area'),
-                ('imp_area', 'sum', 'n/a')
+                ('imp_ar', 'sum', 'n/a')
             ],
             streams_layer='streams.shp',
             output_layer='output.shp',
@@ -613,8 +613,8 @@ class Test_Accumulator_Tbx(BaseToolboxChecker_Mixin):
                     nt.assert_list_equal(
                         filters[0].list,
                         [
-                            u'Imp', u'Area', u'aveWet_M', u'maxWet_N', u'medDry_M',
-                            u'p10Dry_N', u'imp_area', u'Wet_B', u'n/a'
+                            u'Imp', u'Area', u'WetM', u'WetN', u'DryM',
+                            u'DryN', u'imp_ar', u'WetB', u'n/a'
                         ]
                     )
 
@@ -626,9 +626,14 @@ class Test_Accumulator_Tbx(BaseToolboxChecker_Mixin):
         tbx = toolbox.Accumulator()
         ws = resource_filename('propagator.testing', 'score_accumulator')
         vc = (
-            'medDry_M maximum n/a;p10Dry_N First area;Wet_B WeIghtED_AveragE imp_area;'
-            'aveWet_M minimum imp_area;maxWet_N average n/a;Area sum n/a;'
-            'Imp weighted_Average Area;imp_area sum n/a'
+            'DryM maximum n/a;'
+            'DryN First area;'
+            'WetB WeIghtED_AveragE imp_ar;'
+            'WetM minimum imp_ar;'
+            'WetN average n/a;'
+            'Area sum n/a;'
+            'Imp weighted_Average Area;'
+            'imp_ar sum n/a'
         )
         with mock.patch.object(tbx, '_add_to_map') as atm:
             stream_layer = tbx.analyze(
