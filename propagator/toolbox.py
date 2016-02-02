@@ -619,9 +619,7 @@ class Accumulator(base_tbx.BaseToolbox_Mixin):
         downstream_ID_col = params.pop('downstream_ID_column', None)
         # value columns and aggregations
         value_cols_string = params.pop('value_columns', None)
-        utils._status(value_cols_string, True, True)
         value_columns = [vc.split(' ') for vc in value_cols_string.replace(' #', ' average').split(';')]
-        utils._status(value_columns, True, True)
 
         streams = params.pop('streams', None)
         output_layer = params.pop('output_layer', None)
