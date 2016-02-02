@@ -76,7 +76,7 @@ def mock_status(*args, **kwargs):
     pass
 
 
-class Test_propagate(object):
+class Test_propagate_baseline(object):
     def setup(self):
         self.ws = resource_filename('propagator.testing', 'tbx_propagate')
         self.columns = [
@@ -89,6 +89,21 @@ class Test_propagate(object):
         ]
         self.subc_res = 'test_subcatchments.shp'
         self.stream_res = 'test_streams.shp'
+        self.subc_expected_base = 'expected_subc.shp'
+        self.stream_expected_base = 'expected_streams.shp'
+        self.subc_expected_filtered = 'expected_filtered_subc.shp'
+        self.stream_expected_filtered = 'expected_filtered_streams.shp'
+
+        self.muli_agg_columns = [
+            ['Dry_B', 'averAgE'],
+            ['Dry_M', 'MEDIAN'],
+            ['Dry_M', 'MINIMUM'],
+            ['Wet_B', 'MAXIMum'],
+            ['Wet_N', 'averAgE'],
+            ['Wet_N', 'Median'],
+        ]
+        self.subc_expected_multi_agg = 'expected_multi_agg_subc.shp'
+        self.stream_expected_multi_agg = 'expected_multi_agg_streams.shp'
 
     @nt.nottest
     def check(self, subc_res, stream_res, subc_exp, stream_exp):
@@ -104,6 +119,9 @@ class Test_propagate(object):
             os.path.join(self.ws, stream_exp),
             os.path.join(self.ws, self.stream_res),
         )
+
+        nt.assert_equal(subc_res, self.subc_res)
+        nt.assert_equal(stream_res, self.stream_res)
 
     def teardown(self):
         utils.cleanup_temp_results(
@@ -124,7 +142,7 @@ class Test_propagate(object):
                 output_path='test.shp'
             )
 
-        self.check(subc_layer, stream_layer, 'expected_subc.shp', 'expected_streams.shp')
+        self.check(subc_layer, stream_layer, self.subc_expected_base, self.stream_expected_base)
 
     @nptest.dec.skipif(not pptest.has_fiona)
     def test_filtered(self):
@@ -142,9 +160,25 @@ class Test_propagate(object):
                 output_path='test.shp'
             )
 
-        self.check(subc_layer, stream_layer, 'expected_filtered_subc.shp', 'expected_filtered_streams.shp')
-        nt.assert_equal(subc_layer, 'test_subcatchments.shp')
-        nt.assert_equal(stream_layer, 'test_streams.shp')
+        self.check(subc_layer, stream_layer, self.subc_expected_filtered, self.stream_expected_filtered)
+
+    @nptest.dec.skipif(not pptest.has_fiona)
+    def test_multi_agg(self):
+        stacol = 'StationTyp'
+        with utils.WorkSpace(self.ws), utils.OverwriteState(True):
+            subc_layer, stream_layer = propagator.toolbox.propagate(
+                subcatchments='subcatchments.shp',
+                id_col='CID',
+                ds_col='DS_CID',
+                monitoring_locations='monitoring_locations.shp',
+                ml_filter=lambda row: row[stacol] in ['Channel', 'Outfall', 'Outfall, Coastal'],
+                ml_filter_cols=stacol,
+                value_columns=self.muli_agg_columns,
+                streams='streams.shp',
+                output_path='test.shp'
+            )
+
+        self.check(subc_layer, stream_layer, self.subc_expected_multi_agg, self.stream_expected_multi_agg)
 
 
 def test_accumulate():

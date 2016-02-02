@@ -240,6 +240,37 @@ class Test_preprocess_wq(object):
         nt.assert_true(isinstance(wq, numpy.ndarray))
         nt.assert_list_equal(cols, self.expected_cols)
 
+    def test_multi_agg(self):
+        expected_cols = [
+            'medDry_B', 'aveDry_B', 'maxDry_B',
+            'minWet_B', 'aveWet_M', 'maxWet_M',
+        ]
+        wq_cols = [
+            ('Dry_B', 'medIAN'),
+            ('Dry_B',),
+            ('Dry_B', 'MAXIMUM'),
+            ('Wet_B', 'minIMUM'),
+            ('Wet_M',),
+            ('Wet_M', 'MAXIMUM'),
+        ]
+
+        with utils.OverwriteState(True), utils.WorkSpace(self.ws):
+            wq, cols = analysis.preprocess_wq(
+                monitoring_locations=self.ml,
+                subcatchments=self.sc,
+                id_col='CID',
+                ds_col='DS_CID',
+                output_path=self.results,
+                value_columns=wq_cols
+            )
+        expected = 'expected_multi_agg.shp'
+        pptest.assert_shapefiles_are_close(
+            os.path.join(self.ws, expected),
+            os.path.join(self.ws, self.results),
+        )
+        nt.assert_true(isinstance(wq, numpy.ndarray))
+        nt.assert_list_equal(cols, expected_cols)
+
     @nt.raises(ValueError)
     def test_no_wq_col_error(self):
         with utils.OverwriteState(True), utils.WorkSpace(self.ws):

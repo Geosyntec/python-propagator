@@ -793,6 +793,9 @@ def load_attribute_table(input_path, *fields):
     if len(fields) == 0:
         fields = get_field_names(input_path)
 
+    # remove any duplicate field names
+    fields = numpy.unique(fields)
+
     # check that fields are valid
     check_fields(layer.dataSource, *fields, should_exist=True)
 

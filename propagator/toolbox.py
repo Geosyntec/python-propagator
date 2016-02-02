@@ -207,7 +207,6 @@ def accumulate(subcatchments_layer=None, id_col=None, ds_col=None,
         else:
             vc_field_wfactor.append(col)
 
-
     # define the Statistic objects that will be passed to `rec_groupby`
     statfxns = []
     for agg in value_columns_aggmethods:

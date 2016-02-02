@@ -446,7 +446,7 @@ def preprocess_wq(monitoring_locations, subcatchments, id_col, ds_col,
 
     res_columns = [
         '{}{}'.format(prefix[0:3].lower(), col)
-        for prefix, col in zip(value_columns_aggmethod, value_columns_field)
+        for col, prefix in value_columns
     ]
 
     statistics = [
