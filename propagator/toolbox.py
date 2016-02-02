@@ -268,20 +268,20 @@ def accumulate(subcatchments_layer=None, id_col=None, ds_col=None,
     )
 
     upstream_attributes = analysis.collect_upstream_attributes(
-        subcatchments_table,
-        split_streams_table,
-        id_col,
-        ds_col,
-        target_fields
+        subcatchments_table=subcatchments_table,
+        target_subcatchments=split_streams_table,
+        id_col=id_col,
+        ds_col=ds_col,
+        preserved_fields=target_fields
     )
     aggregated_properties = utils.rec_groupby(upstream_attributes, id_col, *stats)
 
     # Update output layer with aggregated values.
     utils.update_attribute_table(
-        split_streams_layer,
-        aggregated_properties,
-        id_col,
-        final_fields,
+        layerpath=split_streams_layer,
+        attribute_array=aggregated_properties,
+        id_column=id_col,
+        orig_columns=final_fields,
     )
 
     # Remove extraneous columns
