@@ -528,8 +528,7 @@ def test_intersect_polygon_layers():
     with utils.OverwriteState(True):
         output = utils.intersect_polygon_layers(
             output_file,
-            input1_file,
-            input2_file,
+            [input1_file, input2_file,]
         )
 
     nt.assert_true(isinstance(output, arcpy.mapping.Layer))
@@ -667,7 +666,7 @@ class Test_populate_field(object):
             self.testfile,
             lambda row: value_dict.get(row[0], -1),
             self.field_added,
-            "FID"
+            ["FID"]
         )
 
         with arcpy.da.SearchCursor(self.testfile, [self.field_added, "FID"]) as cur:
@@ -680,7 +679,7 @@ class Test_populate_field(object):
             self.testfile,
             lambda row: row[0]**2,
             self.field_added,
-            "FID"
+            ["FID"]
         )
 
         with arcpy.da.SearchCursor(self.testfile, [self.field_added, "FID"]) as cur:
@@ -720,8 +719,8 @@ def test_concat_results():
     with utils.OverwriteState(True):
         test = utils.concat_results(
             resource_filename('propagator.testing.concat_results', 'result.shp'),
-            resource_filename('propagator.testing.concat_results', 'input1.shp'),
-            resource_filename('propagator.testing.concat_results', 'input2.shp')
+            [resource_filename('propagator.testing.concat_results', 'input1.shp'),
+             resource_filename('propagator.testing.concat_results', 'input2.shp')]
         )
 
     nt.assert_true(isinstance(test, arcpy.mapping.Layer))
@@ -1058,10 +1057,10 @@ class Test_append_column_to_array():
 
     def test_subset_scalar_colnames(self):
         result = utils.append_column_to_array(self.raw_data, self.newcol, self.newval,
-                                              othercols='value')
+                                              other_cols='value')
         nptest.assert_array_equal(result, self.expected_subset)
 
     def test_subset_list_colnames(self):
         result = utils.append_column_to_array(self.raw_data, self.newcol, self.newval,
-                                              othercols=['value'])
+                                              other_cols=['value'])
         nptest.assert_array_equal(result, self.expected_subset)

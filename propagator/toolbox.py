@@ -199,22 +199,18 @@ def accumulate(subcatchments_layer=None, id_col=None, ds_col=None,
 
     # Separate value columns into field name and aggregation method
     value_columns = validate.value_column_stats(value_columns, default_aggfxn)
-    value_columns_field = [i[0] for i in value_columns]
-    value_columns_aggmethod = [i[1] for i in value_columns]
-    value_columns_weight = [i[2] for i in value_columns]
+    value_columns_aggmethods = [i[1] for i in value_columns]
     vc_field_wfactor = []
-    for col, wfactor, aggmethod in zip(value_columns_field, value_columns_weight, value_columns_aggmethod):
+    for col, aggmethod, wfactor in value_columns:
         if aggmethod.lower() == 'weighted_average':
-            dummy = [col]
-            dummy.append(wfactor)
+            vc_field_wfactor.append([col, wfactor])
         else:
-            dummy = col
+            vc_field_wfactor.append(col)
 
-        vc_field_wfactor.append(dummy)
 
     # define the Statistic objects that will be passed to `rec_groupby`
     statfxns = []
-    for agg in value_columns_aggmethod:
+    for agg in value_columns_aggmethods:
         statfxns.append(partial(
             utils.stats_with_ignored_values,
             statfxn=analysis.AGG_METHOD_DICT[agg.lower()],
@@ -222,8 +218,8 @@ def accumulate(subcatchments_layer=None, id_col=None, ds_col=None,
         ))
 
     res_columns = [
-        '{}{}'.format(prefix[0:2].upper(), col)
-        for prefix, col in zip(value_columns_aggmethod, value_columns_field)
+        '{}{}'.format(prefix[:3].upper(), col)
+        for col, prefix, _ in value_columns
     ]
     stats = [
         utils.Statistic(srccol, statfxn, rescol)
@@ -252,10 +248,16 @@ def accumulate(subcatchments_layer=None, id_col=None, ds_col=None,
         output_layer=output_layer,
         agg_method="first",  # first works b/c all values are equal
     )
-    final_fields = [stat.rescol for stat in stats]
+
     # Add target_field columns back to spilt_stream_layer.
-    for i in final_fields:
-        arcpy.management.AddField(split_streams_layer, i, "DOUBLE")
+    final_fields = [s.rescol for s in stats]
+    for field in final_fields:
+        utils.add_field_with_value(
+            table=split_streams_layer,
+            field_name=field,
+            field_value=None,
+            field_type='DOUBLE',
+        )
 
     # load the split/aggregated streams' attribute table
     split_streams_table = utils.load_attribute_table(
@@ -268,20 +270,20 @@ def accumulate(subcatchments_layer=None, id_col=None, ds_col=None,
     )
 
     upstream_attributes = analysis.collect_upstream_attributes(
-        subcatchments_table,
-        split_streams_table,
-        id_col,
-        ds_col,
-        target_fields
+        subcatchments_table=subcatchments_table,
+        target_subcatchments=split_streams_table,
+        id_col=id_col,
+        ds_col=ds_col,
+        preserved_fields=target_fields
     )
     aggregated_properties = utils.rec_groupby(upstream_attributes, id_col, *stats)
 
     # Update output layer with aggregated values.
     utils.update_attribute_table(
-        split_streams_layer,
-        aggregated_properties,
-        id_col,
-        final_fields,
+        layerpath=split_streams_layer,
+        attribute_array=aggregated_properties,
+        id_column=id_col,
+        orig_columns=final_fields,
     )
 
     # Remove extraneous columns
